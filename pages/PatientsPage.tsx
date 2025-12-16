@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '../components/patients/Header';
 import DesktopHeader from '../components/patients/DesktopHeader';
 import SearchBar from '../components/patients/SearchBar';
@@ -14,9 +14,10 @@ interface PatientsPageProps {
     onSelectHistory: (patient: Patient) => void;
     onNavigate: (page: CurrentPage) => void;
     currentPage: CurrentPage;
+    refreshKey?: number;
 }
 
-const PatientsPage: React.FC<PatientsPageProps> = ({ onSelectPatient, onSelectHistory, onNavigate, currentPage }) => {
+const PatientsPage: React.FC<PatientsPageProps> = ({ onSelectPatient, onSelectHistory, onNavigate, currentPage, refreshKey = 0 }) => {
     const [searchTerm, setSearchTerm] = useState('');
 
     return (
@@ -32,6 +33,7 @@ const PatientsPage: React.FC<PatientsPageProps> = ({ onSelectPatient, onSelectHi
                 </div>
                 <main className="flex-grow pb-28 px-4">
                     <PatientList 
+                        key={`mobile-${refreshKey}`}
                         onSelectPatient={onSelectPatient} 
                         onSelectHistory={onSelectHistory}
                         searchTerm={searchTerm}
@@ -51,6 +53,7 @@ const PatientsPage: React.FC<PatientsPageProps> = ({ onSelectPatient, onSelectHi
                 </div>
                 <main className="flex-grow pt-6">
                     <PatientList 
+                        key={`desktop-${refreshKey}`}
                         onSelectPatient={onSelectPatient} 
                         onSelectHistory={onSelectHistory}
                         searchTerm={searchTerm}

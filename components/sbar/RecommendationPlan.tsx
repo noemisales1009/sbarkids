@@ -67,7 +67,7 @@ const RecommendationHistoryPanel: React.FC<RecommendationHistoryPanelProps> = ({
   const recommendationLogs = auditLogs.filter(log => log.data_type === 'recommendation');
 
   if (recommendationLogs.length === 0) {
-    return <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded text-center text-gray-500 dark:text-gray-400 italic">Nenhuma recomendação salva para este turno</div>;
+    return null;
   }
 
   const shiftLabel = { morning: 'Manhã', afternoon: 'Tarde', night: 'Noite' }[shift];
@@ -113,6 +113,7 @@ const RecommendationPlan: React.FC<RecommendationPlanProps> = ({
 }) => {
   const [internalSelectedShift, setInternalSelectedShift] = useState<'morning' | 'afternoon' | 'night'>('morning');
   const [saving, setSaving] = useState(false);
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
   // Usa o selectedShift da prop se fornecido, senão usa o estado interno
   const selectedShift = propSelectedShift || 'morning';
@@ -201,21 +202,39 @@ const RecommendationPlan: React.FC<RecommendationPlanProps> = ({
       </div>
 
       {/* Conteúdo do turno selecionado */}
-      <div className="space-y-4 mb-6">
+      <div className="space-y-2 mb-6">
         {categories.map((category) => {
           const currentData = shiftData[selectedShift];
+          const isExpanded = expandedCategory === category.key;
+          const hasContent = currentData.data[category.key]?.trim().length > 0;
+          
           return (
-            <div key={category.key}>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                {category.icon} {category.title}
-              </label>
-              <textarea
-                value={currentData.data[category.key]}
-                onChange={(e) => currentData.onChange(category.key, e.target.value)}
-                placeholder={category.placeholder}
-                className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                rows={3}
-              />
+            <div key={category.key} className="border border-gray-300 dark:border-gray-600 rounded-lg">
+              <button
+                onClick={() => setExpandedCategory(isExpanded ? null : category.key)}
+                className="w-full flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+              >
+                <label className="flex items-center gap-2 font-semibold text-gray-700 dark:text-gray-300 cursor-pointer">
+                  {category.icon} {category.title}
+                  {hasContent && <span className="text-green-600 dark:text-green-400 text-lg">✓</span>}
+                </label>
+                <span className={`text-gray-600 dark:text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
+                  ▼
+                </span>
+              </button>
+              
+              {isExpanded && (
+                <div className="p-3 border-t border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800">
+                  <textarea
+                    value={currentData.data[category.key]}
+                    onChange={(e) => currentData.onChange(category.key, e.target.value)}
+                    placeholder={category.placeholder}
+                    className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    rows={4}
+                    autoFocus
+                  />
+                </div>
+              )}
             </div>
           );
         })}

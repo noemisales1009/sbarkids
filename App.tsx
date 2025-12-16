@@ -10,8 +10,8 @@ import { Patient, HistoryItemData, CurrentPage } from './types';
 import ReportDetailPage from './pages/ReportDetailPage';
 import { ViewportProvider } from './hooks/useViewport';
 import { TestSupabasePage } from './pages/TestSupabasePage';
-import { DebugFloatingButton } from './components/DebugFloatingButton';
 import { supabase } from './lib/supabase';
+import { patientsService } from './services/patientsService';
 
 interface AuthUser {
     id: string;
@@ -25,6 +25,7 @@ const App: React.FC = () => {
     const [selectedReport, setSelectedReport] = useState<HistoryItemData | null>(null);
     const [authUser, setAuthUser] = useState<AuthUser | null>(null);
     const [loadingAuth, setLoadingAuth] = useState(true);
+    const [refreshKey, setRefreshKey] = useState(0);
 
     // Verificar autenticação ao montar o componente
     useEffect(() => {
@@ -149,10 +150,52 @@ const App: React.FC = () => {
         if (page !== 'reportDetail') {
             setSelectedReport(null);
         }
+        // Recarregar lista de pacientes quando volta para essa página
+        if (page === 'patients') {
+            setRefreshKey(prev => prev + 1);
+        }
         setCurrentPage(page);
     };
 
-    const handleSelectPatientForSbar = (patient: Patient) => {
+    const handleSelectPatientForSbar = async (patient: Patient) => {
+        // Salvar/atualizar paciente no Supabase
+        try {
+            // Verificar se o paciente já existe
+            const existingPatient = await patientsService.getPatient(patient.id);
+            
+            if (!existingPatient) {
+                // Criar novo paciente
+                await patientsService.createPatient({
+                    name: patient.name,
+                    bed_number: patient.bed_number || 0,
+                    dob: patient.dob,
+                    mother_name: patient.mother_name || null,
+                    diagnosis: patient.diagnosis || null,
+                    status: patient.status || 'estavel',
+                    comorbidade: patient.comorbidade || null,
+                    dt_internacao: patient.dt_internacao || null,
+                    peso: patient.peso || null,
+                    destino: patient.destino || null,
+                });
+            } else {
+                // Atualizar paciente existente com dados mais recentes
+                await patientsService.updatePatient(patient.id, {
+                    name: patient.name,
+                    bed_number: patient.bed_number || 0,
+                    dob: patient.dob,
+                    mother_name: patient.mother_name || null,
+                    diagnosis: patient.diagnosis || null,
+                    status: patient.status || 'estavel',
+                    comorbidade: patient.comorbidade || null,
+                    dt_internacao: patient.dt_internacao || null,
+                    peso: patient.peso || null,
+                    destino: patient.destino || null,
+                });
+            }
+        } catch (error) {
+            console.error('Erro ao salvar paciente:', error);
+        }
+        
         setSelectedPatient(patient);
         handleNavigate('sbar');
     };
@@ -179,11 +222,11 @@ const App: React.FC = () => {
             case 'login':
                 return <LoginPage onLoginSuccess={handleLogin} />;
             case 'patients':
-                return <PatientsPage onSelectPatient={handleSelectPatientForSbar} onSelectHistory={handleSelectPatientForHistory} onNavigate={handleNavigate} currentPage={currentPage} />;
+                return <PatientsPage onSelectPatient={handleSelectPatientForSbar} onSelectHistory={handleSelectPatientForHistory} onNavigate={handleNavigate} currentPage={currentPage} refreshKey={refreshKey} />;
             case 'sbar':
-                return selectedPatient ? <SbarReportPage patient={selectedPatient} onBack={() => handleNavigate('patients')} /> : <PatientsPage onSelectPatient={handleSelectPatientForSbar} onSelectHistory={handleSelectPatientForHistory} onNavigate={handleNavigate} currentPage={currentPage} />;
+                return selectedPatient ? <SbarReportPage patient={selectedPatient} onBack={() => handleNavigate('patients')} /> : <PatientsPage onSelectPatient={handleSelectPatientForSbar} onSelectHistory={handleSelectPatientForHistory} onNavigate={handleNavigate} currentPage={currentPage} refreshKey={refreshKey} />;
             case 'history':
-                return selectedPatient ? <HistoryPage patient={selectedPatient} onBack={() => handleNavigate('patients')} onNavigate={handleNavigate} currentPage={currentPage} onSelectReport={handleSelectReport} /> : <PatientsPage onSelectPatient={handleSelectPatientForSbar} onSelectHistory={handleSelectPatientForHistory} onNavigate={handleNavigate} currentPage={currentPage} />;
+                return selectedPatient ? <HistoryPage patient={selectedPatient} onBack={() => handleNavigate('patients')} onNavigate={handleNavigate} currentPage={currentPage} onSelectReport={handleSelectReport} /> : <PatientsPage onSelectPatient={handleSelectPatientForSbar} onSelectHistory={handleSelectPatientForHistory} onNavigate={handleNavigate} currentPage={currentPage} refreshKey={refreshKey} />;
             case 'settings':
                 return <SettingsPage onNavigate={handleNavigate} currentPage={currentPage} />;
             case 'reports':
@@ -194,7 +237,7 @@ const App: React.FC = () => {
                 return <TestSupabasePage />;
             default:
                 // Redirect unhandled pages to patients for this example
-                return <PatientsPage onSelectPatient={handleSelectPatientForSbar} onSelectHistory={handleSelectPatientForHistory} onNavigate={handleNavigate} currentPage={currentPage} />;
+                return <PatientsPage onSelectPatient={handleSelectPatientForSbar} onSelectHistory={handleSelectPatientForHistory} onNavigate={handleNavigate} currentPage={currentPage} refreshKey={refreshKey} />;
         }
     }
 
@@ -203,7 +246,6 @@ const App: React.FC = () => {
             <div className="relative flex h-auto min-h-screen w-full flex-col bg-background-light dark:bg-background-dark group/design-root">
                 {renderPage()}
             </div>
-            <DebugFloatingButton onTestClick={() => handleNavigate('test')} />
         </ViewportProvider>
     );
 };

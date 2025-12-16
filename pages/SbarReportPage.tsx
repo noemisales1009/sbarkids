@@ -18,6 +18,7 @@ import { auditLogService } from '../services/auditLogService';
 import { userService } from '../services/userService';
 import { alertasService, Alerta } from '../services/alertasService';
 import { patientService } from '../services/patientService';
+import { patientsService } from '../services/patientsService';
 
 interface SbarReportPageProps {
     patient: Patient;
@@ -110,6 +111,26 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack }) => {
         };
         loadAlertas();
     }, [patient.id]);
+
+    // Salvar status automaticamente quando o paciente é selecionado
+    useEffect(() => {
+        if (!status) return;
+
+        const saveStatus = async () => {
+            try {
+                console.log('💾 Salvando status do paciente:', status);
+                await patientsService.updatePatient(patient.id, { status });
+                console.log('✅ Status salvo com sucesso:', status);
+            } catch (error) {
+                console.error('❌ Erro ao salvar status:', error);
+            }
+        };
+
+        // Aguardar um pouco para que o usuário tenha confirmado o status
+        const saveTimeout = setTimeout(saveStatus, 500);
+        
+        return () => clearTimeout(saveTimeout);
+    }, [status, patient.id]);
 
     // Carregar status do paciente quando a página carrega
     useEffect(() => {
@@ -631,10 +652,10 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack }) => {
                     {/* Assessment Plan por turno */}
                     <div className="bg-blue-50 dark:bg-blue-900 p-3 rounded-lg border border-blue-200 dark:border-blue-700 mb-4 text-sm">
                         <div className="font-mono text-blue-900 dark:text-blue-100">
-                            <div>Round: {currentRoundId || 'carregando...'}</div>
-                            <div>Morning data: {assessmentMorning.respiratorio ? '✅ Sim' : '❌ Não'}</div>
-                            <div>Afternoon data: {assessmentAfternoon.respiratorio ? '✅ Sim' : '❌ Não'}</div>
-                            <div>Night data: {assessmentNight.respiratorio ? '✅ Sim' : '❌ Não'}</div>
+                            <div>Rodada: {currentRoundId || 'carregando...'}</div>
+                            <div>Dados da Manhã: {assessmentMorning.respiratorio ? '✅ Sim' : '❌ Não'}</div>
+                            <div>Dados da Tarde: {assessmentAfternoon.respiratorio ? '✅ Sim' : '❌ Não'}</div>
+                            <div>Dados da Noite: {assessmentNight.respiratorio ? '✅ Sim' : '❌ Não'}</div>
                         </div>
                     </div>
 
