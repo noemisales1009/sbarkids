@@ -1,0 +1,5 @@
+{
+  "name": "10 SBAR Juju Login",
+  "description": "A React-based login interface for the SBAR Juju application, designed with a clean, modern user experience using Tailwind CSS.",
+  "requestFramePermissions": []
+}
