@@ -133,12 +133,12 @@ const AssessmentPlan: React.FC<AssessmentPlanProps> = ({
   };
 
   const categories = [
-    { key: 'respiratorio' as const, icon: '🫁', title: 'Respiratório', placeholder: 'Murmúrios vesiculares, sibilos, SpO2...' },
-    { key: 'hemodinamico' as const, icon: '❤️', title: 'Hemodinâmico', placeholder: 'PA, FC, débito urinário, perfusão...' },
-    { key: 'neurologico' as const, icon: '🧠', title: 'Neurológico', placeholder: 'Nível de consciência, escalas de sedação...' },
-    { key: 'renal' as const, icon: '🔬', title: 'Renal/Hidro', placeholder: 'Diurese, balanço hídrico, eletrólitos...' },
-    { key: 'infeccioso' as const, icon: '🦠', title: 'Infeccioso', placeholder: 'Sinais de infecção, febre, culturas...' },
-    { key: 'observacoes' as const, icon: '📝', title: 'Observações Gerais', placeholder: 'Outros achados relevantes...' },
+    { key: 'respiratorio' as const, icon: 'air', title: 'Respiratório', placeholder: 'Murmúrios vesiculares, sibilos, SpO2...' },
+    { key: 'hemodinamico' as const, icon: 'favorite', title: 'Hemodinâmico', placeholder: 'PA, FC, débito urinário, perfusão...' },
+    { key: 'neurologico' as const, icon: 'psychology', title: 'Neurológico', placeholder: 'Nível de consciência, escalas de sedação...' },
+    { key: 'renal' as const, icon: 'water_drop', title: 'Renal/Hidro', placeholder: 'Diurese, balanço hídrico, eletrólitos...' },
+    { key: 'infeccioso' as const, icon: 'shield', title: 'Infeccioso', placeholder: 'Sinais de infecção, febre, culturas...' },
+    { key: 'observacoes' as const, icon: 'description', title: 'Observações Gerais', placeholder: 'Outros achados relevantes...' },
   ];
 
   const handleSaveAll = async () => {
@@ -213,13 +213,14 @@ const AssessmentPlan: React.FC<AssessmentPlanProps> = ({
             <div key={category.key} className="border border-gray-300 dark:border-gray-600 rounded-lg">
               <button
                 onClick={() => setExpandedCategory(isExpanded ? null : category.key)}
-                className="w-full flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+                className="w-full flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition appearance-none"
               >
-                <label className="flex items-center gap-2 font-semibold text-gray-700 dark:text-gray-300 cursor-pointer">
-                  {category.icon} {category.title}
+                <div className="flex items-center gap-3 font-semibold text-gray-700 dark:text-gray-300 text-lg">
+                  <span className="material-symbols-outlined text-2xl flex-shrink-0 text-blue-600 dark:text-blue-400">{category.icon}</span>
+                  <span className="flex-grow text-left">{category.title}</span>
                   {hasContent && <span className="text-green-600 dark:text-green-400 text-lg">✓</span>}
-                </label>
-                <span className={`text-gray-600 dark:text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
+                </div>
+                <span className={`text-gray-600 dark:text-gray-400 transition-transform flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`}>
                   ▼
                 </span>
               </button>

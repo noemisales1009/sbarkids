@@ -132,12 +132,12 @@ const RecommendationPlan: React.FC<RecommendationPlanProps> = ({
   };
 
   const categories = [
-    { key: 'respiratorio' as const, icon: '🫁', title: 'Respiratório', placeholder: 'Ajustes ventilatórios, reexpansão, metas de desmame...' },
-    { key: 'hemodinamico' as const, icon: '❤️', title: 'Hemodinâmico', placeholder: 'Titulação de drogas, metas de PAM/perfusão...' },
-    { key: 'neurologico' as const, icon: '🧠', title: 'Neurológico', placeholder: 'Metas de sedação e dor...' },
-    { key: 'deliriumPrevencao' as const, icon: '⚠️', title: 'Prevenção de Delirium', placeholder: 'Descrever medidas de prevenção...' },
-    { key: 'metabolicoRenal' as const, icon: '🔬', title: 'Metabólico/Renal', placeholder: 'Balanço hídrico alvo, ajustes de dieta/NPT...' },
-    { key: 'exames' as const, icon: '📋', title: 'Exames e Avaliações', placeholder: 'Exames solicitados e avaliações...' }
+    { key: 'respiratorio' as const, icon: 'air', title: 'Respiratório', placeholder: 'Ajustes ventilatórios, reexpansão, metas de desmame...' },
+    { key: 'hemodinamico' as const, icon: 'favorite', title: 'Hemodinâmico', placeholder: 'Titulação de drogas, metas de PAM/perfusão...' },
+    { key: 'neurologico' as const, icon: 'psychology', title: 'Neurológico', placeholder: 'Metas de sedação e dor...' },
+    { key: 'deliriumPrevencao' as const, icon: 'warning', title: 'Prevenção de Delirium', placeholder: 'Descrever medidas de prevenção...' },
+    { key: 'metabolicoRenal' as const, icon: 'water_drop', title: 'Metabólico/Renal', placeholder: 'Balanço hídrico alvo, ajustes de dieta/NPT...' },
+    { key: 'exames' as const, icon: 'assignment', title: 'Exames e Avaliações', placeholder: 'Exames solicitados e avaliações...' }
   ];
 
   const handleSaveAll = async () => {
@@ -212,13 +212,14 @@ const RecommendationPlan: React.FC<RecommendationPlanProps> = ({
             <div key={category.key} className="border border-gray-300 dark:border-gray-600 rounded-lg">
               <button
                 onClick={() => setExpandedCategory(isExpanded ? null : category.key)}
-                className="w-full flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+                className="w-full flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition appearance-none"
               >
-                <label className="flex items-center gap-2 font-semibold text-gray-700 dark:text-gray-300 cursor-pointer">
-                  {category.icon} {category.title}
+                <div className="flex items-center gap-3 font-semibold text-gray-700 dark:text-gray-300 text-lg">
+                  <span className="material-symbols-outlined text-2xl flex-shrink-0 text-green-600 dark:text-green-400">{category.icon}</span>
+                  <span className="flex-grow text-left">{category.title}</span>
                   {hasContent && <span className="text-green-600 dark:text-green-400 text-lg">✓</span>}
-                </label>
-                <span className={`text-gray-600 dark:text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
+                </div>
+                <span className={`text-gray-600 dark:text-gray-400 transition-transform flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`}>
                   ▼
                 </span>
               </button>
