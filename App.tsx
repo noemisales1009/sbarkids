@@ -25,41 +25,68 @@ const App: React.FC = () => {
     const [selectedReport, setSelectedReport] = useState<HistoryItemData | null>(null);
     const [authUser, setAuthUser] = useState<AuthUser | null>(null);
     const [loadingAuth, setLoadingAuth] = useState(true);
+    const [loadingTimeout, setLoadingTimeout] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
 
     // Verificar autenticação ao montar o componente
     useEffect(() => {
+        // Timeout de 5 segundos para carregar autenticação
+        const timeoutId = setTimeout(() => {
+            console.warn('⏱️ Timeout ao carregar autenticação, mostrando login...');
+            setLoadingAuth(false);
+            setLoadingTimeout(true);
+        }, 5000);
+
         const checkAuth = async () => {
             try {
-                const { data: { session } } = await supabase.auth.getSession();
-                console.log('Sessão encontrada:', session);
+                console.log('🔄 Iniciando verificação de autenticação...');
+                const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+                
+                if (sessionError) {
+                    console.warn('⚠️ Erro ao obter sessão (pode ser falta de configuração Supabase):', sessionError);
+                    setCurrentPage('login');
+                    setLoadingAuth(false);
+                    clearTimeout(timeoutId);
+                    return;
+                }
+                
+                console.log('✅ Sessão encontrada:', session ? 'Sim' : 'Não');
                 
                 if (session?.user) {
-                    // Buscar dados do usuário na tabela users
-                    const { data: userData, error } = await supabase
-                        .from('users')
-                        .select('id, name, email')
-                        .eq('id', session.user.id)
-                        .single();
+                    try {
+                        // Buscar dados do usuário na tabela users
+                        const { data: userData, error } = await supabase
+                            .from('users')
+                            .select('id, name, email')
+                            .eq('id', session.user.id)
+                            .single();
 
-                    if (userData) {
-                        console.log('Usuário autenticado:', userData);
-                        setAuthUser({
-                            id: userData.id,
-                            email: userData.email || session.user.email || '',
-                            name: userData.name || 'Usuário'
-                        });
-                        setCurrentPage('patients');
+                        if (userData) {
+                            console.log('✅ Usuário autenticado:', userData);
+                            setAuthUser({
+                                id: userData.id,
+                                email: userData.email || session.user.email || '',
+                                name: userData.name || 'Usuário'
+                            });
+                            setCurrentPage('patients');
+                        } else {
+                            console.log('❌ Usuário não encontrado na tabela users');
+                            setCurrentPage('login');
+                        }
+                    } catch (err) {
+                        console.error('❌ Erro ao buscar dados do usuário:', err);
+                        setCurrentPage('login');
                     }
                 } else {
-                    console.log('Nenhuma sessão ativa');
+                    console.log('ℹ️ Nenhuma sessão ativa');
                     setCurrentPage('login');
                 }
             } catch (error) {
-                console.error('Erro ao verificar autenticação:', error);
+                console.error('❌ Erro geral ao verificar autenticação:', error);
                 setCurrentPage('login');
             } finally {
                 setLoadingAuth(false);
+                clearTimeout(timeoutId);
             }
         };
 
@@ -67,22 +94,26 @@ const App: React.FC = () => {
 
         // Escutar mudanças de autenticação
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            console.log('Auth state changed:', event, session);
+            console.log('🔔 Auth state changed:', event);
             
             if (session?.user) {
-                const { data: userData } = await supabase
-                    .from('users')
-                    .select('id, name, email')
-                    .eq('id', session.user.id)
-                    .single();
+                try {
+                    const { data: userData } = await supabase
+                        .from('users')
+                        .select('id, name, email')
+                        .eq('id', session.user.id)
+                        .single();
 
-                if (userData) {
-                    setAuthUser({
-                        id: userData.id,
-                        email: userData.email || session.user.email || '',
-                        name: userData.name || 'Usuário'
-                    });
-                    setCurrentPage('patients');
+                    if (userData) {
+                        setAuthUser({
+                            id: userData.id,
+                            email: userData.email || session.user.email || '',
+                            name: userData.name || 'Usuário'
+                        });
+                        setCurrentPage('patients');
+                    }
+                } catch (err) {
+                    console.error('Erro ao buscar dados do usuário:', err);
                 }
             } else {
                 setAuthUser(null);
@@ -91,6 +122,7 @@ const App: React.FC = () => {
         });
 
         return () => {
+            clearTimeout(timeoutId);
             subscription?.unsubscribe();
         };
     }, []);
@@ -245,10 +277,20 @@ const App: React.FC = () => {
         <ViewportProvider>
             <div className="dark relative flex h-auto min-h-screen w-full flex-col bg-background-light dark:bg-background-dark group/design-root">
                 {loadingAuth ? (
-                    <div className="flex items-center justify-center min-h-screen">
+                    <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: '#101C22' }}>
                         <div className="text-center">
                             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4 mx-auto"></div>
-                            <p className="text-gray-600 dark:text-gray-400">Carregando...</p>
+                            <p className="text-gray-400 dark:text-gray-400">Carregando aplicativo...</p>
+                            {loadingTimeout && (
+                                <p className="text-yellow-400 text-sm mt-2">Se continuar nesta tela, verifique:</p>
+                            )}
+                            {loadingTimeout && (
+                                <ul className="text-gray-400 text-xs mt-2 space-y-1">
+                                    <li>✓ Variáveis de ambiente na Vercel</li>
+                                    <li>✓ Console (F12) para mais informações</li>
+                                    <li>✓ Conexão com internet</li>
+                                </ul>
+                            )}
                         </div>
                     </div>
                 ) : (
