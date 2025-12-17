@@ -75,7 +75,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                         </div>
                     )}
                     <button 
-                        className="flex h-14 w-full items-center justify-center rounded-lg bg-primary px-6 text-base font-bold text-white shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 dark:focus:ring-offset-background-dark"
+                        className="flex h-14 w-full items-center justify-center rounded-lg px-6 text-base font-bold text-white shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-background-dark"
+                        style={{ backgroundColor: '#13a4ec' }}
                         onClick={handleLogin}
                     >
                         {loading ? 'Entrando...' : 'Entrar'}
