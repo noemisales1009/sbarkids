@@ -51,7 +51,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 </div>
 
                 {/* Headline */}
-                <h2 className="text-slate-800 dark:text-white tracking-tight text-[32px] font-bold leading-tight text-center">Acesse sua conta</h2>
+                <h2 className="text-slate-200 dark:text-white tracking-tight text-[32px] font-bold leading-tight text-center">Acesse sua conta</h2>
 
                 {/* Form */}
                 <div className="flex w-full flex-col items-stretch gap-4">
@@ -75,13 +75,13 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                         </div>
                     )}
                     <button 
-                        className="flex h-14 w-full items-center justify-center rounded-lg bg-primary px-6 text-base font-bold text-white shadow-sm transition-all hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 dark:focus:ring-offset-background-dark disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex h-14 w-full items-center justify-center rounded-lg bg-primary hover:bg-blue-700 px-6 text-base font-bold text-white shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 dark:focus:ring-offset-background-dark disabled:opacity-50 disabled:cursor-not-allowed"
                         onClick={handleLogin}
                         disabled={loading || !emailOrId || !password}
                     >
                         {loading ? 'Entrando...' : 'Entrar'}
                     </button>
-                    <button className="flex h-14 w-full items-center justify-center rounded-lg border-2 border-primary bg-transparent px-6 text-base font-bold text-primary dark:text-white transition-all hover:bg-primary/10 dark:hover:bg-primary/20 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 dark:focus:ring-offset-background-dark">
+                    <button className="flex h-14 w-full items-center justify-center rounded-lg border-2 border-primary bg-white dark:bg-slate-800 px-6 text-base font-bold text-primary dark:text-white hover:bg-slate-100 dark:hover:bg-slate-700 transition-all focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 dark:focus:ring-offset-background-dark">
                         Criar Nova Conta
                     </button>
                 </div>
