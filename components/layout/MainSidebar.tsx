@@ -19,11 +19,11 @@ const MainSidebar: React.FC<MainSidebarProps> = ({ currentPage, onNavigate }) =>
         <aside className="hidden sm:flex flex-col w-64 bg-background-light dark:bg-background-dark border-r border-slate-700 dark:border-slate-800 p-4">
             <div className="flex items-center gap-3 pb-8 pt-4 px-2">
                 <div className="relative flex h-12 w-12 items-center justify-center rounded-xl bg-primary/20">
-                    <span className="material-symbols-outlined text-4xl text-primary">
+                    <span className="material-symbols-outlined text-4xl text-white">
                         waving_hand
                     </span>
                 </div>
-                <h1 className="text-xl font-bold text-slate-800 dark:text-white">SBAR Juju</h1>
+                <h1 className="text-xl font-bold" style={{ color: '#13A4EC' }}>SBAR Juju</h1>
             </div>
             <nav className="flex flex-col gap-2">
                 {navItems.map(item => (
@@ -33,7 +33,7 @@ const MainSidebar: React.FC<MainSidebarProps> = ({ currentPage, onNavigate }) =>
                         className={`flex items-center gap-3 p-3 rounded-lg text-base font-semibold transition-colors ${
                             currentPage === item.page
                                 ? 'text-white dark:text-white'
-                                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                : 'text-slate-400 dark:text-slate-400 hover:text-white hover:bg-slate-700 dark:hover:bg-slate-700'
                         }`}
                         style={currentPage === item.page ? { backgroundColor: '#13A4EC', color: '#FFFFFF' } : {}}
                         aria-current={currentPage === item.page ? 'page' : undefined}

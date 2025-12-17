@@ -89,13 +89,13 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
           </div>
           <div className="space-y-2">
             {medicacoes.map((med) => (
-              <div key={med.id} className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg flex justify-between items-start">
+              <div key={med.id} className="p-3 bg-blue-900/20 border border-blue-800 rounded-lg flex justify-between items-start">
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{med.nome_medicacao}</p>
-                  <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
+                  <p className="text-sm font-semibold text-white">{med.nome_medicacao}</p>
+                  <p className="text-xs text-gray-300 mt-1">
                     {med.dosagem_valor} {med.unidade_medida}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  <p className="text-xs text-gray-400 mt-1">
                     Desde: {new Date(med.data_inicio).toLocaleDateString('pt-BR')}
                     {med.data_fim && ` até ${new Date(med.data_fim).toLocaleDateString('pt-BR')}`}
                   </p>
@@ -127,11 +127,11 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
           </div>
           <div className="space-y-2">
             {dispositivos.map((dev) => (
-              <div key={dev.id} className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg flex justify-between items-start">
+              <div key={dev.id} className="p-3 bg-green-900/20 border border-green-800 rounded-lg flex justify-between items-start">
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{dev.tipo_dispositivo}</p>
-                  <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">Localização: {dev.localizacao}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  <p className="text-sm font-semibold text-white">{dev.tipo_dispositivo}</p>
+                  <p className="text-xs text-gray-300 mt-1">Localização: {dev.localizacao}</p>
+                  <p className="text-xs text-gray-400 mt-1">
                     Inserido em: {new Date(dev.data_insercao).toLocaleDateString('pt-BR')}
                     {dev.data_remocao && ` (Removido em ${new Date(dev.data_remocao).toLocaleDateString('pt-BR')})`}
                   </p>
@@ -318,8 +318,8 @@ const MedicacaoModal: React.FC<MedicacaoModalProps> = ({ data, patientId, onClos
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-lg max-w-md w-full p-6 space-y-4">
-        <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+      <div className="bg-gray-900 rounded-lg max-w-md w-full p-6 space-y-4">
+        <h3 className="text-lg font-bold text-white">
           {data ? 'Editar Medicação' : 'Nova Medicação'}
         </h3>
 
@@ -328,7 +328,7 @@ const MedicacaoModal: React.FC<MedicacaoModalProps> = ({ data, patientId, onClos
           placeholder="Nome da medicação"
           value={form.nome_medicacao || ''}
           onChange={(e) => setForm({ ...form, nome_medicacao: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-[#1F2937] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
 
         <div className="flex gap-2">
@@ -337,14 +337,14 @@ const MedicacaoModal: React.FC<MedicacaoModalProps> = ({ data, patientId, onClos
             placeholder="Dosagem"
             value={form.dosagem_valor || ''}
             onChange={(e) => setForm({ ...form, dosagem_valor: e.target.value })}
-            className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+            className="flex-1 px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-[#1F2937] text-sm"
           />
           <input
             type="text"
             placeholder="Unidade"
             value={form.unidade_medida || ''}
             onChange={(e) => setForm({ ...form, unidade_medida: e.target.value })}
-            className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+            className="flex-1 px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-[#1F2937] text-sm"
           />
         </div>
 
@@ -352,7 +352,7 @@ const MedicacaoModal: React.FC<MedicacaoModalProps> = ({ data, patientId, onClos
           type="date"
           value={form.data_inicio || ''}
           onChange={(e) => setForm({ ...form, data_inicio: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+          className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white text-sm"
         />
 
         <input
@@ -360,13 +360,13 @@ const MedicacaoModal: React.FC<MedicacaoModalProps> = ({ data, patientId, onClos
           placeholder="Data fim (opcional)"
           value={form.data_fim || ''}
           onChange={(e) => setForm({ ...form, data_fim: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+          className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white text-sm"
         />
 
         <div className="flex gap-2 justify-end">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+            className="px-4 py-2 text-gray-300 bg-gray-700 rounded-lg hover:bg-gray-600 transition"
           >
             Cancelar
           </button>
@@ -424,8 +424,8 @@ const DispositivoModal: React.FC<DispositivoModalProps> = ({ data, patientId, on
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-lg max-w-md w-full p-6 space-y-4">
-        <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+      <div className="bg-gray-900 rounded-lg max-w-md w-full p-6 space-y-4">
+        <h3 className="text-lg font-bold text-white">
           {data ? 'Editar Dispositivo' : 'Novo Dispositivo'}
         </h3>
 
@@ -434,7 +434,7 @@ const DispositivoModal: React.FC<DispositivoModalProps> = ({ data, patientId, on
           placeholder="Tipo de dispositivo"
           value={form.tipo_dispositivo || ''}
           onChange={(e) => setForm({ ...form, tipo_dispositivo: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+          className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-[#1F2937] text-sm"
         />
 
         <input
@@ -442,20 +442,20 @@ const DispositivoModal: React.FC<DispositivoModalProps> = ({ data, patientId, on
           placeholder="Localização"
           value={form.localizacao || ''}
           onChange={(e) => setForm({ ...form, localizacao: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+          className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-[#1F2937] text-sm"
         />
 
         <input
           type="date"
           value={form.data_insercao || ''}
           onChange={(e) => setForm({ ...form, data_insercao: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+          className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white text-sm"
         />
 
         <div className="flex gap-2 justify-end">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+            className="px-4 py-2 text-gray-300 bg-gray-700 rounded-lg hover:bg-gray-600 transition"
           >
             Cancelar
           </button>
@@ -512,8 +512,8 @@ const CulturaModal: React.FC<CulturaModalProps> = ({ data, patientId, onClose, o
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-lg max-w-md w-full p-6 space-y-4">
-        <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+      <div className="bg-gray-900 rounded-lg max-w-md w-full p-6 space-y-4">
+        <h3 className="text-lg font-bold text-white">
           {data ? 'Editar Cultura' : 'Nova Cultura'}
         </h3>
 
@@ -522,7 +522,7 @@ const CulturaModal: React.FC<CulturaModalProps> = ({ data, patientId, onClose, o
           placeholder="Local da coleta"
           value={form.local || ''}
           onChange={(e) => setForm({ ...form, local: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+          className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-[#1F2937] text-sm"
         />
 
         <input
@@ -530,20 +530,20 @@ const CulturaModal: React.FC<CulturaModalProps> = ({ data, patientId, onClose, o
           placeholder="Microorganismo"
           value={form.microorganismo || ''}
           onChange={(e) => setForm({ ...form, microorganismo: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+          className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-[#1F2937] text-sm"
         />
 
         <input
           type="date"
           value={form.data_coleta || ''}
           onChange={(e) => setForm({ ...form, data_coleta: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+          className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white text-sm"
         />
 
         <div className="flex gap-2 justify-end">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+            className="px-4 py-2 text-gray-300 bg-gray-700 rounded-lg hover:bg-gray-600 transition"
           >
             Cancelar
           </button>
@@ -601,8 +601,8 @@ const ProcedimentoModal: React.FC<ProcedimentoModalProps> = ({ data, patientId, 
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-lg max-w-md w-full p-6 space-y-4">
-        <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+      <div className="bg-gray-900 rounded-lg max-w-md w-full p-6 space-y-4">
+        <h3 className="text-lg font-bold text-white">
           {data ? 'Editar Procedimento' : 'Novo Procedimento'}
         </h3>
 
@@ -611,14 +611,14 @@ const ProcedimentoModal: React.FC<ProcedimentoModalProps> = ({ data, patientId, 
           placeholder="Nome do procedimento"
           value={form.nome_procedimento || ''}
           onChange={(e) => setForm({ ...form, nome_procedimento: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+          className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-[#1F2937] text-sm"
         />
 
         <input
           type="date"
           value={form.data_procedimento || ''}
           onChange={(e) => setForm({ ...form, data_procedimento: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+          className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white text-sm"
         />
 
         <input
@@ -626,20 +626,20 @@ const ProcedimentoModal: React.FC<ProcedimentoModalProps> = ({ data, patientId, 
           placeholder="Nome do cirurgião (opcional)"
           value={form.nome_cirurgiao || ''}
           onChange={(e) => setForm({ ...form, nome_cirurgiao: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+          className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-[#1F2937] text-sm"
         />
 
         <textarea
           placeholder="Notas (opcional)"
           value={form.notas || ''}
           onChange={(e) => setForm({ ...form, notas: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm resize-none h-20"
+          className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-[#1F2937] text-sm resize-none h-20"
         />
 
         <div className="flex gap-2 justify-end">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+            className="px-4 py-2 text-gray-300 bg-gray-700 rounded-lg hover:bg-gray-600 transition"
           >
             Cancelar
           </button>

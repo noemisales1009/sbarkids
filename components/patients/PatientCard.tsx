@@ -70,8 +70,11 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient, onSelectPatient, onS
             {/* Linha 1: Nome e DN | Status */}
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
                 <div className="flex flex-col gap-1 flex-1">
-                    <p className="text-zinc-900 dark:text-white text-lg sm:text-xl lg:text-2xl font-bold wrap-break-word">{patient.name}</p>
-                    <p className="text-zinc-600 dark:text-zinc-400 text-sm sm:text-base font-medium">DN: {formatDate(patient.dob)}</p>
+                    <p className="text-white text-lg sm:text-xl lg:text-2xl font-bold wrap-break-word">{patient.name}</p>
+                    <p className="text-zinc-400 text-sm sm:text-base font-medium">DN: {formatDate(patient.dob)}</p>
+                    {patient.bed_number && (
+                        <p className="text-blue-300 text-sm sm:text-base font-semibold">Leito: {patient.bed_number}</p>
+                    )}
                 </div>
                 
                 <div className={`inline-flex items-center rounded-full px-4 py-2 text-sm sm:text-base font-bold shrink-0 ${getStatusColor()}`}>

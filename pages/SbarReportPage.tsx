@@ -631,29 +631,28 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack }) => {
     
     return (
         <div className="relative flex min-h-screen w-full flex-col">
-            <SbarHeader onBack={onBack} />
-            <main className="flex-1 pt-32">
-                <PatientInfoHeader patient={patient} />
-                <div className="flex flex-col p-4 gap-4 pt-4">
+            <PatientInfoHeader patient={patient} onBack={onBack} />
+            <main className="flex-1 pt-48">
+                <div className="flex flex-col p-4 gap-4">
                     <SbarStatusSection 
                         currentStatus={status} 
                         onStatusChange={setStatus}
                     />
 
                     {/* Editor de Diagnósticos */}
-                    <div className="bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-800">
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">S - Situação</h3>
+                    <div className="bg-gray-900 p-4 rounded-lg border border-gray-800">
+                        <h3 className="text-lg font-bold text-white mb-4">S - Situação</h3>
                         <DiagnosticsEditor patientId={patient.id} />
                     </div>
                     {/* Background Editor - Medicações, Dispositivos, Culturas, Procedimentos */}
-                    <div className="bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-800">
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">B - Breve Histórico</h3>
+                    <div className="bg-gray-900 p-4 rounded-lg border border-gray-800">
+                        <h3 className="text-lg font-bold text-white mb-4">B - Breve Histórico</h3>
                         <BackgroundEditor patientId={patient.id} />
                     </div>
 
                     {/* Assessment Plan por turno */}
-                    <div className="bg-blue-50 dark:bg-blue-900 p-3 rounded-lg border border-blue-200 dark:border-blue-700 mb-4 text-sm">
-                        <div className="font-mono text-blue-900 dark:text-blue-100">
+                    <div className="bg-blue-900 p-3 rounded-lg border border-blue-700 mb-4 text-sm">
+                        <div className="font-mono text-blue-100">
                             <div>Rodada: {currentRoundId || 'carregando...'}</div>
                             <div>Dados da Manhã: {assessmentMorning.respiratorio ? '✅ Sim' : '❌ Não'}</div>
                             <div>Dados da Tarde: {assessmentAfternoon.respiratorio ? '✅ Sim' : '❌ Não'}</div>
@@ -685,7 +684,7 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack }) => {
                     />
 
                     {/* Alertas do Paciente */}
-                    <div className="bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-800">
+                    <div className="bg-gray-900 p-4 rounded-lg border border-gray-800">
                         <AlertasDisplay patientId={patient.id} alertas={alertas} />
                     </div>
 
