@@ -42,9 +42,9 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient, onSelectPatient, onS
     const getBorderColor = () => {
         switch (patient.status) {
             case 'estavel':
-                return 'border-green-500';
+                return 'border-green-400';
             case 'instavel':
-                return 'border-yellow-500';
+                return 'border-amber-400';
             case 'em_risco':
                 return 'border-red-500';
             default:
@@ -55,26 +55,23 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient, onSelectPatient, onS
     const getStatusColor = () => {
         switch (patient.status) {
             case 'estavel':
-                return 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100 border border-green-300 dark:border-green-600';
+                return 'bg-emerald-600/20 text-emerald-400 dark:bg-emerald-600/20 dark:text-emerald-400 border border-emerald-500/40 dark:border-emerald-500/40';
             case 'instavel':
-                return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100 border border-yellow-300 dark:border-yellow-600';
+                return 'bg-amber-600/20 text-amber-400 dark:bg-amber-600/20 dark:text-amber-400 border border-amber-500/40 dark:border-amber-500/40';
             case 'em_risco':
-                return 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100 border border-red-300 dark:border-red-600';
+                return 'bg-red-600/20 text-red-400 dark:bg-red-600/20 dark:text-red-400 border border-red-500/40 dark:border-red-500/40';
             default:
-                return 'bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100';
+                return 'bg-zinc-700/50 text-zinc-400 dark:bg-zinc-700/50 dark:text-zinc-400';
         }
     };
 
     return (
-        <div className={`flex flex-col gap-3 sm:gap-4 p-3 sm:p-4 lg:p-5 rounded-xl border-2 bg-gray-800/50 dark:bg-gray-900/80 ${getBorderColor()} hover:shadow-md transition-shadow`}>
+        <div className={`flex flex-col gap-3 sm:gap-4 p-3 sm:p-4 lg:p-5 rounded-xl border-2 bg-gray-900/50 dark:bg-gray-950/80 ${getBorderColor()} hover:shadow-md transition-shadow`}>
             {/* Linha 1: Nome e DN | Status */}
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
                 <div className="flex flex-col gap-1 flex-1">
                     <p className="text-white text-lg sm:text-xl lg:text-2xl font-bold wrap-break-word">{patient.name}</p>
                     <p className="text-zinc-400 text-sm sm:text-base font-medium">DN: {formatDate(patient.dob)}</p>
-                    {patient.bed_number && (
-                        <p className="text-blue-300 text-sm sm:text-base font-semibold">Leito: {patient.bed_number}</p>
-                    )}
                 </div>
                 
                 <div className={`inline-flex items-center rounded-full px-4 py-2 text-sm sm:text-base font-bold shrink-0 ${getStatusColor()}`}>
@@ -87,19 +84,18 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient, onSelectPatient, onS
             {/* Botões de Ação */}
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                 <button 
-                    className="flex-1 flex items-center justify-center gap-2 h-9 sm:h-10 lg:h-11 px-3 sm:px-4 rounded-lg text-white text-xs sm:text-sm font-semibold hover:opacity-90 transition-opacity"
+                    className="flex-1 h-10 px-4 rounded-lg text-white text-sm font-semibold hover:opacity-90 transition-opacity"
                     style={{ backgroundColor: '#13A4EC' }}
                     onClick={() => onSelectPatient(patient)}
                 >
-                    <span className="material-symbols-outlined text-lg">add</span>
-                    <span className="hidden sm:inline">Novo SBAR</span>
+                    Novo SBAR
                 </button>
                 <button 
-                    className="flex-1 flex items-center justify-center gap-2 h-9 sm:h-10 lg:h-11 px-3 sm:px-4 rounded-lg bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm font-semibold hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors"
+                    className="flex-1 h-10 px-4 rounded-lg bg-slate-300 dark:bg-slate-600 text-slate-800 dark:text-slate-100 text-sm font-semibold hover:bg-slate-400 dark:hover:bg-slate-500 transition-colors flex items-center justify-center gap-2"
                     onClick={() => onSelectHistory(patient)}
                 >
-                    <span className="material-symbols-outlined text-lg">history</span>
-                    <span className="hidden sm:inline">Histórico</span>
+                    <span className="material-symbols-outlined text-base">history</span>
+                    <span>Histórico</span>
                 </button>
             </div>
         </div>
