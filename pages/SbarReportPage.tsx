@@ -137,10 +137,12 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack }) => {
         const loadPatientStatus = async () => {
             console.log('📍 Carregando status do paciente:', patient.id);
             try {
-                const patientStatus = await patientService.getPatientStatus(patient.id);
-                console.log('✅ Status do paciente carregado:', patientStatus);
-                if (patientStatus) {
-                    setStatus(patientStatus);
+                // Buscar o paciente completo do Supabase para pegar o status
+                const patientData = await patientsService.getPatient(patient.id);
+                console.log('✅ Dados do paciente carregados:', patientData);
+                if (patientData?.status) {
+                    console.log('✅ Status do paciente carregado:', patientData.status);
+                    setStatus(patientData.status as 'estavel' | 'instavel' | 'em_risco');
                 }
             } catch (error) {
                 console.error('❌ Erro ao carregar status do paciente:', error);
