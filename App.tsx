@@ -243,7 +243,7 @@ const App: React.FC = () => {
 
     return (
         <ViewportProvider>
-            <div className="relative flex h-auto min-h-screen w-full flex-col bg-background-light dark:bg-background-dark group/design-root">
+            <div className="dark relative flex h-auto min-h-screen w-full flex-col bg-background-light dark:bg-background-dark group/design-root">
                 {loadingAuth ? (
                     <div className="flex items-center justify-center min-h-screen">
                         <div className="text-center">
