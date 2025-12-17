@@ -632,7 +632,7 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack }) => {
     return (
         <div className="relative flex min-h-screen w-full flex-col">
             <SbarHeader onBack={onBack} />
-            <main className="flex-1">
+            <main className="flex-1 pt-16">
                 <PatientInfoHeader patient={patient} />
                 <div className="flex flex-col p-4 gap-4">
                     <SbarStatusSection 

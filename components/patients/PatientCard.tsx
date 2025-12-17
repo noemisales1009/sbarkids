@@ -70,11 +70,11 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient, onSelectPatient, onS
             {/* Linha 1: Nome e DN | Status */}
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
                 <div className="flex flex-col gap-1 flex-1">
-                    <p className="text-zinc-900 dark:text-white text-lg sm:text-xl lg:text-2xl font-bold break-words">{patient.name}</p>
+                    <p className="text-zinc-900 dark:text-white text-lg sm:text-xl lg:text-2xl font-bold wrap-break-word">{patient.name}</p>
                     <p className="text-zinc-600 dark:text-zinc-400 text-sm sm:text-base font-medium">DN: {formatDate(patient.dob)}</p>
                 </div>
                 
-                <div className={`inline-flex items-center rounded-full px-4 py-2 text-sm sm:text-base font-bold flex-shrink-0 ${getStatusColor()}`}>
+                <div className={`inline-flex items-center rounded-full px-4 py-2 text-sm sm:text-base font-bold shrink-0 ${getStatusColor()}`}>
                     {patient.status === 'estavel' && '✓ Estável'}
                     {patient.status === 'instavel' && '⚠ Instável'}
                     {patient.status === 'em_risco' && '⚡ Em Risco'}
@@ -84,13 +84,12 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient, onSelectPatient, onS
             {/* Botões de Ação */}
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                 <button 
-                    className="flex-1 flex items-center justify-center gap-2 h-9 sm:h-10 lg:h-11 px-3 sm:px-4 rounded-lg bg-primary text-white text-xs sm:text-sm font-semibold hover:opacity-90 transition-opacity"
+                    className="flex-1 flex items-center justify-center gap-2 h-9 sm:h-10 lg:h-11 px-3 sm:px-4 rounded-lg text-white text-xs sm:text-sm font-semibold hover:opacity-90 transition-opacity"
+                    style={{ backgroundColor: '#13A4EC' }}
                     onClick={() => onSelectPatient(patient)}
                 >
-                    <span className="material-symbols-outlined text-lg hidden sm:inline">add_notes</span>
-                    <span className="material-symbols-outlined text-lg sm:hidden">note_add</span>
+                    <span className="material-symbols-outlined text-lg">add</span>
                     <span className="hidden sm:inline">Novo SBAR</span>
-                    <span className="sm:hidden">SBAR</span>
                 </button>
                 <button 
                     className="flex-1 flex items-center justify-center gap-2 h-9 sm:h-10 lg:h-11 px-3 sm:px-4 rounded-lg bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm font-semibold hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors"
