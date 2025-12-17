@@ -80,7 +80,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                     >
                         {loading ? 'Entrando...' : 'Entrar'}
                     </button>
-                    <button className="flex h-14 w-full items-center justify-center rounded-lg border-2 border-primary bg-white dark:bg-gray-700 px-6 text-base font-bold text-primary dark:text-white hover:bg-slate-100 dark:hover:bg-gray-600 transition-all focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 dark:focus:ring-offset-background-dark">
+                    <button className="flex h-14 w-full items-center justify-center rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent px-6 text-base font-bold text-primary transition-colors hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 dark:focus:ring-offset-background-dark">
                         Criar Nova Conta
                     </button>
                 </div>
