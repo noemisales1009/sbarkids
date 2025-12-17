@@ -32,12 +32,13 @@ const MainSidebar: React.FC<MainSidebarProps> = ({ currentPage, onNavigate }) =>
                         onClick={() => onNavigate(item.page)}
                         className={`flex items-center gap-3 p-3 rounded-lg text-base font-semibold transition-colors ${
                             currentPage === item.page
-                                ? 'bg-primary/10 text-primary dark:bg-primary/20'
+                                ? 'text-white dark:text-white'
                                 : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                         }`}
+                        style={currentPage === item.page ? { backgroundColor: '#13A4EC', color: '#FFFFFF' } : {}}
                         aria-current={currentPage === item.page ? 'page' : undefined}
                     >
-                        <span className={`material-symbols-outlined ${currentPage === item.page ? 'fill-1' : ''}`}>{item.icon}</span>
+                        <span className={`material-symbols-outlined`} style={currentPage === item.page ? { color: '#FFFFFF' } : {}}>{item.icon}</span>
                         <span>{item.label}</span>
                     </button>
                 ))}
