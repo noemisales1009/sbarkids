@@ -84,11 +84,12 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient, onSelectPatient, onS
             {/* Botões de Ação */}
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                 <button 
-                    className="flex-1 h-10 px-4 rounded-lg text-white text-sm font-semibold hover:opacity-90 transition-opacity"
+                    className="flex-1 h-10 px-4 rounded-lg text-white text-sm font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
                     style={{ backgroundColor: '#13A4EC' }}
                     onClick={() => onSelectPatient(patient)}
                 >
-                    Novo SBAR
+                    <span className="material-symbols-outlined text-base">add</span>
+                    <span>Novo SBAR</span>
                 </button>
                 <button 
                     className="flex-1 h-10 px-4 rounded-lg bg-slate-300 dark:bg-slate-600 text-slate-800 dark:text-slate-100 text-sm font-semibold hover:bg-slate-400 dark:hover:bg-slate-500 transition-colors flex items-center justify-center gap-2"
