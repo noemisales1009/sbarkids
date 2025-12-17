@@ -25,13 +25,13 @@ const PatientsPage: React.FC<PatientsPageProps> = ({ onSelectPatient, onSelectHi
             {/* Mobile View */}
             <div className="w-full overflow-x-hidden sm:hidden">
                 <Header />
-                <div className="px-4 py-3 sticky top-[68px] z-10 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm">
+                <div className="px-4 py-3 sticky top-17 z-10 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm">
                     <SearchBar 
                         placeholder="Buscar paciente por nome ou leito" 
                         onSearch={setSearchTerm}
                     />
                 </div>
-                <main className="flex-grow pb-28 px-4">
+                <main className="grow pb-28 px-4">
                     <PatientList 
                         key={`mobile-${refreshKey}`}
                         onSelectPatient={onSelectPatient} 
@@ -51,7 +51,7 @@ const PatientsPage: React.FC<PatientsPageProps> = ({ onSelectPatient, onSelectHi
                         onSearch={setSearchTerm}
                     />
                 </div>
-                <main className="flex-grow pt-6">
+                <main className="grow pt-6">
                     <PatientList 
                         key={`desktop-${refreshKey}`}
                         onSelectPatient={onSelectPatient} 

@@ -215,11 +215,11 @@ const RecommendationPlan: React.FC<RecommendationPlanProps> = ({
                 className="w-full flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition appearance-none"
               >
                 <div className="flex items-center gap-3 font-semibold text-gray-700 dark:text-gray-300 text-lg">
-                  <span className="material-symbols-outlined text-2xl flex-shrink-0 text-green-600 dark:text-green-400">{category.icon}</span>
-                  <span className="flex-grow text-left">{category.title}</span>
+                  <span className="material-symbols-outlined text-2xl shrink-0 text-green-600 dark:text-green-400">{category.icon}</span>
+                  <span className="grow text-left">{category.title}</span>
                   {hasContent && <span className="text-green-600 dark:text-green-400 text-lg">✓</span>}
                 </div>
-                <span className={`text-gray-600 dark:text-gray-400 transition-transform flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`}>
+                <span className={`text-gray-600 dark:text-gray-400 transition-transform shrink-0 ${isExpanded ? 'rotate-180' : ''}`}>
                   ▼
                 </span>
               </button>
