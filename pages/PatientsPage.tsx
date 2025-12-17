@@ -5,8 +5,7 @@ import DesktopHeader from '../components/patients/DesktopHeader';
 import SearchBar from '../components/patients/SearchBar';
 import PatientList from '../components/patients/PatientList';
 import BottomNavBar from '../components/patients/BottomNavBar';
-import { Patient } from '../components/patients/PatientCard';
-import { CurrentPage } from '../App';
+import { Patient, CurrentPage } from '../types';
 import DesktopLayout from '../components/layout/DesktopLayout';
 
 interface PatientsPageProps {

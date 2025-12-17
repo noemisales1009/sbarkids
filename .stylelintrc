@@ -1,0 +1,7 @@
+{
+  "extends": ["stylelint-config-recommended"],
+  "rules": {
+    "no-unknown-at-rules": null,
+    "unit-allowed-list": ["px", "em", "rem", "%", "ms", "s", "deg", "turn"]
+  }
+}

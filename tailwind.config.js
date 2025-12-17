@@ -19,8 +19,14 @@ export default {
       },
       fontFamily: {
         "display": ["Inter", "sans-serif"]
+      },
+      spacing: {
+        '17': '68px',
       }
     }
   },
   darkMode: 'class',
+  corePlugins: {
+    preflight: false,
+  }
 }
