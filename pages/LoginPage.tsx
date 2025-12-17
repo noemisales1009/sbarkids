@@ -38,12 +38,12 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     };
 
     return (
-        <div className="flex min-h-screen w-full flex-col items-center justify-center p-4">
+        <div className="flex min-h-screen w-full flex-col items-center justify-center p-4" style={{ backgroundColor: '#101C22' }}>
             <div className="flex w-full max-w-sm flex-col items-center gap-6">
                 {/* Logo Section */}
                 <div className="flex flex-col items-center gap-3 pb-4">
-                    <div className="relative flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/20">
-                        <span className="material-symbols-outlined text-5xl text-primary">
+                    <div className="relative flex h-20 w-20 items-center justify-center rounded-2xl" style={{ backgroundColor: '#10374A' }}>
+                        <span className="material-symbols-outlined text-5xl" style={{ color: '#13A2EA' }}>
                             waving_hand
                         </span>
                     </div>

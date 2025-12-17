@@ -36,7 +36,7 @@ const PatientInfoHeader: React.FC<PatientInfoHeaderProps> = ({ patient }) => {
     const daysAdmitted = calculateDaysAdmitted(patient.dt_internacao);
 
     return (
-        <section className="sticky top-16 z-40 bg-linear-to-r from-blue-600 to-blue-700 dark:from-blue-900 dark:to-blue-800 px-4 py-6 border-b border-blue-500 dark:border-blue-700">
+        <section className="fixed top-16 left-0 right-0 z-40 bg-linear-to-r from-blue-600 to-blue-700 dark:from-blue-900 dark:to-blue-800 px-4 py-6 border-b border-blue-500 dark:border-blue-700">
             <div className="max-w-6xl mx-auto">
                 {/* Nome e Leito em destaque */}
                 <div className="flex items-center justify-between mb-6">
@@ -75,15 +75,23 @@ const PatientInfoHeader: React.FC<PatientInfoHeaderProps> = ({ patient }) => {
                         <p className="text-blue-100 text-xs font-semibold uppercase mb-1">Admissão</p>
                         <p className="text-white text-sm font-bold truncate">{formatDate(patient.dt_internacao)}</p>
                     </div>
-                </div>
 
-                {/* Mãe - Full width */}
-                {patient.mother_name && (
-                    <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-3 border border-white/20 mt-3">
-                        <p className="text-blue-100 text-xs font-semibold uppercase mb-1">Mãe</p>
-                        <p className="text-white text-base font-semibold">{patient.mother_name}</p>
-                    </div>
-                )}
+                    {/* Peso */}
+                    {patient.peso && (
+                        <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-3 border border-white/20">
+                            <p className="text-blue-100 text-xs font-semibold uppercase mb-1">Peso</p>
+                            <p className="text-white text-sm font-bold">{patient.peso} kg</p>
+                        </div>
+                    )}
+
+                    {/* Mãe */}
+                    {patient.mother_name && (
+                        <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-3 border border-white/20">
+                            <p className="text-blue-100 text-xs font-semibold uppercase mb-1">Mãe</p>
+                            <p className="text-white text-sm font-bold truncate">{patient.mother_name}</p>
+                        </div>
+                    )}
+                </div>
             </div>
         </section>
     );
