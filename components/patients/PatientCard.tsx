@@ -42,13 +42,13 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient, onSelectPatient, onS
     const getBorderColor = () => {
         switch (patient.status) {
             case 'estavel':
-                return 'border-green-500 bg-green-50 dark:bg-green-950/20';
+                return 'border-green-500';
             case 'instavel':
-                return 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20';
+                return 'border-yellow-500';
             case 'em_risco':
-                return 'border-red-500 bg-red-50 dark:bg-red-950/20';
+                return 'border-red-500';
             default:
-                return 'border-zinc-200 dark:border-zinc-700';
+                return 'border-zinc-700';
         }
     };
 

@@ -16,7 +16,7 @@ const MainSidebar: React.FC<MainSidebarProps> = ({ currentPage, onNavigate }) =>
     ];
 
     return (
-        <aside className="hidden sm:flex flex-col w-64 bg-white dark:bg-slate-900/70 border-r border-slate-200 dark:border-slate-800 p-4">
+        <aside className="hidden sm:flex flex-col w-64 bg-background-light dark:bg-background-dark border-r border-slate-700 dark:border-slate-800 p-4">
             <div className="flex items-center gap-3 pb-8 pt-4 px-2">
                 <div className="relative flex h-12 w-12 items-center justify-center rounded-xl bg-primary/20">
                     <span className="material-symbols-outlined text-4xl text-primary">
