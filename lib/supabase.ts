@@ -3,8 +3,14 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+// Debug para verificar se as variáveis estão definidas
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Variáveis de ambiente Supabase não configuradas');
+  console.error('⚠️ Variáveis de ambiente Supabase não configuradas');
+  console.error('VITE_SUPABASE_URL:', supabaseUrl ? 'configurada' : 'NÃO CONFIGURADA');
+  console.error('VITE_SUPABASE_ANON_KEY:', supabaseAnonKey ? 'configurada' : 'NÃO CONFIGURADA');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(
+  supabaseUrl || 'https://placeholder.supabase.co',
+  supabaseAnonKey || 'placeholder-key'
+);
