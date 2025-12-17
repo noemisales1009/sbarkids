@@ -66,7 +66,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient, onSelectPatient, onS
     };
 
     return (
-        <div className={`flex flex-col gap-3 sm:gap-4 p-3 sm:p-4 lg:p-5 rounded-xl border-2 ${getBorderColor()} hover:shadow-md transition-shadow`}>
+        <div className={`flex flex-col gap-3 sm:gap-4 p-3 sm:p-4 lg:p-5 rounded-xl border-2 bg-gray-800/50 dark:bg-gray-900/80 ${getBorderColor()} hover:shadow-md transition-shadow`}>
             {/* Linha 1: Nome e DN | Status */}
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
                 <div className="flex flex-col gap-1 flex-1">
