@@ -17,7 +17,7 @@ export const PasswordField: React.FC<PasswordFieldProps> = ({ value, onChange, s
             </div>
             <div className="flex w-full flex-1 items-stretch rounded-lg">
                 <input
-                    className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-l-lg text-white focus:outline-0 focus:ring-2 border h-14 placeholder:text-slate-500 p-3.75 border-r-0 text-base font-normal leading-normal"
+                    className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-l-lg text-white focus:outline-0 focus:ring-2 focus:ring-white border h-14 placeholder:text-slate-500 p-3.75 border-r-0 text-base font-normal leading-normal transition-all"
                     style={{ backgroundColor: '#1E293B', borderColor: '#1E293B', color: 'white' }}
                     placeholder="Digite sua senha"
                     type={showPassword ? 'text' : 'password'}
