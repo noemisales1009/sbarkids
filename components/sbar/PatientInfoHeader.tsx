@@ -36,7 +36,7 @@ const PatientInfoHeader: React.FC<PatientInfoHeaderProps> = ({ patient }) => {
     const daysAdmitted = calculateDaysAdmitted(patient.dt_internacao);
 
     return (
-        <section className="bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-900 dark:to-blue-800 px-4 py-6 border-b border-blue-500 dark:border-blue-700">
+        <section className="sticky top-16 z-40 bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-900 dark:to-blue-800 px-4 py-6 border-b border-blue-500 dark:border-blue-700">
             <div className="max-w-6xl mx-auto">
                 {/* Nome e Leito em destaque */}
                 <div className="flex items-center justify-between mb-6">
