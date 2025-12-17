@@ -41,44 +41,44 @@ const PatientInfoHeader: React.FC<PatientInfoHeaderProps> = ({ patient }) => {
                 {/* Nome e Leito em destaque */}
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex-1">
-                        <h1 className="text-white text-3xl sm:text-4xl font-bold leading-tight">{patient.name}</h1>
-                        <p className="text-blue-100 text-sm mt-1">Paciente internado</p>
+                        <h1 className="text-white text-3xl sm:text-4xl font-bold leading-tight drop-shadow">{patient.name}</h1>
+                        <p className="text-blue-50 text-sm mt-1 drop-shadow">Paciente internado</p>
                     </div>
-                    <div className="bg-white dark:bg-gray-800 rounded-lg px-6 py-3 ml-4">
-                        <p className="text-gray-600 dark:text-gray-400 text-xs font-semibold uppercase">Leito</p>
-                        <p className="text-blue-600 dark:text-blue-400 text-3xl font-bold">{patient.bed_number}</p>
+                    <div className="bg-blue-50 dark:bg-gray-800 rounded-lg px-6 py-3 ml-4 shadow-md">
+                        <p className="text-blue-900 dark:text-blue-100 text-xs font-semibold uppercase">Leito</p>
+                        <p className="text-blue-700 dark:text-blue-300 text-3xl font-bold">{patient.bed_number}</p>
                     </div>
                 </div>
 
                 {/* Grid de informações */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {/* Idade */}
-                    <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-3 border border-white/20">
+                    <div className="bg-blue-800/60 backdrop-blur-sm rounded-lg px-4 py-3 border border-blue-400/30 shadow-md">
                         <p className="text-blue-100 text-xs font-semibold uppercase mb-1">Idade</p>
                         <p className="text-white text-xl font-bold">{age} <span className="text-sm font-normal">anos</span></p>
                     </div>
 
                     {/* Dias de Internação */}
-                    <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-3 border border-white/20">
+                    <div className="bg-blue-800/60 backdrop-blur-sm rounded-lg px-4 py-3 border border-blue-400/30 shadow-md">
                         <p className="text-blue-100 text-xs font-semibold uppercase mb-1">Dias Int.</p>
                         <p className="text-white text-xl font-bold">{daysAdmitted} <span className="text-sm font-normal">dias</span></p>
                     </div>
 
                     {/* Data de Nascimento */}
-                    <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-3 border border-white/20">
+                    <div className="bg-blue-800/60 backdrop-blur-sm rounded-lg px-4 py-3 border border-blue-400/30 shadow-md">
                         <p className="text-blue-100 text-xs font-semibold uppercase mb-1">Nasc.</p>
                         <p className="text-white text-sm font-bold truncate">{formatDate(patient.dob)}</p>
                     </div>
 
                     {/* Data de Admissão */}
-                    <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-3 border border-white/20">
+                    <div className="bg-blue-800/60 backdrop-blur-sm rounded-lg px-4 py-3 border border-blue-400/30 shadow-md">
                         <p className="text-blue-100 text-xs font-semibold uppercase mb-1">Admissão</p>
                         <p className="text-white text-sm font-bold truncate">{formatDate(patient.dt_internacao)}</p>
                     </div>
 
                     {/* Peso */}
                     {patient.peso && (
-                        <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-3 border border-white/20">
+                        <div className="bg-blue-800/60 backdrop-blur-sm rounded-lg px-4 py-3 border border-blue-400/30 shadow-md">
                             <p className="text-blue-100 text-xs font-semibold uppercase mb-1">Peso</p>
                             <p className="text-white text-sm font-bold">{patient.peso} kg</p>
                         </div>
@@ -86,7 +86,7 @@ const PatientInfoHeader: React.FC<PatientInfoHeaderProps> = ({ patient }) => {
 
                     {/* Mãe */}
                     {patient.mother_name && (
-                        <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-3 border border-white/20">
+                        <div className="bg-blue-800/60 backdrop-blur-sm rounded-lg px-4 py-3 border border-blue-400/30 shadow-md">
                             <p className="text-blue-100 text-xs font-semibold uppercase mb-1">Mãe</p>
                             <p className="text-white text-sm font-bold truncate">{patient.mother_name}</p>
                         </div>
