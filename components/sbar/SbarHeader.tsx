@@ -7,7 +7,7 @@ interface SbarHeaderProps {
 
 const SbarHeader: React.FC<SbarHeaderProps> = ({ onBack }) => {
     return (
-        <header className="fixed top-0 left-0 right-0 z-50 flex items-center bg-background-light dark:bg-background-dark p-4 pb-2 justify-between border-b border-gray-200 dark:border-gray-800 w-screen">
+        <header className="sticky top-0 z-50 flex items-center bg-background-light dark:bg-background-dark p-4 pb-2 justify-between border-b border-gray-200 dark:border-gray-800">
             <button 
                 className="text-gray-800 dark:text-white flex size-12 shrink-0 items-center justify-center -ml-3"
                 onClick={onBack}
