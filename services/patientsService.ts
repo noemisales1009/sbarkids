@@ -9,15 +9,15 @@ import { logError } from '../utils/errorHandler';
 
 export const patientsService = {
   /**
-   * Listar todos os pacientes
-   */
-  async listPatients(): Promise<Patient[]> {
-    try {
-      const { data, error } = await supabase
-        .from('patients')
-        .select('*')
-        .order('bed_number', { ascending: true });
-
+ * Listar pacientes com limite
+ */
+async listPatients(limit: number = 50): Promise<Patient[]> {
+  try {
+    const { data, error } = await supabase
+      .from('patients')
+      .select('*', { count: 'exact' })
+      .order('bed_number', { ascending: true })
+      .limit(limit);
       if (error) throw error;
       return data || [];
     } catch (error) {

@@ -27,12 +27,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
             if (signInError) {
                 setError(signInError.message);
+                setLoading(false);
             } else {
+                // Chamar callback se login bem-sucedido
                 onLoginSuccess(emailOrId, password);
+                // Não desabilitar loading aqui - deixar que o App.tsx mude a página
             }
         } catch (err: any) {
             setError(err.message || 'Erro ao fazer login');
-        } finally {
             setLoading(false);
         }
     };

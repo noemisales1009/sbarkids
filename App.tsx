@@ -30,13 +30,6 @@ const App: React.FC = () => {
 
     // Verificar autenticação ao montar o componente
     useEffect(() => {
-        // Timeout de 5 segundos para carregar autenticação
-        const timeoutId = setTimeout(() => {
-            console.warn('⏱️ Timeout ao carregar autenticação, mostrando login...');
-            setLoadingAuth(false);
-            setLoadingTimeout(true);
-        }, 5000);
-
         const checkAuth = async () => {
             try {
                 console.log('🔄 Iniciando verificação de autenticação...');
@@ -46,7 +39,6 @@ const App: React.FC = () => {
                     console.warn('⚠️ Erro ao obter sessão (pode ser falta de configuração Supabase):', sessionError);
                     setCurrentPage('login');
                     setLoadingAuth(false);
-                    clearTimeout(timeoutId);
                     return;
                 }
                 
@@ -70,12 +62,22 @@ const App: React.FC = () => {
                             });
                             setCurrentPage('patients');
                         } else {
-                            console.log('❌ Usuário não encontrado na tabela users');
-                            setCurrentPage('login');
+                            console.log('❌ Usuário não encontrado na tabela users, usando dados do auth');
+                            setAuthUser({
+                                id: session.user.id,
+                                email: session.user.email || '',
+                                name: session.user.user_metadata?.name || 'Usuário'
+                            });
+                            setCurrentPage('patients');
                         }
                     } catch (err) {
                         console.error('❌ Erro ao buscar dados do usuário:', err);
-                        setCurrentPage('login');
+                        setAuthUser({
+                            id: session.user.id,
+                            email: session.user.email || '',
+                            name: 'Usuário'
+                        });
+                        setCurrentPage('patients');
                     }
                 } else {
                     console.log('ℹ️ Nenhuma sessão ativa');
@@ -86,7 +88,6 @@ const App: React.FC = () => {
                 setCurrentPage('login');
             } finally {
                 setLoadingAuth(false);
-                clearTimeout(timeoutId);
             }
         };
 
@@ -111,9 +112,22 @@ const App: React.FC = () => {
                             name: userData.name || 'Usuário'
                         });
                         setCurrentPage('patients');
+                    } else {
+                        setAuthUser({
+                            id: session.user.id,
+                            email: session.user.email || '',
+                            name: session.user.user_metadata?.name || 'Usuário'
+                        });
+                        setCurrentPage('patients');
                     }
                 } catch (err) {
                     console.error('Erro ao buscar dados do usuário:', err);
+                    setAuthUser({
+                        id: session.user.id,
+                        email: session.user.email || '',
+                        name: 'Usuário'
+                    });
+                    setCurrentPage('patients');
                 }
             } else {
                 setAuthUser(null);
@@ -122,44 +136,56 @@ const App: React.FC = () => {
         });
 
         return () => {
-            clearTimeout(timeoutId);
             subscription?.unsubscribe();
         };
     }, []);
 
     const handleLogin = async (email: string, password: string) => {
         try {
+            console.log('🔐 Tentando fazer login com:', email);
             const { data, error } = await supabase.auth.signInWithPassword({
                 email,
                 password
             });
 
             if (error) {
-                console.error('Erro ao fazer login:', error);
+                console.error('❌ Erro ao fazer login:', error);
                 alert('Erro ao fazer login: ' + error.message);
                 return;
             }
 
+            console.log('✅ Login bem-sucedido! User:', data.user?.email);
+            
             if (data.user) {
                 // Buscar dados do usuário na tabela users
-                const { data: userData } = await supabase
+                const { data: userData, error: userError } = await supabase
                     .from('users')
                     .select('id, name, email')
                     .eq('id', data.user.id)
                     .single();
 
                 if (userData) {
+                    console.log('✅ Dados do usuário encontrados na tabela users');
                     setAuthUser({
                         id: userData.id,
                         email: userData.email || data.user.email || '',
                         name: userData.name || 'Usuário'
                     });
-                    setCurrentPage('patients');
+                } else {
+                    // Se não encontrar na tabela users, usar dados do auth
+                    console.log('⚠️ Usuário não encontrado na tabela users, usando dados do auth');
+                    setAuthUser({
+                        id: data.user.id,
+                        email: data.user.email || '',
+                        name: data.user.user_metadata?.name || 'Usuário'
+                    });
                 }
+                console.log('📍 Navegando para página de pacientes...');
+                setCurrentPage('patients');
             }
         } catch (error) {
-            console.error('Erro ao fazer login:', error);
-            alert('Erro ao fazer login');
+            console.error('❌ Erro ao fazer login:', error);
+            alert('Erro ao fazer login: ' + (error as any).message);
         }
     };
 

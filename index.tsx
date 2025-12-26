@@ -4,8 +4,12 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './src/index.css';
 
-// Capturar erros globais de carregamento
-console.log('🚀 Iniciando aplicação SBAR Juju...');
+// Desabilitar console em produção
+const isDevelopment = import.meta.env.DEV;
+if (!isDevelopment) {
+  console.log = () => {};
+  console.warn = () => {};
+}
 
 window.addEventListener('error', (event) => {
     console.error('❌ Erro global detectado:', event.error);
@@ -22,15 +26,9 @@ if (!rootElement) {
     throw new Error(errorMsg);
 }
 
-console.log('✅ Elemento root encontrado');
-
 const root = ReactDOM.createRoot(rootElement);
-console.log('🔄 Renderizando App...');
-
 root.render(
     <React.StrictMode>
         <App />
     </React.StrictMode>
 );
-
-console.log('✅ App renderizado com sucesso');
