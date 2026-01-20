@@ -1,98 +1,126 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import HistoryItem, { HistoryItemData } from './HistoryItem';
-
-const mockHistoryItems: HistoryItemData[] = [
-    {
-        datetime: '25/07/2024 - 08:15',
-        status: 'Urgente',
-        description: 'Piora no padrão respiratório e queda de saturação para 88% em ar ambiente.',
-        author: 'Dr. Carlos Andrade',
-        sbar: {
-            situation: 'Paciente com piora súbita no padrão respiratório, apresentando dispneia intensa e uso de musculatura acessória.',
-            background: 'Paciente asmático, internado por pneumonia comunitária há 3 dias. Sem histórico de intubação prévia.',
-            assessment: {
-                morning: 'Saturação caiu para 88% em ar ambiente, frequência respiratória de 28 irpm. Ausculta pulmonar com sibilos difusos.',
-                afternoon: '',
-                night: ''
-            },
-            recommendation: {
-                morning: 'Administrar oxigênio suplementar para manter SatO2 > 92%, iniciar broncodilatador de curta ação e contatar fisioterapia respiratória. Avaliar necessidade de VNI.',
-                afternoon: '',
-                night: ''
-            }
-        }
-    },
-    {
-        datetime: '24/07/2024 - 19:30',
-        status: 'Atenção',
-        description: 'Paciente apresentou febre de 38.5°C, medicado conforme prescrição.',
-        author: 'Enf. Juliana Oliveira',
-        sbar: {
-            situation: 'Pico febril de 38.5°C aferido às 19:15. Paciente refere calafrios e cefaleia.',
-            background: 'Em antibioticoterapia para pneumonia. Última dose administrada há 6 horas.',
-            assessment: {
-                morning: '',
-                afternoon: 'Paciente consciente, orientado, hidratado. Hemodinamicamente estável, apesar da febre.',
-                night: ''
-            },
-            recommendation: {
-                morning: '',
-                afternoon: 'Administrado antitérmico prescrito. Coletar nova cultura de sangue se a febre persistir. Manter observação rigorosa dos sinais vitais.',
-                night: ''
-            }
-        }
-    },
-    {
-        datetime: '24/07/2024 - 14:00',
-        status: 'Normal',
-        description: 'Paciente estável após medicação, parâmetros dentro da normalidade.',
-        author: 'Enf. Juliana Oliveira',
-        sbar: {
-            situation: 'Paciente calmo, colaborativo, sem queixas álgicas no momento.',
-            background: 'Evoluindo bem ao tratamento para pneumonia.',
-            assessment: {
-                morning: '',
-                afternoon: 'Sinais vitais estáveis, saturação de 96% em ar ambiente. Diurese presente e de bom volume.',
-                night: ''
-            },
-            recommendation: {
-                morning: '',
-                afternoon: 'Manter cuidados de rotina e observar aceitação da dieta.',
-                night: ''
-            }
-        }
-    },
-    {
-        datetime: '23/07/2024 - 10:05',
-        status: 'Informativo',
-        description: 'Admissão na unidade vindo do centro cirúrgico. Estável.',
-        author: 'Enf. Ricardo Souza',
-        sbar: {
-            situation: 'Paciente admitido na unidade de internação, vindo do centro cirúrgico após apendicectomia.',
-            background: 'Sem comorbidades prévias. Procedimento cirúrgico ocorreu sem intercorrências.',
-            assessment: {
-                morning: 'Consciente, orientado, estável hemodinamicamente. Saturação 98% com cateter nasal 2L/min. Refere dor leve em sítio cirúrgico (EVA 3/10).',
-                afternoon: '',
-                night: ''
-            },
-            recommendation: {
-                morning: 'Administrar analgesia prescrita se necessário. Manter monitoramento de sinais vitais e do curativo cirúrgico.',
-                afternoon: '',
-                night: ''
-            }
-        }
-    }
-];
+import { historyService, HistoryRound } from '../../services/historyService';
 
 interface HistoryListProps {
     onSelectReport: (report: HistoryItemData) => void;
+    patientId: string;
 }
 
-const HistoryList: React.FC<HistoryListProps> = ({ onSelectReport }) => {
+const HistoryList: React.FC<HistoryListProps> = ({ onSelectReport, patientId }) => {
+    const [rounds, setRounds] = useState<HistoryRound[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const loadHistory = async () => {
+            console.log('📚 Carregando histórico do paciente:', patientId);
+            setLoading(true);
+            try {
+                const historyData = await historyService.getPatientRoundsHistory(patientId);
+                console.log('📚 Histórico carregado:', historyData);
+                setRounds(historyData);
+            } catch (error) {
+                console.error('❌ Erro ao carregar histórico:', error);
+                setRounds([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (patientId) {
+            loadHistory();
+        }
+    }, [patientId]);
+
+    // Converter HistoryRound em HistoryItemData para compatibilidade com HistoryItem
+    const convertToHistoryItem = (round: HistoryRound, shift: 'morning' | 'afternoon' | 'night'): HistoryItemData => {
+        const shiftLabel = {
+            morning: 'Manhã',
+            afternoon: 'Tarde',
+            night: 'Noite'
+        }[shift];
+
+        const shiftEmoji = {
+            morning: '🌅',
+            afternoon: '☀️',
+            night: '🌙'
+        }[shift];
+
+        // Gerar descrição resumida
+        const assessmentText = round.assessment[shift];
+        const recommendationText = round.recommendation[shift];
+        const description = assessmentText || recommendationText 
+            ? (assessmentText.substring(0, 100) || recommendationText.substring(0, 100)) + '...'
+            : 'Sem dados preenchidos neste turno';
+
+        // Formatar data
+        const date = new Date(round.created_at);
+        const dateStr = date.toLocaleDateString('pt-BR');
+        const timeStr = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+        return {
+            datetime: `${dateStr} - ${timeStr} ${shiftEmoji} ${shiftLabel}`,
+            status: round.status === 'instavel' ? 'Urgente' : 
+                    round.status === 'em_risco' ? 'Atenção' : 
+                    round.status === 'estavel' ? 'Normal' : 'Informativo',
+            description,
+            author: round.saved_by_names[shift] || 'Não preenchido',
+            sbar: {
+                situation: '',
+                background: '',
+                assessment: {
+                    morning: shift === 'morning' ? round.assessment.morning : '',
+                    afternoon: shift === 'afternoon' ? round.assessment.afternoon : '',
+                    night: shift === 'night' ? round.assessment.night : ''
+                },
+                recommendation: {
+                    morning: shift === 'morning' ? round.recommendation.morning : '',
+                    afternoon: shift === 'afternoon' ? round.recommendation.afternoon : '',
+                    night: shift === 'night' ? round.recommendation.night : ''
+                }
+            }
+        };
+    };
+
+    // Gerar lista de itens de histórico (um item por turno preenchido)
+    const historyItems: HistoryItemData[] = [];
+    
+    rounds.forEach(round => {
+        // Verificar quais turnos têm dados
+        if (round.assessment.morning || round.recommendation.morning) {
+            historyItems.push(convertToHistoryItem(round, 'morning'));
+        }
+        if (round.assessment.afternoon || round.recommendation.afternoon) {
+            historyItems.push(convertToHistoryItem(round, 'afternoon'));
+        }
+        if (round.assessment.night || round.recommendation.night) {
+            historyItems.push(convertToHistoryItem(round, 'night'));
+        }
+    });
+
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center py-12">
+                <div className="text-gray-400">Carregando histórico...</div>
+            </div>
+        );
+    }
+
+    if (historyItems.length === 0) {
+        return (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="text-gray-400 text-lg mb-2">📚 Nenhum histórico encontrado</div>
+                <div className="text-gray-500 text-sm">
+                    Os dados preenchidos aparecerão aqui
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="flex flex-col gap-3">
-            {mockHistoryItems.map((item, index) => (
+            {historyItems.map((item, index) => (
                 <HistoryItem key={index} item={item} onSelectReport={onSelectReport} />
             ))}
         </div>

@@ -49,7 +49,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                             waving_hand
                         </span>
                     </div>
-                    <h1 className="text-2xl font-bold text-slate-800 dark:text-white">SBAR Juju</h1>
+                    <h1 className="text-2xl font-bold text-slate-800 dark:text-white">SBAR KIDS</h1>
                 </div>
 
                 {/* Headline */}

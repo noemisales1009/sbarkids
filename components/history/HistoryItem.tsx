@@ -13,10 +13,19 @@ interface HistoryItemProps {
 
 const HistoryItem: React.FC<HistoryItemProps> = ({ item, onSelectReport, selectable = false, selected = false, onToggleSelect }) => {
     const config = HISTORY_STATUS_CONFIG[item.status];
+    
+    // Determinar cor da borda baseado no status real (estavel/instavel/em_risco)
+    const getBorderColor = () => {
+        // Mapear status exibido para status real do banco
+        if (item.status === 'Normal') return 'border-green-500'; // estavel
+        if (item.status === 'Urgente') return 'border-yellow-500'; // instavel
+        if (item.status === 'Atenção') return 'border-red-500'; // em_risco
+        return 'border-gray-300 dark:border-gray-600'; // padrão
+    };
 
     return (
         <div 
-            className={`flex cursor-pointer items-center gap-2 sm:gap-3 lg:gap-4 rounded-lg bg-white p-2 sm:p-3 lg:p-4 shadow-sm transition-all hover:bg-gray-50 dark:bg-gray-800/50 dark:hover:bg-gray-800 border ${selected ? 'border-primary ring-1 ring-primary' : 'border-gray-100 dark:border-gray-700'}`}
+            className={`flex cursor-pointer items-center gap-2 sm:gap-3 lg:gap-4 rounded-lg bg-white p-2 sm:p-3 lg:p-4 shadow-sm transition-all hover:bg-gray-50 dark:bg-gray-800/50 dark:hover:bg-gray-800 border-2 ${selected ? 'border-primary ring-1 ring-primary' : getBorderColor()}`}
             onClick={() => onSelectReport(item)}
         >
             {selectable && (

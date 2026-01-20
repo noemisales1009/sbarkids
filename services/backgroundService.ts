@@ -12,6 +12,7 @@ export interface Medicacao {
   unidade_medida: string;
   data_inicio: string;
   data_fim: string | null;
+  observacao: string | null;
   is_archived: boolean;
   created_at: string;
 }
@@ -27,6 +28,7 @@ export interface Dispositivo {
   data_insercao: string;
   data_remocao: string | null;
   is_archived: boolean;
+  observacao: string | null;
   created_at: string;
 }
 
@@ -40,6 +42,7 @@ export interface Cultura {
   microorganismo: string;
   data_coleta: string;
   is_archived: boolean;
+  observacao: string | null;
   created_at: string;
 }
 
@@ -55,6 +58,42 @@ export interface Procedimento {
   notas: string | null;
   is_archived: boolean;
   created_at: string;
+}
+
+// ============================================================================
+// EXAMES
+// ============================================================================
+export interface Exame {
+  id: number;
+  paciente_id: string;
+  nome_exame: string;
+  data_exame: string;
+  observacao: string | null;
+  is_archived: boolean;
+  created_at: string;
+}
+
+// ============================================================================
+// DIETAS
+// ============================================================================
+export interface Dieta {
+  id: string;
+  paciente_id: string;
+  tipo: string;
+  data_inicio: string;
+  volume: number | null;
+  vet: number | null;
+  pt: number | null;
+  th: number | null;
+  vet_pleno: number | null;
+  pt_g_dia: number | null;
+  vet_at: number | null; // calculado
+  pt_at: number | null; // calculado
+  is_archived: boolean;
+  created_at: string;
+  updated_at: string;
+  data_remocao: string | null;
+  observacao: string | null;
 }
 
 // ============================================================================
@@ -261,6 +300,116 @@ export const backgroundService = {
       return data as Procedimento;
     } catch (error) {
       logError(error, 'backgroundService.updateProcedimento');
+      return null;
+    }
+  },
+
+  // ========== EXAMES ==========
+  async getExames(patientId: string): Promise<Exame[]> {
+    try {
+      const { data, error } = await supabase
+        .from('exames_pacientes')
+        .select('*')
+        .eq('paciente_id', patientId)
+        .eq('is_archived', false)
+        .order('data_exame', { ascending: false });
+
+      if (error) throw error;
+      return (data as Exame[]) || [];
+    } catch (error) {
+      logError(error, 'backgroundService.getExames');
+      return [];
+    }
+  },
+
+  async saveExame(exame: Omit<Exame, 'id' | 'created_at'>): Promise<Exame | null> {
+    try {
+      console.log('🗄️ [backgroundService.saveExame] Inserindo:', exame);
+      
+      const { data, error } = await supabase
+        .from('exames_pacientes')
+        .insert(exame)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('❌ [backgroundService.saveExame] Erro do Supabase:', error);
+        throw error;
+      }
+      
+      console.log('✅ [backgroundService.saveExame] Sucesso:', data);
+      return data as Exame;
+    } catch (error) {
+      console.error('❌ [backgroundService.saveExame] Erro capturado:', error);
+      logError(error, 'backgroundService.saveExame');
+      return null;
+    }
+  },
+
+  async updateExame(id: number, updates: Partial<Exame>): Promise<Exame | null> {
+    try {
+      const { data, error } = await supabase
+        .from('exames_pacientes')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as Exame;
+    } catch (error) {
+      logError(error, 'backgroundService.updateExame');
+      return null;
+    }
+  },
+
+  // ========== DIETAS ==========
+  async getDietas(patientId: string): Promise<Dieta[]> {
+    try {
+      const { data, error } = await supabase
+        .from('dietas_pacientes')
+        .select('*')
+        .eq('paciente_id', patientId)
+        .eq('is_archived', false)
+        .order('data_inicio', { ascending: false });
+
+      if (error) throw error;
+      return (data as Dieta[]) || [];
+    } catch (error) {
+      logError(error, 'backgroundService.getDietas');
+      return [];
+    }
+  },
+
+  async saveDieta(dieta: Omit<Dieta, 'id' | 'created_at' | 'updated_at' | 'vet_at' | 'pt_at'>): Promise<Dieta | null> {
+    try {
+      const { data, error } = await supabase
+        .from('dietas_pacientes')
+        .insert(dieta)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as Dieta;
+    } catch (error) {
+      logError(error, 'backgroundService.saveDieta');
+      return null;
+    }
+  },
+
+  async updateDieta(id: string, updates: Partial<Dieta>): Promise<Dieta | null> {
+    try {
+      const { data, error } = await supabase
+        .from('dietas_pacientes')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as Dieta;
+    } catch (error) {
+      logError(error, 'backgroundService.updateDieta');
       return null;
     }
   }

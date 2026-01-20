@@ -7,6 +7,7 @@
 import React, { useState, useEffect } from 'react';
 import { recommendationService, ClinicalRoundRecommendation } from '../../services/recommendationService';
 import { auditLogService, AuditLogEntry } from '../../services/auditLogService';
+import { backgroundService, Exame } from '../../services/backgroundService';
 
 interface RecommendationByShift {
   respiratorio: string;
@@ -15,6 +16,7 @@ interface RecommendationByShift {
   deliriumPrevencao: string;
   metabolicoRenal: string;
   exames: string;
+  pendencias: string;
 }
 
 interface RecommendationPlanProps {
@@ -114,9 +116,26 @@ const RecommendationPlan: React.FC<RecommendationPlanProps> = ({
   const [internalSelectedShift, setInternalSelectedShift] = useState<'morning' | 'afternoon' | 'night'>('morning');
   const [saving, setSaving] = useState(false);
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  
+  // Estado para modal de exames
+  const [exameModal, setExameModal] = useState<{ open: boolean; exame?: Exame }>({ open: false });
+  const [exames, setExames] = useState<Exame[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Usa o selectedShift da prop se fornecido, senão usa o estado interno
   const selectedShift = propSelectedShift || 'morning';
+  
+  // Carrega os exames do paciente
+  useEffect(() => {
+    const loadExames = async () => {
+      if (!patientId) return;
+      console.log('🔄 Carregando exames do paciente:', patientId);
+      const data = await backgroundService.getExames(patientId);
+      console.log('📋 Exames carregados:', data);
+      setExames(data);
+    };
+    loadExames();
+  }, [patientId, refreshKey]);
   
   const handleShiftChange = (shift: 'morning' | 'afternoon' | 'night') => {
     setInternalSelectedShift(shift);
@@ -134,10 +153,10 @@ const RecommendationPlan: React.FC<RecommendationPlanProps> = ({
   const categories = [
     { key: 'respiratorio' as const, icon: 'air', title: 'Respiratório', placeholder: 'Ajustes ventilatórios, reexpansão, metas de desmame...' },
     { key: 'hemodinamico' as const, icon: 'favorite', title: 'Hemodinâmico', placeholder: 'Titulação de drogas, metas de PAM/perfusão...' },
-    { key: 'neurologico' as const, icon: 'psychology', title: 'Neurológico', placeholder: 'Metas de sedação e dor...' },
-    { key: 'deliriumPrevencao' as const, icon: 'warning', title: 'Prevenção de Delirium', placeholder: 'Descrever medidas de prevenção...' },
+    { key: 'neurologico' as const, icon: 'psychology', title: 'Neurológico', placeholder: 'Metas de sedação e dor.\nMedidas de prevenção de delirium.' },
     { key: 'metabolicoRenal' as const, icon: 'water_drop', title: 'Metabólico/Renal', placeholder: 'Balanço hídrico alvo, ajustes de dieta/NPT...' },
-    { key: 'exames' as const, icon: 'assignment', title: 'Exames e Avaliações', placeholder: 'Exames solicitados e avaliações...' }
+    { key: 'exames' as const, icon: 'assignment', title: 'Exames e Avaliações', placeholder: 'Exames solicitados e avaliações...', showExamesList: true },
+    { key: 'pendencias' as const, icon: 'checklist', title: 'Pendências', placeholder: 'Procedimentos, alertas, checagem de dispositivos...' }
   ];
 
   const handleSaveAll = async () => {
@@ -175,6 +194,59 @@ const RecommendationPlan: React.FC<RecommendationPlanProps> = ({
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleSaveExame = async (exameData: { nome_exame: string; data_exame: string; observacao?: string }) => {
+    if (!patientId) {
+      console.error('❌ PatientId não encontrado');
+      return;
+    }
+    
+    try {
+      console.log('💾 Salvando exame:', exameData);
+      console.log('👤 PatientId:', patientId);
+      
+      if (exameModal.exame) {
+        console.log('✏️ Atualizando exame existente:', exameModal.exame.id);
+        const result = await backgroundService.updateExame(exameModal.exame.id, exameData);
+        console.log('✅ Exame atualizado:', result);
+      } else {
+        console.log('➕ Criando novo exame');
+        const dataToSave = {
+          ...exameData,
+          paciente_id: patientId,
+          is_archived: false
+        };
+        console.log('📦 Dados para salvar:', dataToSave);
+        const result = await backgroundService.saveExame(dataToSave);
+        console.log('✅ Exame salvo:', result);
+        
+        if (!result) {
+          console.error('❌ backgroundService.saveExame retornou null');
+          alert('Erro ao salvar exame. Verifique o console.');
+          return;
+        }
+      }
+      
+      // Recarrega a lista
+      console.log('🔄 Recarregando lista de exames...');
+      const updatedExames = await backgroundService.getExames(patientId);
+      console.log('📋 Exames carregados:', updatedExames);
+      setExames(updatedExames);
+      setRefreshKey(prev => prev + 1); // Força atualização
+      setExameModal({ open: false });
+      console.log('✅ Modal fechado');
+    } catch (error) {
+      console.error('❌ Erro ao salvar exame:', error);
+      alert('Erro ao salvar exame: ' + (error as any).message);
+    }
+  };
+
+  const handleDeleteExame = async (id: string) => {
+    if (!patientId) return;
+    await backgroundService.deleteExame(id);
+    const updatedExames = await backgroundService.getExames(patientId);
+    setExames(updatedExames);
   };
 
   return (
@@ -226,14 +298,67 @@ const RecommendationPlan: React.FC<RecommendationPlanProps> = ({
               
               {isExpanded && (
                 <div className="p-3 border-t border-gray-600 bg-gray-800">
-                  <textarea
-                    value={currentData.data[category.key]}
-                    onChange={(e) => currentData.onChange(category.key, e.target.value)}
-                    placeholder={category.placeholder}
-                    className="w-full p-3 rounded-lg border border-gray-600 bg-gray-900 text-white placeholder:text-[#1F2937] focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    rows={4}
-                    autoFocus
-                  />
+                  {category.showExamesList && (
+                    <div className="mb-4">
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="text-sm text-gray-400">Exames cadastrados:</span>
+                        <button
+                          onClick={() => setExameModal({ open: true })}
+                          className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition"
+                        >
+                          + Adicionar Exame
+                        </button>
+                      </div>
+                      
+                      {exames.length > 0 ? (
+                        <div className="space-y-2 mb-4">
+                          {exames.map((exame) => (
+                            <div key={exame.id} className="bg-gray-700 p-3 rounded border border-gray-600">
+                              <div className="flex justify-between items-start mb-2">
+                                <div className="flex-1">
+                                  <p className="font-semibold text-white">{exame.nome_exame}</p>
+                                  <p className="text-sm text-gray-400">
+                                    {new Date(exame.data_exame).toLocaleDateString('pt-BR')}
+                                  </p>
+                                  {exame.observacao && (
+                                    <p className="text-sm text-gray-300 mt-1">{exame.observacao}</p>
+                                  )}
+                                </div>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => setExameModal({ open: true, exame })}
+                                    className="text-blue-400 hover:text-blue-300"
+                                  >
+                                    ✏️
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteExame(exame.id)}
+                                    className="text-red-400 hover:text-red-300"
+                                  >
+                                    🗑️
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-500 italic mb-4">Nenhum exame cadastrado ainda.</p>
+                      )}
+                    </div>
+                  )}
+                  
+                  {!category.showExamesList && (
+                    <textarea
+                      value={currentData.data[category.key]}
+                      onChange={(e) => currentData.onChange(category.key, e.target.value)}
+                      placeholder={category.placeholder}
+                      className="w-full p-3 rounded-lg border border-gray-600 bg-gray-700 text-white placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-gray-800 whitespace-pre-wrap"
+                      rows={6}
+                      wrap="soft"
+                      autoFocus
+                    />
+                  )}
                 </div>
               )}
             </div>
@@ -248,6 +373,83 @@ const RecommendationPlan: React.FC<RecommendationPlanProps> = ({
           roundId={roundId}
           shiftStatus={shiftStatus}
         />
+      )}
+      
+      {/* Modal de Exame */}
+      {exameModal.open && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 rounded-lg p-6 w-full max-w-lg border border-gray-700">
+            <h3 className="text-xl font-bold text-white mb-4">
+              {exameModal.exame ? 'Editar Exame' : 'Cadastrar Exame'}
+            </h3>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                handleSaveExame({
+                  nome_exame: formData.get('nome_exame') as string,
+                  data_exame: formData.get('data_exame') as string,
+                  observacao: formData.get('observacao') as string
+                });
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Nome do Exame
+                </label>
+                <input
+                  type="text"
+                  name="nome_exame"
+                  defaultValue={exameModal.exame?.nome_exame || ''}
+                  className="w-full p-3 rounded-lg border border-gray-600 bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Data do Exame
+                </label>
+                <input
+                  type="date"
+                  name="data_exame"
+                  defaultValue={exameModal.exame?.data_exame || new Date().toISOString().split('T')[0]}
+                  className="w-full p-3 rounded-lg border border-gray-600 bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Observação
+                </label>
+                <textarea
+                  name="observacao"
+                  defaultValue={exameModal.exame?.observacao || ''}
+                  className="w-full p-3 rounded-lg border border-gray-600 bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows={3}
+                />
+              </div>
+              
+              <div className="flex gap-3 justify-end">
+                <button
+                  type="button"
+                  onClick={() => setExameModal({ open: false })}
+                  className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition"
+                >
+                  Salvar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -240,5 +240,75 @@ export const clinicalRoundsService = {
       logError(error, 'clinicalRoundsService.deleteRound');
       return false;
     }
+  },
+
+  /**
+   * Obter ou criar round para o dia atual (horário de São Paulo)
+   * Verifica se já existe um round criado hoje, senão cria um novo
+   */
+  async getOrCreateTodayRound(patientId: string, userId?: string): Promise<ClinicalRound | null> {
+    try {
+      // Obtém a data atual em São Paulo (UTC-3)
+      const nowSaoPaulo = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+      const todayStart = new Date(nowSaoPaulo);
+      todayStart.setHours(0, 0, 0, 0);
+      
+      const todayEnd = new Date(nowSaoPaulo);
+      todayEnd.setHours(23, 59, 59, 999);
+
+      console.log('[ClinicalRounds] Buscando round de hoje:', {
+        start: todayStart.toISOString(),
+        end: todayEnd.toISOString()
+      });
+
+      // Busca round criado hoje
+      const { data: rounds, error: searchError } = await supabase
+        .from('clinical_rounds')
+        .select('*')
+        .eq('patient_id', patientId)
+        .gte('created_at', todayStart.toISOString())
+        .lte('created_at', todayEnd.toISOString())
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (searchError) {
+        logError(searchError, 'clinicalRoundsService.getOrCreateTodayRound.search');
+      }
+
+      // Se encontrou um round de hoje, retorna ele
+      if (rounds && rounds.length > 0) {
+        console.log('[ClinicalRounds] Round de hoje encontrado:', rounds[0].id);
+        return rounds[0] as ClinicalRound;
+      }
+
+      // Se não encontrou, cria um novo round para hoje
+      console.log('[ClinicalRounds] Criando novo round para hoje');
+      const newRound = await this.createRound({
+        patient_id: patientId,
+        created_by: userId || null
+      });
+
+      return newRound;
+    } catch (error) {
+      logError(error, 'clinicalRoundsService.getOrCreateTodayRound');
+      return null;
+    }
+  },
+
+  /**
+   * Verificar se o round atual é de hoje (horário de São Paulo)
+   */
+  isTodayRound(round: ClinicalRound): boolean {
+    try {
+      const nowSaoPaulo = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+      const todayStart = new Date(nowSaoPaulo);
+      todayStart.setHours(0, 0, 0, 0);
+
+      const roundDate = new Date(round.created_at);
+      return roundDate >= todayStart;
+    } catch (error) {
+      logError(error, 'clinicalRoundsService.isTodayRound');
+      return false;
+    }
   }
 };

@@ -6,7 +6,7 @@ const AboutSection: React.FC = () => {
         <div className="flex flex-col gap-2">
             <button className="flex items-center gap-2 justify-start rounded-lg bg-slate-100 dark:bg-slate-700 p-3 text-slate-800 dark:text-slate-200 text-base font-medium hover:bg-slate-200 dark:hover:bg-slate-600">
                 <span className="material-symbols-outlined text-xl">info</span>
-                Sobre o SBAR Juju
+                Sobre o SBAR KIDS
             </button>
             <button className="flex items-center gap-2 justify-start rounded-lg bg-slate-100 dark:bg-slate-700 p-3 text-slate-800 dark:text-slate-200 text-base font-medium hover:bg-slate-200 dark:hover:bg-slate-600">
                 <span className="material-symbols-outlined text-xl">description</span>

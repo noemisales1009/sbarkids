@@ -19,11 +19,20 @@ const calculateAge = (dob: string): number => {
 
 const calculateDaysAdmitted = (dt_internacao: string | null): number => {
     if (!dt_internacao) return 0;
-    const admissionDate = new Date(dt_internacao);
-    const today = new Date();
-    const diffTime = Math.abs(today.getTime() - admissionDate.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
+    
+    try {
+        const admissionDate = new Date(dt_internacao + 'T00:00:00');
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Zera as horas para comparar apenas datas
+        
+        const diffTime = today.getTime() - admissionDate.getTime();
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        
+        return diffDays >= 0 ? diffDays : 0;
+    } catch (error) {
+        console.error('Erro ao calcular dias de internação:', error);
+        return 0;
+    }
 };
 
 const formatDate = (dateString: string | null): string => {
@@ -35,6 +44,9 @@ const formatDate = (dateString: string | null): string => {
 const PatientInfoHeader: React.FC<PatientInfoHeaderProps> = ({ patient, onBack }) => {
     const age = calculateAge(patient.dob);
     const daysAdmitted = calculateDaysAdmitted(patient.dt_internacao);
+    
+    // Debug: verificar os valores
+    console.log('📅 Data de internação:', patient.dt_internacao, '| Dias:', daysAdmitted);
 
     return (
         <section className="fixed top-0 left-0 right-0 z-50 bg-linear-to-r from-blue-900 to-blue-800 px-4 py-3 border-b border-blue-700">

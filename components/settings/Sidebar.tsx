@@ -24,7 +24,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
                         waving_hand
                     </span>
                 </div>
-                <h1 className="text-xl font-bold text-slate-800 dark:text-white">SBAR Juju</h1>
+                <h1 className="text-xl font-bold text-slate-800 dark:text-white">SBAR KIDS</h1>
             </div>
             <nav className="flex flex-col gap-2">
                 {navItems.map(item => (

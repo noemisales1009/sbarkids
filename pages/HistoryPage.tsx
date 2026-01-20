@@ -23,8 +23,8 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ patient, onBack, onNavigate, 
             {/* Mobile View */}
             <div className="w-full overflow-x-hidden sm:hidden">
                 <HistoryHeader patientName={patient.name} onBack={onBack} />
-                <main className="flex-grow px-4 pt-2 pb-28">
-                    <HistoryList onSelectReport={onSelectReport} />
+                <main className="grow px-4 pt-2 pb-28">
+                    <HistoryList onSelectReport={onSelectReport} patientId={patient.id} />
                 </main>
                 <BottomNavBar onNavigate={onNavigate} currentPage={currentPage} />
             </div>
@@ -32,8 +32,8 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ patient, onBack, onNavigate, 
             {/* Desktop View */}
             <DesktopLayout currentPage={currentPage} onNavigate={onNavigate}>
                 <DesktopHistoryHeader patientName={patient.name} />
-                <main className="flex-grow pt-6">
-                    <HistoryList onSelectReport={onSelectReport} />
+                <main className="grow pt-6">
+                    <HistoryList onSelectReport={onSelectReport} patientId={patient.id} />
                 </main>
             </DesktopLayout>
         </>

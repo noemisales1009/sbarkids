@@ -20,3 +20,71 @@ body {
   min-height: 100vh;
   font-family: 'Inter', sans-serif;
 }
+
+@media print {
+  @page {
+    margin: 1cm;
+    size: A4 landscape;
+  }
+  
+  /* Remover cabeçalhos e rodapés automáticos do navegador */
+  @page {
+    margin-top: 0;
+  }
+  
+  /* Ocultar elementos desnecessários na impressão */
+  header, 
+  nav,
+  aside,
+  footer:not(.print\\:block),
+  .print\\:hidden,
+  [class*="BottomNavBar"],
+  [class*="FloatingActionButton"],
+  [class*="MainSidebar"],
+  [class*="DesktopHeader"],
+  [class*="Header"]:not([class*="ReportDetail"]),
+  [class*="ReportDetailHeader"],
+  [aria-label="Voltar"] {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  
+  /* Remover qualquer conteúdo gerado por CSS */
+  *::before,
+  *::after {
+    content: none !important;
+    display: none !important;
+  }
+  
+  /* Garantir fundo branco e texto preto na impressão */
+  * {
+    color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  body, html, #root, main, div[class*="flex"] {
+    background: white !important;
+    background-color: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  /* Forçar cores de impressão */
+  .bg-gray-900,
+  .bg-gray-800,
+  .dark\\:bg-gray-800,
+  .bg-background-dark,
+  .dark\\:bg-background-dark {
+    background: white !important;
+    background-color: white !important;
+  }
+  
+  .text-white,
+  .text-gray-300,
+  .text-gray-400,
+  .text-blue-400,
+  .dark\\:text-white {
+    color: black !important;
+  }
+}

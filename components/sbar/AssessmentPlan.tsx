@@ -133,9 +133,9 @@ const AssessmentPlan: React.FC<AssessmentPlanProps> = ({
   };
 
   const categories = [
-    { key: 'respiratorio' as const, icon: 'air', title: 'Respiratório', placeholder: 'Murmúrios vesiculares, sibilos, SpO2...' },
-    { key: 'hemodinamico' as const, icon: 'favorite', title: 'Hemodinâmico', placeholder: 'PA, FC, débito urinário, perfusão...' },
-    { key: 'neurologico' as const, icon: 'psychology', title: 'Neurológico', placeholder: 'Nível de consciência, escalas de sedação...' },
+    { key: 'respiratorio' as const, icon: 'air', title: 'Respiratório', placeholder: 'Trabalho respiratório, sincronia.\nFIO2 / PEEP / modo ventilatório.\nGasometria interpretada.' },
+    { key: 'hemodinamico' as const, icon: 'favorite', title: 'Hemodinâmico', placeholder: 'PAM, FC, perfusão, lactato.' },
+    { key: 'neurologico' as const, icon: 'psychology', title: 'Neurológico', placeholder: 'Sedação, analgesia.\nComfort B, FLACC/FLACC-R, Delirium, Glasgow.' },
     { key: 'renal' as const, icon: 'water_drop', title: 'Renal/Hidro', placeholder: 'Diurese, balanço hídrico, eletrólitos...' },
     { key: 'infeccioso' as const, icon: 'shield', title: 'Infeccioso', placeholder: 'Sinais de infecção, febre, culturas...' },
     { key: 'observacoes' as const, icon: 'description', title: 'Observações Gerais', placeholder: 'Outros achados relevantes...' },
@@ -231,8 +231,9 @@ const AssessmentPlan: React.FC<AssessmentPlanProps> = ({
                     value={currentData.data[category.key]}
                     onChange={(e) => currentData.onChange(category.key, e.target.value)}
                     placeholder={category.placeholder}
-                    className="w-full p-3 rounded-lg border border-gray-600 bg-gray-900 text-white placeholder:text-[#1F2937] focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    rows={4}
+                    className="w-full p-3 rounded-lg border border-gray-600 bg-gray-700 text-white placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-gray-800 whitespace-pre-wrap"
+                    rows={6}
+                    wrap="soft"
                     autoFocus
                   />
                 </div>

@@ -204,14 +204,21 @@ const App: React.FC = () => {
             setSelectedPatient(null);
             setSelectedReport(null);
             handleLogout();
+            return;
         }
+        
+        // Limpar report quando não for reportDetail
         if (page !== 'reportDetail') {
             setSelectedReport(null);
         }
-        // Recarregar lista de pacientes quando volta para essa página
-        if (page === 'patients') {
+        
+        // Limpar paciente selecionado apenas quando realmente volta para lista
+        // NÃO limpar se está navegando entre sbar/history
+        if (page === 'patients' && currentPage !== 'sbar' && currentPage !== 'history') {
+            setSelectedPatient(null);
             setRefreshKey(prev => prev + 1);
         }
+        
         setCurrentPage(page);
     };
 
@@ -282,15 +289,35 @@ const App: React.FC = () => {
             case 'patients':
                 return <PatientsPage onSelectPatient={handleSelectPatientForSbar} onSelectHistory={handleSelectPatientForHistory} onNavigate={handleNavigate} currentPage={currentPage} refreshKey={refreshKey} />;
             case 'sbar':
-                return selectedPatient ? <SbarReportPage patient={selectedPatient} onBack={() => handleNavigate('patients')} /> : <PatientsPage onSelectPatient={handleSelectPatientForSbar} onSelectHistory={handleSelectPatientForHistory} onNavigate={handleNavigate} currentPage={currentPage} refreshKey={refreshKey} />;
+                return selectedPatient ? <SbarReportPage patient={selectedPatient} onBack={() => {
+                    setSelectedPatient(null);
+                    handleNavigate('patients');
+                }} onNavigate={handleNavigate} currentPage={currentPage} /> : <PatientsPage onSelectPatient={handleSelectPatientForSbar} onSelectHistory={handleSelectPatientForHistory} onNavigate={handleNavigate} currentPage={currentPage} refreshKey={refreshKey} />;
             case 'history':
-                return selectedPatient ? <HistoryPage patient={selectedPatient} onBack={() => handleNavigate('patients')} onNavigate={handleNavigate} currentPage={currentPage} onSelectReport={handleSelectReport} /> : <PatientsPage onSelectPatient={handleSelectPatientForSbar} onSelectHistory={handleSelectPatientForHistory} onNavigate={handleNavigate} currentPage={currentPage} refreshKey={refreshKey} />;
+                return selectedPatient ? <HistoryPage patient={selectedPatient} onBack={() => {
+                    setSelectedPatient(null);
+                    handleNavigate('patients');
+                }} onNavigate={handleNavigate} currentPage={currentPage} onSelectReport={handleSelectReport} /> : null;
             case 'settings':
                 return <SettingsPage onNavigate={handleNavigate} currentPage={currentPage} />;
             case 'reports':
                 return <ReportsPage onNavigate={handleNavigate} currentPage={currentPage} onSelectReportContext={handleSelectReportContext} />;
             case 'reportDetail':
-                return selectedPatient && selectedReport ? <ReportDetailPage patient={selectedPatient} report={selectedReport} onBack={() => handleNavigate('history')} /> : <HistoryPage patient={selectedPatient!} onBack={() => handleNavigate('patients')} onNavigate={handleNavigate} currentPage={'history'} onSelectReport={handleSelectReport} />;
+                if (!selectedPatient || !selectedReport) {
+                    // Se não tiver paciente ou report, voltar para patients
+                    handleNavigate('patients');
+                    return <PatientsPage onSelectPatient={handleSelectPatientForSbar} onSelectHistory={handleSelectPatientForHistory} onNavigate={handleNavigate} currentPage={currentPage} refreshKey={refreshKey} />;
+                }
+                return <ReportDetailPage 
+                    patient={selectedPatient} 
+                    report={selectedReport} 
+                    onBack={() => {
+                        setSelectedReport(null);
+                        handleNavigate('history');
+                    }} 
+                    onNavigate={handleNavigate} 
+                    currentPage={currentPage} 
+                />;
             case 'test':
                 return <TestSupabasePage />;
             default:

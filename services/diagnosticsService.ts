@@ -15,7 +15,7 @@ export interface DiagnosticHistory {
 }
 
 export interface PatientDiagnostics {
-  principal: DiagnosticHistory | null;
+  principais: DiagnosticHistory[];
   secundarios: DiagnosticHistory[];
 }
 
@@ -38,19 +38,25 @@ export const diagnosticsService = {
       if (error) throw error;
 
       const diagnostics = (data as DiagnosticHistory[]) || [];
+      
+      // DEBUG: Ver o que está vindo do Supabase
+      console.log('🔍 Diagnósticos do Supabase:', JSON.stringify(diagnostics, null, 2));
 
-      // Separar diagnóstico principal (primeira entrada) de secundários
-      const principal = diagnostics.length > 0 ? diagnostics[0] : null;
-      const secundarios = diagnostics.slice(1);
+      // Separar por pergunta_id: 1 = principais, 2 = secundários
+      const principais = diagnostics.filter(d => Number(d.pergunta_id) === 1);
+      const secundarios = diagnostics.filter(d => Number(d.pergunta_id) === 2);
+      
+      console.log('📊 Principais:', principais.length);
+      console.log('📊 Secundários:', secundarios.length);
 
       return {
-        principal,
+        principais,
         secundarios
       };
     } catch (error) {
       logError(error, 'diagnosticsService.getPatientDiagnostics');
       return {
-        principal: null,
+        principais: [],
         secundarios: []
       };
     }
@@ -67,13 +73,13 @@ export const diagnosticsService = {
   ): Promise<DiagnosticHistory | null> {
     try {
       const { data, error } = await supabase
-        .from('diagnosticos_historico_com_usuario')
+        .from('diagnosticos_historico')
         .insert({
           patient_id: patientId,
+          pergunta_id: 1,
           opcao_label: diagnostic,
           status: 'principal',
-          created_by: userId,
-          created_by_name: userName
+          created_by: userId
         })
         .select()
         .single();
@@ -97,13 +103,13 @@ export const diagnosticsService = {
   ): Promise<DiagnosticHistory | null> {
     try {
       const { data, error } = await supabase
-        .from('diagnosticos_historico_com_usuario')
+        .from('diagnosticos_historico')
         .insert({
           patient_id: patientId,
+          pergunta_id: 2,
           opcao_label: diagnostic,
           status: 'secundario',
-          created_by: userId,
-          created_by_name: userName
+          created_by: userId
         })
         .select()
         .single();

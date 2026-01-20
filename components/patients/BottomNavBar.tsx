@@ -16,7 +16,7 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({ onNavigate, currentPage }) 
     ];
     
     return (
-        <footer className="fixed bottom-0 left-0 right-0 z-10 border-t border-zinc-200 dark:border-zinc-800 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm sm:hidden">
+        <footer className="fixed bottom-0 left-0 right-0 z-10 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm sm:hidden print:hidden">
             <nav className="flex h-16 sm:h-20 items-center justify-around px-2">
                 {navItems.map(item => (
                     <button 

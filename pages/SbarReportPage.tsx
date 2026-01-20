@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Patient } from '../types';
+import { Patient, CurrentPage } from '../types';
 import SbarHeader from '../components/sbar/SbarHeader';
 import PatientInfoHeader from '../components/sbar/PatientInfoHeader';
 import SbarSection from '../components/sbar/SbarSection';
@@ -7,8 +7,10 @@ import SbarFooter from '../components/sbar/SbarFooter';
 import SbarStatusSection from '../components/sbar/SbarStatusSection';
 import SbarReadonlySection from '../components/sbar/SbarReadonlySection';
 import DiagnosticsEditor from '../components/sbar/DiagnosticsEditor';
+import SuportesVentilatoriosSection from '../components/sbar/SuportesVentilatoriosSection';
 import BackgroundEditor from '../components/sbar/BackgroundEditor';
 import AlertasDisplay from '../components/sbar/AlertasDisplay';
+import BottomNavBar from '../components/patients/BottomNavBar';
 import AssessmentPlan from '../components/sbar/AssessmentPlan';
 import RecommendationPlan from '../components/sbar/RecommendationPlan';
 import { clinicalRoundsService } from '../services/clinicalRoundsService';
@@ -23,6 +25,8 @@ import { patientsService } from '../services/patientsService';
 interface SbarReportPageProps {
     patient: Patient;
     onBack: () => void;
+    onNavigate: (page: CurrentPage) => void;
+    currentPage: CurrentPage;
 }
 
 // Interface para campos de texto que rastreiam o autor
@@ -38,7 +42,7 @@ const MOCK_OTHER_USER = {
     name: 'Dr. Gregory House'
 };
 
-const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack }) => {
+const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavigate, currentPage }) => {
     // ID do usuário (você pode pegar do Supabase Auth)
     const CURRENT_USER_ID = 'user-1';
     const [status, setStatus] = useState<'estavel' | 'instavel' | 'em_risco' | null>(null);
@@ -151,35 +155,24 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack }) => {
         loadPatientStatus();
     }, [patient.id]);
 
-    // Auto-criar o round quando a página carrega (ou usar o existente)
+    // Auto-criar o round quando a página carrega (ou usar o do dia atual)
     useEffect(() => {
         if (currentRoundId) return; // Já existe um round
 
         const loadOrCreateRound = async () => {
-            console.log('Procurando round existente para paciente:', patient.id);
+            console.log('🔍 Procurando ou criando round do dia para paciente:', patient.id);
             try {
-                // Primeiro, tenta buscar o último round existente para este paciente
-                const existingRound = await clinicalRoundsService.getLatestRound(patient.id);
+                // Busca ou cria automaticamente o round do dia atual (horário de São Paulo)
+                const todayRound = await clinicalRoundsService.getOrCreateTodayRound(patient.id, CURRENT_USER_ID);
                 
-                if (existingRound) {
-                    console.log('Round existente encontrado:', existingRound.id);
-                    setCurrentRoundId(existingRound.id);
-                    return;
-                }
-
-                // Se não houver, cria um novo
-                console.log('Criando novo round para paciente:', patient.id);
-                const roundData = {
-                    patient_id: patient.id
-                };
-
-                const result = await clinicalRoundsService.createRound(roundData);
-                console.log('Round criado com sucesso:', result?.id);
-                if (result) {
-                    setCurrentRoundId(result.id);
+                if (todayRound) {
+                    console.log('✅ Round do dia:', todayRound.id, '(criado em:', todayRound.created_at, ')');
+                    setCurrentRoundId(todayRound.id);
+                } else {
+                    console.error('❌ Não foi possível obter/criar round do dia');
                 }
             } catch (error) {
-                console.error('Erro ao carregar/criar round:', error);
+                console.error('❌ Erro ao carregar/criar round do dia:', error);
             }
         };
 
@@ -630,14 +623,94 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack }) => {
     };
     
     return (
-        <div className="relative flex min-h-screen w-full flex-col">
-            <PatientInfoHeader patient={patient} onBack={onBack} />
-            <main className="flex-1 pt-48">
+        <div className="relative flex min-h-screen w-full flex-col bg-gray-950">
+            <main className="flex-1 pb-32 sm:pb-20">
                 <div className="flex flex-col p-4 gap-4">
+                    {/* Informações do Paciente */}
+                    <div className="bg-gray-900 p-4 rounded-lg border border-gray-800">
+                        <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1">
+                                <h1 className="text-white text-2xl font-bold">{patient.name}</h1>
+                                <p className="text-gray-400 text-sm mt-1">Leito {patient.bed_number}</p>
+                            </div>
+                            {onBack && (
+                                <button
+                                    onClick={onBack}
+                                    className="flex items-center gap-1 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-lg text-gray-300 text-sm transition-colors"
+                                >
+                                    <span className="material-symbols-outlined text-base">arrow_back</span>
+                                    Voltar
+                                </button>
+                            )}
+                        </div>
+                        
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            <div className="bg-gray-800 p-2 rounded-lg">
+                                <p className="text-gray-400 text-xs mb-1">Idade</p>
+                                <p className="text-white text-sm font-semibold">
+                                    {(() => {
+                                        const birthDate = new Date(patient.dob);
+                                        const today = new Date();
+                                        let age = today.getFullYear() - birthDate.getFullYear();
+                                        const m = today.getMonth() - birthDate.getMonth();
+                                        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
+                                        return age;
+                                    })()} anos
+                                </p>
+                            </div>
+                            
+                            <div className="bg-gray-800 p-2 rounded-lg">
+                                <p className="text-gray-400 text-xs mb-1">Dias Int.</p>
+                                <p className="text-white text-sm font-semibold">
+                                    {(() => {
+                                        if (!patient.dt_internacao) return '0 dias';
+                                        const admissionDate = new Date(patient.dt_internacao + 'T00:00:00');
+                                        const today = new Date();
+                                        today.setHours(0, 0, 0, 0);
+                                        const diffTime = today.getTime() - admissionDate.getTime();
+                                        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                                        return `${diffDays >= 0 ? diffDays : 0} dias`;
+                                    })()}
+                                </p>
+                            </div>
+                            
+                            <div className="bg-gray-800 p-2 rounded-lg">
+                                <p className="text-gray-400 text-xs mb-1">Nascimento</p>
+                                <p className="text-white text-sm font-semibold">
+                                    {new Date(patient.dob).toLocaleDateString('pt-BR')}
+                                </p>
+                            </div>
+                            
+                            <div className="bg-gray-800 p-2 rounded-lg">
+                                <p className="text-gray-400 text-xs mb-1">Admissão</p>
+                                <p className="text-white text-sm font-semibold">
+                                    {patient.dt_internacao ? new Date(patient.dt_internacao).toLocaleDateString('pt-BR') : '-'}
+                                </p>
+                            </div>
+                            
+                            <div className="bg-gray-800 p-2 rounded-lg">
+                                <p className="text-gray-400 text-xs mb-1">Peso</p>
+                                <p className="text-white text-sm font-semibold">
+                                    {patient.peso ? `${patient.peso} kg` : '-'}
+                                </p>
+                            </div>
+                            
+                            <div className="bg-gray-800 p-2 rounded-lg">
+                                <p className="text-gray-400 text-xs mb-1">Mãe</p>
+                                <p className="text-white text-sm font-semibold truncate">
+                                    {patient.mother_name || '-'}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
                     <SbarStatusSection 
                         currentStatus={status} 
                         onStatusChange={setStatus}
                     />
+
+                    {/* Suportes Ventilatórios */}
+                    <SuportesVentilatoriosSection patientId={patient.id} />
 
                     {/* Editor de Diagnósticos */}
                     <div className="bg-gray-900 p-4 rounded-lg border border-gray-800">
@@ -648,16 +721,6 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack }) => {
                     <div className="bg-gray-900 p-4 rounded-lg border border-gray-800">
                         <h3 className="text-lg font-bold text-white mb-4">B - Breve Histórico</h3>
                         <BackgroundEditor patientId={patient.id} />
-                    </div>
-
-                    {/* Assessment Plan por turno */}
-                    <div className="bg-blue-900 p-3 rounded-lg border border-blue-700 mb-4 text-sm">
-                        <div className="font-mono text-blue-100">
-                            <div>Rodada: {currentRoundId || 'carregando...'}</div>
-                            <div>Dados da Manhã: {assessmentMorning.respiratorio ? '✅ Sim' : '❌ Não'}</div>
-                            <div>Dados da Tarde: {assessmentAfternoon.respiratorio ? '✅ Sim' : '❌ Não'}</div>
-                            <div>Dados da Noite: {assessmentNight.respiratorio ? '✅ Sim' : '❌ Não'}</div>
-                        </div>
                     </div>
 
                     <AssessmentPlan
@@ -745,6 +808,7 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack }) => {
                     )}
                 </div>
             </main>
+            <BottomNavBar onNavigate={onNavigate} currentPage={currentPage} />
             <SbarFooter onBack={onBack} />
         </div>
     );

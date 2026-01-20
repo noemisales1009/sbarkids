@@ -23,7 +23,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, currentPage }) 
         <>
             <section className="mt-4 mb-8 text-center sm:hidden">
                 <h2 className="text-slate-900 dark:text-white text-xl font-bold leading-tight tracking-[-0.015em] mb-2">Bem-vindo(a) ao seu espaço!</h2>
-                <p className="text-slate-600 dark:text-slate-400 text-sm font-normal leading-normal px-4">Guie-se por estas seções para configurar suas preferências no SBAR Juju.</p>
+                <p className="text-slate-600 dark:text-slate-400 text-sm font-normal leading-normal px-4">Guie-se por estas seções para configurar suas preferências no SBAR KIDS.</p>
             </section>
             <div className="flex flex-col gap-4">
                 <Accordion title="Perfil" icon="person" defaultOpen>
@@ -48,7 +48,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, currentPage }) 
             {/* Mobile Layout */}
             <div className="w-full overflow-x-hidden sm:hidden">
                 <SettingsHeader />
-                <main className="flex-grow pb-24 px-4">
+                <main className="grow pb-24 px-4">
                     {settingsMainContent}
                 </main>
                 <BottomNavBar onNavigate={onNavigate} currentPage={currentPage} />
@@ -57,7 +57,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, currentPage }) 
             {/* Desktop Layout */}
             <DesktopLayout currentPage={currentPage} onNavigate={onNavigate}>
                  <DesktopSettingsHeader />
-                 <main className="flex-grow pt-8">
+                 <main className="grow pt-8">
                     <div className="max-w-3xl">
                         {settingsMainContent}
                     </div>
