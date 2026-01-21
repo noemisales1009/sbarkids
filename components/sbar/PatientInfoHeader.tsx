@@ -81,38 +81,38 @@ const PatientInfoHeader: React.FC<PatientInfoHeaderProps> = ({ patient, onBack }
                 <div className="grid grid-cols-2 sm:grid-cols-6 gap-2">
                     {/* Idade */}
                     <div className="bg-blue-800/60 backdrop-blur-sm rounded-lg px-3 py-2 border border-blue-400/30 shadow-md">
-                        <p className="text-blue-100 text-xs font-semibold uppercase mb-1">Idade</p>
-                        <p className="text-white text-sm font-bold">{age} <span className="text-xs font-normal">anos</span></p>
+                        <p className="text-xs font-semibold uppercase mb-1" style={{ color: '#14A4EC' }}>Idade</p>
+                        <p className="text-sm font-bold" style={{ color: '#14A4EC' }}>{age} <span className="text-xs font-normal">anos</span></p>
                     </div>
 
                     {/* Dias de Internação */}
                     <div className="bg-blue-800/60 backdrop-blur-sm rounded-lg px-3 py-2 border border-blue-400/30 shadow-md">
-                        <p className="text-blue-100 text-xs font-semibold uppercase mb-1">Dias Int.</p>
-                        <p className="text-white text-sm font-bold">{daysAdmitted} <span className="text-xs font-normal">dias</span></p>
+                        <p className="text-xs font-semibold uppercase mb-1" style={{ color: '#14A4EC' }}>Dias Int.</p>
+                        <p className="text-sm font-bold" style={{ color: '#14A4EC' }}>{daysAdmitted} <span className="text-xs font-normal">dias</span></p>
                     </div>
 
                     {/* Data de Nascimento */}
                     <div className="bg-blue-800/60 backdrop-blur-sm rounded-lg px-3 py-2 border border-blue-400/30 shadow-md">
-                        <p className="text-blue-100 text-xs font-semibold uppercase mb-1">Nasc.</p>
-                        <p className="text-white text-xs font-bold truncate">{formatDate(patient.dob)}</p>
+                        <p className="text-xs font-semibold uppercase mb-1" style={{ color: '#14A4EC' }}>Nasc.</p>
+                        <p className="text-xs font-bold truncate" style={{ color: '#14A4EC' }}>{formatDate(patient.dob)}</p>
                     </div>
 
                     {/* Data de Admissão */}
                     <div className="bg-blue-800/60 backdrop-blur-sm rounded-lg px-3 py-2 border border-blue-400/30 shadow-md">
-                        <p className="text-blue-100 text-xs font-semibold uppercase mb-1">Admissão</p>
-                        <p className="text-white text-xs font-bold truncate">{formatDate(patient.dt_internacao)}</p>
+                        <p className="text-xs font-semibold uppercase mb-1" style={{ color: '#14A4EC' }}>Admissão</p>
+                        <p className="text-xs font-bold truncate" style={{ color: '#14A4EC' }}>{formatDate(patient.dt_internacao)}</p>
                     </div>
 
                     {/* Peso */}
                     <div className="bg-blue-800/60 backdrop-blur-sm rounded-lg px-3 py-2 border border-blue-400/30 shadow-md">
-                        <p className="text-blue-100 text-xs font-semibold uppercase mb-1">Peso</p>
-                        <p className="text-white text-sm font-bold">{patient.peso || '-'} <span className="text-xs font-normal">kg</span></p>
+                        <p className="text-xs font-semibold uppercase mb-1" style={{ color: '#14A4EC' }}>Peso</p>
+                        <p className="text-sm font-bold" style={{ color: '#14A4EC' }}>{patient.peso || '-'} <span className="text-xs font-normal">kg</span></p>
                     </div>
 
                     {/* Mãe */}
                     <div className="bg-blue-800/60 backdrop-blur-sm rounded-lg px-3 py-2 border border-blue-400/30 shadow-md">
-                        <p className="text-blue-100 text-xs font-semibold uppercase mb-1">Mãe</p>
-                        <p className="text-white text-xs font-bold truncate">{patient.mother_name || '-'}</p>
+                        <p className="text-xs font-semibold uppercase mb-1" style={{ color: '#14A4EC' }}>Mãe</p>
+                        <p className="text-xs font-bold truncate" style={{ color: '#14A4EC' }}>{patient.mother_name || '-'}</p>
                     </div>
                 </div>
             </div>

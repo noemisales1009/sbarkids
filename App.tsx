@@ -213,9 +213,8 @@ const App: React.FC = () => {
             setSelectedReport(null);
         }
         
-        // Limpar paciente selecionado apenas quando realmente volta para lista
-        // NÃO limpar se está navegando entre sbar/history
-        if (page === 'patients' && currentPage !== 'sbar' && currentPage !== 'history') {
+        // Limpar paciente selecionado quando volta para a lista de pacientes
+        if (page === 'patients') {
             setSelectedPatient(null);
             setRefreshKey(prev => prev + 1);
         }

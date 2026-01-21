@@ -70,7 +70,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient, onSelectPatient, onS
             {/* Linha 1: Nome e DN | Status */}
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
                 <div className="flex flex-col gap-1 flex-1">
-                    <p className="text-white text-lg sm:text-xl lg:text-2xl font-bold wrap-break-word">{patient.name}</p>
+                    <p className="text-lg sm:text-xl lg:text-2xl font-bold wrap-break-word" style={{ color: '#14A4EC' }}>{patient.name}</p>
                     <p className="text-zinc-400 text-sm sm:text-base font-medium">DN: {formatDate(patient.dob)}</p>
                 </div>
                 

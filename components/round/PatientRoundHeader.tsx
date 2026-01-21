@@ -68,40 +68,40 @@ const PatientRoundHeader: React.FC<PatientHeaderProps> = ({ patient }) => {
 
         {/* Idade */}
         <div>
-          <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+          <p className="text-xs sm:text-sm font-medium mb-1" style={{ color: '#14A4EC !important' }}>
             Idade
           </p>
-          <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
+          <p className="text-lg sm:text-xl font-bold" style={{ color: '#14A4EC !important' }}>
             {age}a
           </p>
         </div>
 
         {/* Mãe */}
         <div className="col-span-2">
-          <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+          <p className="text-xs sm:text-sm font-medium mb-1" style={{ color: '#14A4EC !important' }}>
             Mãe
           </p>
-          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+          <p className="text-sm font-medium truncate" style={{ color: '#14A4EC !important' }}>
             {patient.mother_name || 'Não informado'}
           </p>
         </div>
 
         {/* Data de Nascimento */}
         <div className="col-span-2">
-          <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+          <p className="text-xs sm:text-sm font-medium mb-1" style={{ color: '#14A4EC !important' }}>
             Data Nasc.
           </p>
-          <p className="text-sm font-medium text-gray-900 dark:text-white">
+          <p className="text-sm font-medium" style={{ color: '#14A4EC !important' }}>
             {birthDateFormatted}
           </p>
         </div>
 
         {/* Dias de Internação */}
         <div>
-          <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+          <p className="text-xs sm:text-sm font-medium mb-1" style={{ color: '#14A4EC !important' }}>
             D.I.
           </p>
-          <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
+          <p className="text-lg sm:text-xl font-bold" style={{ color: '#14A4EC !important' }}>
             {daysAdmitted}d
           </p>
         </div>
@@ -109,10 +109,10 @@ const PatientRoundHeader: React.FC<PatientHeaderProps> = ({ patient }) => {
         {/* Peso */}
         {patient.peso && (
           <div>
-            <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+            <p className="text-xs sm:text-sm font-medium mb-1" style={{ color: '#14A4EC !important' }}>
               Peso
             </p>
-            <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
+            <p className="text-lg sm:text-xl font-bold" style={{ color: '#14A4EC !important' }}>
               {patient.peso}kg
             </p>
           </div>

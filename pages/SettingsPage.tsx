@@ -27,7 +27,10 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, currentPage }) 
                     <ProfileSection />
                 </Accordion>
             </div>
-            <LogoutButton onLogout={() => onNavigate('login')} />
+            <LogoutButton onLogout={() => {
+                console.log('🔐 Executando logout...');
+                onNavigate('login');
+            }} />
         </>
     );
 

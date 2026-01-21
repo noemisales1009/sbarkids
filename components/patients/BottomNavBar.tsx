@@ -11,7 +11,6 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({ onNavigate, currentPage }) 
     const navItems: { page: CurrentPage; icon: string; label: string }[] = [
         { page: 'patients', icon: 'groups', label: 'Pacientes' },
         { page: 'reports', icon: 'summarize', label: 'Relatórios' },
-        { page: 'team', icon: 'badge', label: 'Equipe' },
         { page: 'settings', icon: 'settings', label: 'Ajustes' },
     ];
     
@@ -22,11 +21,10 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({ onNavigate, currentPage }) 
                     <button 
                         key={item.page}
                         onClick={() => onNavigate(item.page)}
-                        className={`flex flex-col items-center justify-center gap-0.5 sm:gap-1 w-1/4 h-full transition-colors ${
-                            currentPage === item.page
-                                ? 'text-primary'
-                                : 'text-zinc-500 dark:text-zinc-400 hover:text-primary/80 dark:hover:text-primary/80'
-                        }`}
+                        className={`flex flex-col items-center justify-center gap-0.5 sm:gap-1 w-1/4 h-full transition-colors`}
+                        style={{
+                            color: currentPage === item.page ? '#14A4EC' : '#71717a'
+                        }}
                         aria-current={currentPage === item.page ? 'page' : undefined}
                     >
                         <span className={`material-symbols-outlined text-lg sm:text-2xl ${currentPage === item.page ? 'fill-1' : ''}`}>{item.icon}</span>

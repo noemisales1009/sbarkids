@@ -83,9 +83,13 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                     >
                         {loading ? 'Entrando...' : 'Entrar'}
                     </button>
-                    <button className="flex h-14 w-full items-center justify-center rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent px-6 text-base font-bold text-primary transition-colors hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 dark:focus:ring-offset-background-dark">
-                        Criar Nova Conta
-                    </button>
+                </div>
+
+                {/* Restricted Access Notice */}
+                <div className="mt-8 pt-6 border-t border-slate-700 text-center">
+                    <p className="text-slate-400 dark:text-slate-500 text-xs font-normal leading-normal">
+                        Acesso restrito a profissionais autorizados
+                    </p>
                 </div>
             </div>
         </div>
