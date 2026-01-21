@@ -213,8 +213,8 @@ const App: React.FC = () => {
             setSelectedReport(null);
         }
         
-        // Limpar paciente selecionado quando volta para a lista de pacientes
-        if (page === 'patients') {
+        // Limpar paciente selecionado e refresh apenas quando mudar para patients de outra página
+        if (page === 'patients' && currentPage !== 'patients') {
             setSelectedPatient(null);
             setRefreshKey(prev => prev + 1);
         }
