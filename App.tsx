@@ -12,6 +12,7 @@ import { ViewportProvider } from './hooks/useViewport';
 import { TestSupabasePage } from './pages/TestSupabasePage';
 import { supabase } from './lib/supabase';
 import { patientsService } from './services/patientsService';
+import { UserProvider } from './contexts/UserContext';
 
 interface AuthUser {
     id: string;
@@ -328,28 +329,30 @@ const App: React.FC = () => {
 
     return (
         <ViewportProvider>
-            <div className="dark relative flex h-auto min-h-screen w-full flex-col bg-background-light dark:bg-background-dark group/design-root">
-                {loadingAuth ? (
-                    <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: '#101C22' }}>
-                        <div className="text-center">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4 mx-auto"></div>
-                            <p className="text-gray-400 dark:text-gray-400">Carregando aplicativo...</p>
-                            {loadingTimeout && (
-                                <p className="text-yellow-400 text-sm mt-2">Se continuar nesta tela, verifique:</p>
-                            )}
-                            {loadingTimeout && (
-                                <ul className="text-gray-400 text-xs mt-2 space-y-1">
-                                    <li>✓ Variáveis de ambiente na Vercel</li>
-                                    <li>✓ Console (F12) para mais informações</li>
-                                    <li>✓ Conexão com internet</li>
-                                </ul>
-                            )}
+            <UserProvider>
+                <div className="dark relative flex h-auto min-h-screen w-full flex-col bg-background-light dark:bg-background-dark group/design-root">
+                    {loadingAuth ? (
+                        <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: '#101C22' }}>
+                            <div className="text-center">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4 mx-auto"></div>
+                                <p className="text-gray-400 dark:text-gray-400">Carregando aplicativo...</p>
+                                {loadingTimeout && (
+                                    <p className="text-yellow-400 text-sm mt-2">Se continuar nesta tela, verifique:</p>
+                                )}
+                                {loadingTimeout && (
+                                    <ul className="text-gray-400 text-xs mt-2 space-y-1">
+                                        <li>✓ Variáveis de ambiente na Vercel</li>
+                                        <li>✓ Console (F12) para mais informações</li>
+                                        <li>✓ Conexão com internet</li>
+                                    </ul>
+                                )}
+                            </div>
                         </div>
-                    </div>
-                ) : (
-                    renderPage()
-                )}
-            </div>
+                    ) : (
+                        renderPage()
+                    )}
+                </div>
+            </UserProvider>
         </ViewportProvider>
     );
 };

@@ -4,9 +4,6 @@ import { CurrentPage } from '../App';
 import SettingsHeader from '../components/settings/SettingsHeader';
 import Accordion from '../components/settings/Accordion';
 import ProfileSection from '../components/settings/ProfileSection';
-import AccountSection from '../components/settings/AccountSection';
-import NotificationsSection from '../components/settings/NotificationsSection';
-import AboutSection from '../components/settings/AboutSection';
 import LogoutButton from '../components/settings/LogoutButton';
 import BottomNavBar from '../components/patients/BottomNavBar';
 import DesktopLayout from '../components/layout/DesktopLayout';
@@ -28,15 +25,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, currentPage }) 
             <div className="flex flex-col gap-4">
                 <Accordion title="Perfil" icon="person" defaultOpen>
                     <ProfileSection />
-                </Accordion>
-                <Accordion title="Conta" icon="lock">
-                    <AccountSection />
-                </Accordion>
-                <Accordion title="Notificações" icon="notifications">
-                    <NotificationsSection />
-                </Accordion>
-                <Accordion title="Sobre" icon="info">
-                    <AboutSection />
                 </Accordion>
             </div>
             <LogoutButton onLogout={() => onNavigate('login')} />
