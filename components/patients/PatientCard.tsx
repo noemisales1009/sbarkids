@@ -87,15 +87,23 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient, onSelectPatient, onS
             {/* Botões de Ação */}
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                 <button 
-                    className="flex-1 h-10 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors flex items-center justify-center gap-2 shadow-sm"
-                    onClick={() => onSelectPatient(patient)}
+                    className="flex-1 h-10 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors flex items-center justify-center gap-2 shadow-sm cursor-pointer relative z-10"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onSelectPatient(patient);
+                    }}
+                    type="button"
                 >
                     <span className="material-symbols-outlined text-base">add</span>
                     <span>Novo SBAR</span>
                 </button>
                 <button 
-                    className="flex-1 h-10 px-4 rounded-lg bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-500 text-slate-700 dark:text-slate-100 text-sm font-semibold transition-colors flex items-center justify-center gap-2 shadow-sm"
-                    onClick={() => onSelectHistory(patient)}
+                    className="flex-1 h-10 px-4 rounded-lg bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-500 text-slate-700 dark:text-slate-100 text-sm font-semibold transition-colors flex items-center justify-center gap-2 shadow-sm cursor-pointer relative z-10"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onSelectHistory(patient);
+                    }}
+                    type="button"
                 >
                     <span className="material-symbols-outlined text-base">history</span>
                     <span>Histórico</span>

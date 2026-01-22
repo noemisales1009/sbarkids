@@ -155,8 +155,9 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
         loadPatientStatus();
     }, [patient.id]);
 
-    // Auto-criar o round quando a página carrega (ou usar o do dia atual)
-    useEffect(() => {
+    // NÃO criar round automaticamente - apenas quando houver dados para salvar
+    // Isso evita a criação de relatórios vazios
+    /* useEffect(() => {
         if (currentRoundId) return; // Já existe um round
 
         const loadOrCreateRound = async () => {
@@ -177,7 +178,26 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
         };
 
         loadOrCreateRound();
-    }, [patient.id]);
+    }, [patient.id]); */
+
+    // Função auxiliar para criar round sob demanda
+    const ensureRoundExists = async (): Promise<string | null> => {
+        if (currentRoundId) return currentRoundId;
+        
+        console.log('🔍 Criando round do dia para paciente:', patient.id);
+        try {
+            const todayRound = await clinicalRoundsService.getOrCreateTodayRound(patient.id, CURRENT_USER_ID);
+            if (todayRound) {
+                console.log('✅ Round criado:', todayRound.id);
+                setCurrentRoundId(todayRound.id);
+                return todayRound.id;
+            }
+            return null;
+        } catch (error) {
+            console.error('❌ Erro ao criar round:', error);
+            return null;
+        }
+    };
 
     // Carregar dados salvos quando o round é criado
     useEffect(() => {
