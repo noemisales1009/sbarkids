@@ -6,6 +6,8 @@ export interface UserData {
     name: string;
     email: string;
     role: string;
+    sector: string | null;
+    access_level: string | null;
     foto: string | null;
 }
 
@@ -46,7 +48,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             // Tentar buscar usuário na tabela users
             const { data, error: fetchError } = await supabase
                 .from('users')
-                .select('*')
+                .select('id, name, email, role, sector, access_level, foto')
                 .eq('id', authUser.id)
                 .single();
 
@@ -57,19 +59,22 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     name: data.name || authUser.email?.split('@')[0] || 'Usuário',
                     email: data.email || authUser.email || '',
                     role: data.role || 'Médico(a)',
+                    sector: data.sector,
+                    access_level: data.access_level,
                     foto: data.foto
                 });
                 setLoading(false);
                 return;
             }
 
-            // Se não encontrou, usar dados do auth diretamente (não tenta criar)
-            console.log('⚠️ Usuário não encontrado na tabela users, usando dados do auth');
+            // Se não encontrou, usar dados do auth diretamente
             setUser({
                 id: authUser.id,
                 name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Usuário',
                 email: authUser.email || '',
                 role: 'Médico(a)',
+                sector: null,
+                access_level: null,
                 foto: authUser.user_metadata?.avatar_url || null
             });
             
