@@ -43,20 +43,15 @@ const App: React.FC = () => {
 
         const checkAuth = async () => {
             try {
-                console.log('🔄 Iniciando verificação de autenticação...');
                 const { data: { session }, error: sessionError } = await supabase.auth.getSession();
                 
                 if (sessionError) {
-                    console.warn('⚠️ Erro ao obter sessão (pode ser falta de configuração Supabase):', sessionError);
-                    // Limpar sessão corrompida
                     await supabase.auth.signOut();
                     setCurrentPage('login');
                     setLoadingAuth(false);
                     clearTimeout(timeoutId);
                     return;
                 }
-                
-                console.log('✅ Sessão encontrada:', session ? 'Sim' : 'Não');
                 
                 if (session?.user) {
                     try {
@@ -68,7 +63,6 @@ const App: React.FC = () => {
                             .single();
 
                         if (userData) {
-                            console.log('✅ Usuário autenticado:', userData);
                             setAuthUser({
                                 id: userData.id,
                                 email: userData.email || session.user.email || '',
@@ -76,7 +70,6 @@ const App: React.FC = () => {
                             });
                             setCurrentPage('patients');
                         } else {
-                            console.log('❌ Usuário não encontrado na tabela users, usando dados do auth');
                             setAuthUser({
                                 id: session.user.id,
                                 email: session.user.email || '',
@@ -85,7 +78,6 @@ const App: React.FC = () => {
                             setCurrentPage('patients');
                         }
                     } catch (err) {
-                        console.error('❌ Erro ao buscar dados do usuário:', err);
                         setAuthUser({
                             id: session.user.id,
                             email: session.user.email || '',
@@ -94,11 +86,9 @@ const App: React.FC = () => {
                         setCurrentPage('patients');
                     }
                 } else {
-                    console.log('ℹ️ Nenhuma sessão ativa');
                     setCurrentPage('login');
                 }
             } catch (error) {
-                console.error('❌ Erro geral ao verificar autenticação:', error);
                 setCurrentPage('login');
             } finally {
                 setLoadingAuth(false);
@@ -110,8 +100,6 @@ const App: React.FC = () => {
 
         // Escutar mudanças de autenticação
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            console.log('🔔 Auth state changed:', event);
-            
             if (session?.user) {
                 try {
                     const { data: userData } = await supabase
@@ -136,7 +124,6 @@ const App: React.FC = () => {
                         setCurrentPage('patients');
                     }
                 } catch (err) {
-                    console.error('Erro ao buscar dados do usuário:', err);
                     setAuthUser({
                         id: session.user.id,
                         email: session.user.email || '',
@@ -157,19 +144,15 @@ const App: React.FC = () => {
 
     const handleLogin = async (email: string, password: string) => {
         try {
-            console.log('🔐 Tentando fazer login com:', email);
             const { data, error } = await supabase.auth.signInWithPassword({
                 email,
                 password
             });
 
             if (error) {
-                console.error('❌ Erro ao fazer login:', error);
                 alert('Erro ao fazer login: ' + error.message);
                 return;
             }
-
-            console.log('✅ Login bem-sucedido! User:', data.user?.email);
             
             if (data.user) {
                 // Buscar dados do usuário na tabela users
@@ -180,26 +163,21 @@ const App: React.FC = () => {
                     .single();
 
                 if (userData) {
-                    console.log('✅ Dados do usuário encontrados na tabela users');
                     setAuthUser({
                         id: userData.id,
                         email: userData.email || data.user.email || '',
                         name: userData.name || 'Usuário'
                     });
                 } else {
-                    // Se não encontrar na tabela users, usar dados do auth
-                    console.log('⚠️ Usuário não encontrado na tabela users, usando dados do auth');
                     setAuthUser({
                         id: data.user.id,
                         email: data.user.email || '',
                         name: data.user.user_metadata?.name || 'Usuário'
                     });
                 }
-                console.log('📍 Navegando para página de pacientes...');
                 setCurrentPage('patients');
             }
         } catch (error) {
-            console.error('❌ Erro ao fazer login:', error);
             alert('Erro ao fazer login: ' + (error as any).message);
         }
     };
@@ -210,7 +188,7 @@ const App: React.FC = () => {
             setAuthUser(null);
             setCurrentPage('login');
         } catch (error) {
-            console.error('Erro ao fazer logout:', error);
+            // Silenciar erro de logout
         }
     };
 
