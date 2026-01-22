@@ -36,19 +36,60 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 return;
             }
 
+            // Tentar buscar usuário na tabela users
             const { data, error: fetchError } = await supabase
                 .from('users')
                 .select('*')
                 .eq('id', authUser.id)
                 .single();
 
-            if (fetchError) {
+            if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 = não encontrado
+                console.error('Erro ao carregar dados do usuário:', fetchError);
                 setError('Erro ao carregar dados do usuário');
                 setLoading(false);
                 return;
             }
 
-            if (data) {
+            // Se não encontrou o usuário, criar um novo registro
+            if (!data) {
+                console.log('Criando novo registro de usuário...');
+                const newUser = {
+                    id: authUser.id,
+                    email: authUser.email || '',
+                    name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Usuário',
+                    role: 'Médico(a)',
+                    foto: authUser.user_metadata?.avatar_url || null,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                };
+
+                const { data: insertedUser, error: insertError } = await supabase
+                    .from('users')
+                    .insert([newUser])
+                    .select()
+                    .single();
+
+                if (insertError) {
+                    console.error('Erro ao criar usuário:', insertError);
+                    // Usar dados do auth mesmo sem conseguir inserir
+                    setUser({
+                        id: authUser.id,
+                        name: newUser.name,
+                        email: newUser.email,
+                        role: newUser.role,
+                        foto: newUser.foto
+                    });
+                } else {
+                    setUser({
+                        id: insertedUser.id,
+                        name: insertedUser.name || '',
+                        email: insertedUser.email || authUser.email || '',
+                        role: insertedUser.role || '',
+                        foto: insertedUser.foto
+                    });
+                }
+            } else {
+                // Usuário encontrado, usar dados da tabela
                 setUser({
                     id: data.id,
                     name: data.name || '',
@@ -57,6 +98,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     foto: data.foto
                 });
             }
+            
             setLoading(false);
         } catch (err: any) {
             console.error('Erro ao carregar usuário:', err);

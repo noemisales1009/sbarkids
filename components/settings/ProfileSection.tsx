@@ -5,9 +5,18 @@ import { useUser } from '../../contexts/UserContext';
 const ProfileSection: React.FC = () => {
     const { user, loading, error: contextError, refetchUser } = useUser();
     
-    const [profileImage, setProfileImage] = useState<string>(user?.foto || '');
-    const [fullName, setFullName] = useState<string>(user?.name || '');
-    const [role, setRole] = useState<string>(user?.role || '');
+    const [profileImage, setProfileImage] = useState<string>('');
+    const [fullName, setFullName] = useState<string>('');
+    const [role, setRole] = useState<string>('');
+
+    // Atualizar estados quando o user mudar
+    React.useEffect(() => {
+        if (user) {
+            setProfileImage(user.foto || '');
+            setFullName(user.name || '');
+            setRole(user.role || '');
+        }
+    }, [user]);
     
     const [isSaving, setIsSaving] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
