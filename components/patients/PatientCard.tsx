@@ -42,31 +42,31 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient, onSelectPatient, onS
     const getBorderColor = () => {
         switch (patient.status) {
             case 'estavel':
-                return 'border-emerald-400 dark:border-emerald-500';
+                return 'border-emerald-200 dark:border-emerald-500';
             case 'instavel':
-                return 'border-amber-400 dark:border-amber-500';
+                return 'border-amber-200 dark:border-amber-500';
             case 'em_risco':
-                return 'border-red-400 dark:border-red-500';
+                return 'border-red-200 dark:border-red-500';
             default:
-                return 'border-slate-300 dark:border-slate-700';
+                return 'border-slate-200 dark:border-slate-700';
         }
     };
 
     const getStatusColor = () => {
         switch (patient.status) {
             case 'estavel':
-                return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-600/20 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-500/40';
+                return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-600/20 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/40';
             case 'instavel':
-                return 'bg-amber-100 text-amber-700 dark:bg-amber-600/20 dark:text-amber-400 border border-amber-300 dark:border-amber-500/40';
+                return 'bg-amber-50 text-amber-700 dark:bg-amber-600/20 dark:text-amber-400 border border-amber-200 dark:border-amber-500/40';
             case 'em_risco':
-                return 'bg-red-100 text-red-700 dark:bg-red-600/20 dark:text-red-400 border border-red-300 dark:border-red-500/40';
+                return 'bg-red-50 text-red-700 dark:bg-red-600/20 dark:text-red-400 border border-red-200 dark:border-red-500/40';
             default:
-                return 'bg-slate-100 text-slate-700 dark:bg-zinc-700/50 dark:text-zinc-400 border border-slate-300 dark:border-zinc-600';
+                return 'bg-slate-50 text-slate-700 dark:bg-zinc-700/50 dark:text-zinc-400 border border-slate-200 dark:border-zinc-600';
         }
     };
 
     return (
-        <div className={`flex flex-col gap-3 sm:gap-4 p-3 sm:p-4 lg:p-5 rounded-xl border-2 bg-white dark:bg-slate-800 ${getBorderColor()} hover:shadow-lg transition-all hover:scale-[1.01]`}>
+        <div className={`flex flex-col gap-3 sm:gap-4 p-3 sm:p-4 lg:p-5 rounded-xl border-2 bg-slate-50 dark:bg-slate-800 ${getBorderColor()} hover:shadow-lg transition-all hover:scale-[1.01]`}>
             {/* Linha 1: Nome e DN | Status */}
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
                 <div className="flex flex-col gap-1 flex-1">
