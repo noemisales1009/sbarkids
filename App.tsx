@@ -82,8 +82,8 @@ const App: React.FC = () => {
                 setCurrentPage('login');
             } finally {
                 setLoadingAuth(false);
-                clearTimeout(timeoutId);
-            
+            }
+        };
 
         checkAuth();
 
