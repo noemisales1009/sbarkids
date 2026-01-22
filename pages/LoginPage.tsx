@@ -19,11 +19,19 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         setError('');
         setLoading(true);
         
+        // Timeout de 15 segundos
+        const timeoutId = setTimeout(() => {
+            setLoading(false);
+            setError('Tempo de conexão excedido. Verifique sua internet e tente novamente.');
+        }, 15000);
+        
         try {
             const { error: signInError } = await supabase.auth.signInWithPassword({
                 email: emailOrId,
                 password: password
             });
+
+            clearTimeout(timeoutId);
 
             if (signInError) {
                 setError(signInError.message);
@@ -34,6 +42,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 // Não desabilitar loading aqui - deixar que o App.tsx mude a página
             }
         } catch (err: any) {
+            clearTimeout(timeoutId);
             setError(err.message || 'Erro ao fazer login');
             setLoading(false);
         }
