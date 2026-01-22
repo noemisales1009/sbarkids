@@ -32,15 +32,6 @@ const App: React.FC = () => {
 
     // Verificar autenticação ao montar o componente
     useEffect(() => {
-        // Timeout de 10 segundos para o loading
-        const timeoutId = setTimeout(() => {
-            if (loadingAuth) {
-                console.warn('⚠️ Timeout de autenticação - indo para login');
-                setLoadingAuth(false);
-                setCurrentPage('login');
-            }
-        }, 10000);
-
         const checkAuth = async () => {
             try {
                 const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -49,7 +40,6 @@ const App: React.FC = () => {
                     await supabase.auth.signOut();
                     setCurrentPage('login');
                     setLoadingAuth(false);
-                    clearTimeout(timeoutId);
                     return;
                 }
                 
@@ -93,8 +83,7 @@ const App: React.FC = () => {
             } finally {
                 setLoadingAuth(false);
                 clearTimeout(timeoutId);
-            }
-        };
+            
 
         checkAuth();
 

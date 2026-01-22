@@ -16,7 +16,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     const [error, setError] = useState('');
 
     const handleLogin = async () => {
-        if (loading) return; // Evitar duplo clique
+        if (loading) return;
         if (!emailOrId || !password) {
             setError('Por favor, preencha email e senha');
             return;
@@ -25,29 +25,22 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         setError('');
         setLoading(true);
         
-        // Timeout de 15 segundos
-        const timeoutId = setTimeout(() => {
-            setLoading(false);
-            setError('Tempo de conexão excedido. Verifique sua internet e tente novamente.');
-        }, 15000);
-        
         try {
-            const { error: signInError } = await supabase.auth.signInWithPassword({
+            const { data, error: signInError } = await supabase.auth.signInWithPassword({
                 email: emailOrId,
                 password: password
             });
 
-            clearTimeout(timeoutId);
-
             if (signInError) {
                 setError(signInError.message);
                 setLoading(false);
-            } else {
+                return;
+            }
+
+            if (data.session) {
                 onLoginSuccess(emailOrId, password);
-                // Não desabilitar loading aqui - deixar que o App.tsx mude a página
             }
         } catch (err: any) {
-            clearTimeout(timeoutId);
             setError(err.message || 'Erro ao fazer login');
             setLoading(false);
         }
