@@ -9,6 +9,13 @@ const ProfileSection: React.FC = () => {
     const [fullName, setFullName] = useState<string>('');
     const [role, setRole] = useState<string>('');
 
+    // Debug - ver o que está acontecendo
+    React.useEffect(() => {
+        console.log('🔍 ProfileSection - user:', user);
+        console.log('🔍 ProfileSection - loading:', loading);
+        console.log('🔍 ProfileSection - error:', contextError);
+    }, [user, loading, contextError]);
+
     // Atualizar estados quando o user mudar
     React.useEffect(() => {
         if (user) {
