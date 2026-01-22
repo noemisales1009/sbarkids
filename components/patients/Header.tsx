@@ -18,9 +18,9 @@ const Header: React.FC = () => {
                         aria-label={`Foto de perfil de ${userName}`}
                     ></div>
                 </div>
-                <h1 className="text-base sm:text-lg lg:text-xl font-bold leading-tight tracking-[-0.015em] flex-1 text-center text-zinc-900 dark:text-white px-2">Meus Pacientes</h1>
+                <h1 className="text-base sm:text-lg lg:text-xl font-bold leading-tight tracking-[-0.015em] flex-1 text-center text-slate-900 dark:text-white px-2">Meus Pacientes</h1>
                 <div className="flex items-center justify-end">
-                    <button className="flex cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 sm:h-12 bg-transparent text-zinc-600 dark:text-zinc-300 gap-2 text-sm sm:text-base font-bold leading-normal tracking-[0.015em] min-w-0 p-0" aria-label="Notifications">
+                    <button className="flex cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 sm:h-12 bg-transparent text-slate-600 dark:text-slate-300 gap-2 text-sm sm:text-base font-bold leading-normal tracking-[0.015em] min-w-0 p-0" aria-label="Notifications">
                         <span className="material-symbols-outlined text-lg sm:text-2xl">notifications</span>
                     </button>
                 </div>

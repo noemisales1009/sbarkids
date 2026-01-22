@@ -11,13 +11,16 @@ export default {
   theme: {
     extend: {
       colors: {
-        "primary": "#13a4ec",
-        "background-light": "#f6f7f8",
-        "background-dark": "#101c22",
-        "urgent": "#D0021B",
-        "attention": "#F5A623",
-        "normal": "#2e7d32",
-        "info": "#4A90E2"
+        "primary": "#3b82f6",
+        "primary-dark": "#2563eb",
+        "background-light": "#f8fafc",
+        "background-dark": "#0f172a",
+        "card-light": "#ffffff",
+        "card-dark": "#1e293b",
+        "urgent": "#ef4444",
+        "attention": "#f59e0b",
+        "normal": "#10b981",
+        "info": "#3b82f6"
       },
       fontFamily: {
         "display": ["Inter", "sans-serif"]

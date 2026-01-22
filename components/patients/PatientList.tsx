@@ -45,7 +45,7 @@ const PatientList: React.FC<PatientListProps> = ({ onSelectPatient, onSelectHist
         return (
             <div className="flex flex-col items-center justify-center text-center py-8 sm:py-12 lg:py-16 px-4 sm:px-6">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
-                <p className="text-zinc-600 dark:text-zinc-400">Carregando pacientes...</p>
+                <p className="text-slate-600 dark:text-slate-400">Carregando pacientes...</p>
             </div>
         );
     }
@@ -61,10 +61,10 @@ const PatientList: React.FC<PatientListProps> = ({ onSelectPatient, onSelectHist
 
     if (filteredPatients.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center text-center py-8 sm:py-12 lg:py-16 px-4 sm:px-6 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-700 mt-4">
-                <span className="material-symbols-outlined text-5xl sm:text-6xl text-zinc-400 dark:text-zinc-500 mb-3 sm:mb-4">person_search</span>
-                <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold text-zinc-900 dark:text-white">Nenhum paciente encontrado</h3>
-                <p className="text-zinc-600 dark:text-zinc-400 text-sm sm:text-base mt-1 sm:mt-2 max-w-sm">
+            <div className="flex flex-col items-center justify-center text-center py-8 sm:py-12 lg:py-16 px-4 sm:px-6 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 mt-4">
+                <span className="material-symbols-outlined text-5xl sm:text-6xl text-slate-400 dark:text-slate-500 mb-3 sm:mb-4">person_search</span>
+                <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold text-slate-900 dark:text-white">Nenhum paciente encontrado</h3>
+                <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base mt-1 sm:mt-2 max-w-sm">
                     {searchTerm 
                         ? `Não encontramos resultados para "${searchTerm}".`
                         : "Sua lista de pacientes está vazia. Adicione um novo paciente para começar."}

@@ -42,38 +42,38 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient, onSelectPatient, onS
     const getBorderColor = () => {
         switch (patient.status) {
             case 'estavel':
-                return 'border-green-400';
+                return 'border-emerald-400 dark:border-emerald-500';
             case 'instavel':
-                return 'border-amber-400';
+                return 'border-amber-400 dark:border-amber-500';
             case 'em_risco':
-                return 'border-red-500';
+                return 'border-red-400 dark:border-red-500';
             default:
-                return 'border-zinc-700';
+                return 'border-slate-300 dark:border-slate-700';
         }
     };
 
     const getStatusColor = () => {
         switch (patient.status) {
             case 'estavel':
-                return 'bg-emerald-600/20 text-emerald-400 dark:bg-emerald-600/20 dark:text-emerald-400 border border-emerald-500/40 dark:border-emerald-500/40';
+                return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-600/20 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-500/40';
             case 'instavel':
-                return 'bg-amber-600/20 text-amber-400 dark:bg-amber-600/20 dark:text-amber-400 border border-amber-500/40 dark:border-amber-500/40';
+                return 'bg-amber-100 text-amber-700 dark:bg-amber-600/20 dark:text-amber-400 border border-amber-300 dark:border-amber-500/40';
             case 'em_risco':
-                return 'bg-red-600/20 text-red-400 dark:bg-red-600/20 dark:text-red-400 border border-red-500/40 dark:border-red-500/40';
+                return 'bg-red-100 text-red-700 dark:bg-red-600/20 dark:text-red-400 border border-red-300 dark:border-red-500/40';
             default:
-                return 'bg-zinc-700/50 text-zinc-400 dark:bg-zinc-700/50 dark:text-zinc-400';
+                return 'bg-slate-100 text-slate-700 dark:bg-zinc-700/50 dark:text-zinc-400 border border-slate-300 dark:border-zinc-600';
         }
     };
 
     return (
-        <div className={`flex flex-col gap-3 sm:gap-4 p-3 sm:p-4 lg:p-5 rounded-xl border-2 bg-gray-900/50 dark:bg-gray-950/80 ${getBorderColor()} hover:shadow-md transition-shadow`}>
+        <div className={`flex flex-col gap-3 sm:gap-4 p-3 sm:p-4 lg:p-5 rounded-xl border-2 bg-white dark:bg-slate-800 ${getBorderColor()} hover:shadow-lg transition-all hover:scale-[1.01]`}>
             {/* Linha 1: Nome e DN | Status */}
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
                 <div className="flex flex-col gap-1 flex-1">
-                    <p className="text-lg sm:text-xl lg:text-2xl font-bold wrap-break-word" style={{ color: '#14A4EC' }}>{patient.name}</p>
+                    <p className="text-lg sm:text-xl lg:text-2xl font-bold wrap-break-word text-blue-600 dark:text-blue-400">{patient.name}</p>
                     <div className="flex gap-3 flex-wrap text-sm sm:text-base font-medium">
-                        <p className="text-zinc-400">DN: {formatDate(patient.dob)}</p>
-                        <p className="text-zinc-400">Leito {patient.bed_number}</p>
+                        <p className="text-slate-600 dark:text-slate-400">DN: {formatDate(patient.dob)}</p>
+                        <p className="text-slate-600 dark:text-slate-400">Leito {patient.bed_number}</p>
                     </div>
                 </div>
                 
@@ -87,15 +87,14 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient, onSelectPatient, onS
             {/* Botões de Ação */}
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                 <button 
-                    className="flex-1 h-10 px-4 rounded-lg text-white text-sm font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
-                    style={{ backgroundColor: '#13A4EC' }}
+                    className="flex-1 h-10 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors flex items-center justify-center gap-2 shadow-sm"
                     onClick={() => onSelectPatient(patient)}
                 >
                     <span className="material-symbols-outlined text-base">add</span>
                     <span>Novo SBAR</span>
                 </button>
                 <button 
-                    className="flex-1 h-10 px-4 rounded-lg bg-slate-300 dark:bg-slate-600 text-slate-800 dark:text-slate-100 text-sm font-semibold hover:bg-slate-400 dark:hover:bg-slate-500 transition-colors flex items-center justify-center gap-2"
+                    className="flex-1 h-10 px-4 rounded-lg bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-500 text-slate-700 dark:text-slate-100 text-sm font-semibold transition-colors flex items-center justify-center gap-2 shadow-sm"
                     onClick={() => onSelectHistory(patient)}
                 >
                     <span className="material-symbols-outlined text-base">history</span>
