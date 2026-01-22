@@ -80,23 +80,6 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setLoading(false);
         }
     };
-                // Usuário encontrado, usar dados da tabela
-                setUser({
-                    id: data.id,
-                    name: data.name || '',
-                    email: data.email || authUser.email || '',
-                    role: data.role || '',
-                    foto: data.foto
-                });
-            }
-            
-            setLoading(false);
-        } catch (err: any) {
-            console.error('Erro ao carregar usuário:', err);
-            setError(err.message);
-            setLoading(false);
-        }
-    };
 
     useEffect(() => {
         refetchUser();
