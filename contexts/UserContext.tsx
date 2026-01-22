@@ -28,7 +28,16 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setLoading(true);
             setError(null);
             
-            const { data: { user: authUser } } = await supabase.auth.getUser();
+            const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+            
+            if (authError) {
+                console.error('Erro ao obter usuário autenticado:', authError);
+                // Limpar sessão corrompida
+                await supabase.auth.signOut();
+                setUser(null);
+                setLoading(false);
+                return;
+            }
             
             if (!authUser) {
                 setUser(null);

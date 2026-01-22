@@ -47,6 +47,8 @@ const App: React.FC = () => {
                 
                 if (sessionError) {
                     console.warn('⚠️ Erro ao obter sessão (pode ser falta de configuração Supabase):', sessionError);
+                    // Limpar sessão corrompida
+                    await supabase.auth.signOut();
                     setCurrentPage('login');
                     setLoadingAuth(false);
                     clearTimeout(timeoutId);
