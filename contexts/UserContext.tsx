@@ -67,16 +67,12 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 return;
             }
 
-            // Se não encontrou, usar dados do auth diretamente
-            setUser({
-                id: authUser.id,
-                name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Usuário',
-                email: authUser.email || '',
-                role: 'Médico(a)',
-                sector: null,
-                access_level: null,
-                foto: authUser.user_metadata?.avatar_url || null
-            });
+            // Se NÃO encontrou na tabela users, fazer logout (acesso não autorizado)
+            console.warn('⚠️ Usuário não cadastrado na tabela users. Fazendo logout...');
+            await supabase.auth.signOut();
+            setUser(null);
+            setError('Acesso não autorizado. Usuário não cadastrado.');
+            setLoading(false);
             
             setLoading(false);
         } catch (err: any) {
