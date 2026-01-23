@@ -15,6 +15,20 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
+    // Debug: verificar se variáveis de ambiente estão carregadas
+    React.useEffect(() => {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        
+        console.log('🔍 Debug Supabase Config:');
+        console.log('- URL configurada:', supabaseUrl ? '✅' : '❌');
+        console.log('- Key configurada:', supabaseKey ? '✅' : '❌');
+        
+        if (!supabaseUrl || !supabaseKey) {
+            setError('Erro de configuração: Variáveis de ambiente não carregadas. Recarregue a página (F5).');
+        }
+    }, []);
+
     const handleLogin = async () => {
         if (loading) return;
         if (!emailOrId || !password) {
@@ -32,7 +46,18 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             });
 
             if (signInError) {
-                setError(signInError.message);
+                // Traduzir mensagens de erro comuns
+                let errorMessage = signInError.message;
+                
+                if (errorMessage.includes('Invalid login credentials')) {
+                    errorMessage = 'Email ou senha incorretos';
+                } else if (errorMessage.includes('Invalid API key') || errorMessage.includes('API key')) {
+                    errorMessage = 'Erro de configuração do servidor. Contate o administrador.';
+                } else if (errorMessage.includes('Email not confirmed')) {
+                    errorMessage = 'Email não confirmado. Verifique sua caixa de entrada.';
+                }
+                
+                setError(errorMessage);
                 setLoading(false);
                 return;
             }
