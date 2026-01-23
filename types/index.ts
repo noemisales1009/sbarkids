@@ -87,9 +87,6 @@ export type CurrentPage =
     | 'sbar' 
     | 'history' 
     | 'settings' 
-    | 'home' 
-    | 'messages' 
     | 'reports' 
-    | 'team' 
     | 'reportDetail'
     | 'test';

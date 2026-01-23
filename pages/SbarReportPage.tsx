@@ -338,7 +338,8 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
         neurologico: '',
         deliriumPrevencao: '',
         metabolicoRenal: '',
-        exames: ''
+        exames: '',
+        pendencias: ''
     });
 
     const [recommendationAfternoon, setRecommendationAfternoon] = useState({
@@ -347,7 +348,8 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
         neurologico: '',
         deliriumPrevencao: '',
         metabolicoRenal: '',
-        exames: ''
+        exames: '',
+        pendencias: ''
     });
 
     const [recommendationNight, setRecommendationNight] = useState({
@@ -356,7 +358,8 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
         neurologico: '',
         deliriumPrevencao: '',
         metabolicoRenal: '',
-        exames: ''
+        exames: '',
+        pendencias: ''
     });
 
     // Helper to update simple sections (Shared/Collaborative Logic)

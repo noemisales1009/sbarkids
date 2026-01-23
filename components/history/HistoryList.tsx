@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import HistoryItem, { HistoryItemData } from './HistoryItem';
 import { historyService, HistoryRound } from '../../services/historyService';
 
@@ -11,15 +11,28 @@ interface HistoryListProps {
 const HistoryList: React.FC<HistoryListProps> = ({ onSelectReport, patientId }) => {
     const [rounds, setRounds] = useState<HistoryRound[]>([]);
     const [loading, setLoading] = useState(true);
+    const [lastFetch, setLastFetch] = useState<number>(0);
+    
+    // Cache de 1 minuto
+    const CACHE_TIME = 60000;
 
     useEffect(() => {
         const loadHistory = async () => {
+            const now = Date.now();
+            
+            // Se tem cache válido, não recarregar
+            if (rounds.length > 0 && (now - lastFetch) < CACHE_TIME) {
+                setLoading(false);
+                return;
+            }
+
             console.log('📚 Carregando histórico do paciente:', patientId);
             setLoading(true);
             try {
                 const historyData = await historyService.getPatientRoundsHistory(patientId);
                 console.log('📚 Histórico carregado:', historyData);
                 setRounds(historyData);
+                setLastFetch(now);
             } catch (error) {
                 console.error('❌ Erro ao carregar histórico:', error);
                 setRounds([]);
@@ -83,21 +96,25 @@ const HistoryList: React.FC<HistoryListProps> = ({ onSelectReport, patientId }) 
         };
     };
 
-    // Gerar lista de itens de histórico (um item por turno preenchido)
-    const historyItems: HistoryItemData[] = [];
-    
-    rounds.forEach(round => {
-        // Verificar quais turnos têm dados
-        if (round.assessment.morning || round.recommendation.morning) {
-            historyItems.push(convertToHistoryItem(round, 'morning'));
-        }
-        if (round.assessment.afternoon || round.recommendation.afternoon) {
-            historyItems.push(convertToHistoryItem(round, 'afternoon'));
-        }
-        if (round.assessment.night || round.recommendation.night) {
-            historyItems.push(convertToHistoryItem(round, 'night'));
-        }
-    });
+    // Gerar lista de itens de histórico (um item por turno preenchido) - MEMOIZADO
+    const historyItems: HistoryItemData[] = useMemo(() => {
+        const items: HistoryItemData[] = [];
+        
+        rounds.forEach(round => {
+            // Verificar quais turnos têm dados
+            if (round.assessment.morning || round.recommendation.morning) {
+                items.push(convertToHistoryItem(round, 'morning'));
+            }
+            if (round.assessment.afternoon || round.recommendation.afternoon) {
+                items.push(convertToHistoryItem(round, 'afternoon'));
+            }
+            if (round.assessment.night || round.recommendation.night) {
+                items.push(convertToHistoryItem(round, 'night'));
+            }
+        });
+        
+        return items;
+    }, [rounds]);
 
     if (loading) {
         return (

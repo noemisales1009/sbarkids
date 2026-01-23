@@ -28,27 +28,45 @@ interface GlobalReportItem {
 interface ReportsPageProps {
     onNavigate: (page: CurrentPage) => void;
     currentPage: CurrentPage;
+    onSelectReportContext?: (patient: Patient, report: any) => void;
 }
 
-const ReportsPage: React.FC<ReportsPageProps> = ({ onNavigate, currentPage }) => {
+const ReportsPage: React.FC<ReportsPageProps> = ({ onNavigate, currentPage, onSelectReportContext }) => {
     const [statusFilter, setStatusFilter] = useState<string>('');
     const [dateFilter, setDateFilter] = useState<string>(new Date().toISOString().split('T')[0]);
     const [selectedReports, setSelectedReports] = useState<Set<string>>(new Set());
     const [reports, setReports] = useState<GlobalReportItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const [lastFetch, setLastFetch] = useState<number>(0);
+    
+    // Cache de 2 minutos para relatórios
+    const CACHE_TIME = 120000;
 
     useEffect(() => {
-        loadReports();
+        const now = Date.now();
+        // Só carregar se não tem cache ou cache expirou
+        if (reports.length === 0 || (now - lastFetch) > CACHE_TIME) {
+            loadReports();
+        } else {
+            setLoading(false);
+        }
     }, []);
 
     const loadReports = async () => {
         try {
             setLoading(true);
-            // Buscar direto da VIEW patient_reports_view
+            setLastFetch(Date.now());
+            
+            // Buscar direto da VIEW patient_reports_view com limite e filtro de data
+            const threeDaysAgo = new Date();
+            threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+            
             const { data: viewData, error } = await supabase
                 .from('patient_reports_view')
                 .select('*')
-                .order('report_date', { ascending: false });
+                .gte('report_date', threeDaysAgo.toISOString().split('T')[0])
+                .order('report_date', { ascending: false })
+                .limit(100); // Limitar a 100 registros mais recentes
 
             if (error) throw error;
             if (!viewData || viewData.length === 0) {

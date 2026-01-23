@@ -29,6 +29,11 @@ export default defineConfig(({ mode }) => {
             }
           }
         }
+      },
+      // Configuração para SPA - importante para React Router funcionar corretamente
+      preview: {
+        port: 3000,
+        host: '0.0.0.0',
       }
     };
 });

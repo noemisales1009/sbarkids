@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import PatientsPage from './pages/PatientsPage';
 import SbarReportPage from './pages/SbarReportPage';
@@ -21,16 +22,51 @@ interface AuthUser {
     name: string;
 }
 
-const App: React.FC = () => {
-    const [currentPage, setCurrentPage] = useState<CurrentPage>('login');
+// Componente para gerenciar navegação
+const AppContent: React.FC = () => {
+    const navigate = useNavigate();
+    const location = useLocation();
     const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
     const [selectedReport, setSelectedReport] = useState<HistoryItemData | null>(null);
     const [authUser, setAuthUser] = useState<AuthUser | null>(null);
     const [loadingAuth, setLoadingAuth] = useState(true);
-    const [loadingTimeout, setLoadingTimeout] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
 
-    // Verificar autenticação ao montar o componente
+    // Restaurar estados do sessionStorage ao recarregar
+    useEffect(() => {
+        try {
+            const savedPatient = sessionStorage.getItem('selectedPatient');
+            const savedReport = sessionStorage.getItem('selectedReport');
+            
+            if (savedPatient) {
+                setSelectedPatient(JSON.parse(savedPatient));
+            }
+            if (savedReport) {
+                setSelectedReport(JSON.parse(savedReport));
+            }
+        } catch (error) {
+            console.error('Erro ao restaurar estado:', error);
+        }
+    }, []);
+
+    // Salvar estados no sessionStorage quando mudarem
+    useEffect(() => {
+        if (selectedPatient) {
+            sessionStorage.setItem('selectedPatient', JSON.stringify(selectedPatient));
+        } else {
+            sessionStorage.removeItem('selectedPatient');
+        }
+    }, [selectedPatient]);
+
+    useEffect(() => {
+        if (selectedReport) {
+            sessionStorage.setItem('selectedReport', JSON.stringify(selectedReport));
+        } else {
+            sessionStorage.removeItem('selectedReport');
+        }
+    }, [selectedReport]);
+
+    // Verificar autenticação ao montar o componente (OTIMIZADO - sem consulta duplicada)
     useEffect(() => {
         const checkAuth = async () => {
             try {
@@ -38,48 +74,23 @@ const App: React.FC = () => {
                 
                 if (sessionError) {
                     await supabase.auth.signOut();
-                    setCurrentPage('login');
+                    navigate('/login', { replace: true });
                     setLoadingAuth(false);
                     return;
                 }
                 
                 if (session?.user) {
-                    try {
-                        // Buscar dados do usuário na tabela users
-                        const { data: userData, error } = await supabase
-                            .from('users')
-                            .select('id, name, email')
-                            .eq('id', session.user.id)
-                            .single();
-
-                        if (userData) {
-                            setAuthUser({
-                                id: userData.id,
-                                email: userData.email || session.user.email || '',
-                                name: userData.name || 'Usuário'
-                            });
-                            setCurrentPage('patients');
-                        } else {
-                            setAuthUser({
-                                id: session.user.id,
-                                email: session.user.email || '',
-                                name: session.user.user_metadata?.name || 'Usuário'
-                            });
-                            setCurrentPage('patients');
-                        }
-                    } catch (err) {
-                        setAuthUser({
-                            id: session.user.id,
-                            email: session.user.email || '',
-                            name: 'Usuário'
-                        });
-                        setCurrentPage('patients');
-                    }
+                    // Usar dados básicos da sessão sem consulta extra (UserContext faz isso)
+                    setAuthUser({
+                        id: session.user.id,
+                        email: session.user.email || '',
+                        name: session.user.user_metadata?.name || 'Usuário'
+                    });
                 } else {
-                    setCurrentPage('login');
+                    navigate('/login', { replace: true });
                 }
             } catch (error) {
-                setCurrentPage('login');
+                navigate('/login', { replace: true });
             } finally {
                 setLoadingAuth(false);
             }
@@ -87,49 +98,27 @@ const App: React.FC = () => {
 
         checkAuth();
 
-        // Escutar mudanças de autenticação
+        // Escutar mudanças de autenticação (OTIMIZADO)
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
             if (session?.user) {
-                try {
-                    const { data: userData } = await supabase
-                        .from('users')
-                        .select('id, name, email')
-                        .eq('id', session.user.id)
-                        .single();
-
-                    if (userData) {
-                        setAuthUser({
-                            id: userData.id,
-                            email: userData.email || session.user.email || '',
-                            name: userData.name || 'Usuário'
-                        });
-                        setCurrentPage('patients');
-                    } else {
-                        setAuthUser({
-                            id: session.user.id,
-                            email: session.user.email || '',
-                            name: session.user.user_metadata?.name || 'Usuário'
-                        });
-                        setCurrentPage('patients');
-                    }
-                } catch (err) {
-                    setAuthUser({
-                        id: session.user.id,
-                        email: session.user.email || '',
-                        name: 'Usuário'
-                    });
-                    setCurrentPage('patients');
-                }
+                // Usar dados básicos da sessão (UserContext gerencia os detalhes)
+                setAuthUser({
+                    id: session.user.id,
+                    email: session.user.email || '',
+                    name: session.user.user_metadata?.name || 'Usuário'
+                });
             } else {
                 setAuthUser(null);
-                setCurrentPage('login');
+                if (location.pathname !== '/login') {
+                    navigate('/login', { replace: true });
+                }
             }
         });
 
         return () => {
             subscription?.unsubscribe();
         };
-    }, []);
+    }, [navigate]);
 
     const handleLogin = async (email: string, password: string) => {
         try {
@@ -144,27 +133,16 @@ const App: React.FC = () => {
             }
             
             if (data.user) {
-                // Buscar dados do usuário na tabela users
-                const { data: userData, error: userError } = await supabase
-                    .from('users')
-                    .select('id, name, email')
-                    .eq('id', data.user.id)
-                    .single();
-
-                if (userData) {
-                    setAuthUser({
-                        id: userData.id,
-                        email: userData.email || data.user.email || '',
-                        name: userData.name || 'Usuário'
-                    });
-                } else {
-                    setAuthUser({
-                        id: data.user.id,
-                        email: data.user.email || '',
-                        name: data.user.user_metadata?.name || 'Usuário'
-                    });
-                }
-                setCurrentPage('patients');
+                // Usar dados básicos da sessão (UserContext gerencia os detalhes completos)
+                setAuthUser({
+                    id: data.user.id,
+                    email: data.user.email || '',
+                    name: data.user.user_metadata?.name || 'Usuário'
+                });
+                
+                // Forçar recarga dos dados ao fazer login
+                setRefreshKey(prev => prev + 1);
+                navigate('/patients', { replace: true });
             }
         } catch (error) {
             alert('Erro ao fazer login: ' + (error as any).message);
@@ -175,7 +153,10 @@ const App: React.FC = () => {
         try {
             await supabase.auth.signOut();
             setAuthUser(null);
-            setCurrentPage('login');
+            setSelectedPatient(null);
+            setSelectedReport(null);
+            sessionStorage.clear();
+            navigate('/login', { replace: true });
         } catch (error) {
             // Silenciar erro de logout
         }
@@ -183,24 +164,26 @@ const App: React.FC = () => {
 
     const handleNavigate = (page: CurrentPage) => {
         if (page === 'login') {
-            setSelectedPatient(null);
-            setSelectedReport(null);
             handleLogout();
             return;
         }
         
-        // Limpar report quando não for reportDetail
-        if (page !== 'reportDetail') {
-            setSelectedReport(null);
-        }
+        // Mapear páginas para rotas
+        const routeMap: Record<CurrentPage, string> = {
+            login: '/login',
+            patients: '/patients',
+            sbar: '/sbar',
+            history: '/history',
+            settings: '/settings',
+            reports: '/reports',
+            reportDetail: '/report-detail',
+            test: '/test'
+        };
         
-        // Limpar paciente selecionado e refresh apenas quando mudar para patients de outra página
-        if (page === 'patients' && currentPage !== 'patients') {
-            setSelectedPatient(null);
-            setRefreshKey(prev => prev + 1);
+        const route = routeMap[page];
+        if (route) {
+            navigate(route);
         }
-        
-        setCurrentPage(page);
     };
 
     const handleSelectPatientForSbar = async (patient: Patient) => {
@@ -263,76 +246,137 @@ const App: React.FC = () => {
         handleNavigate('reportDetail');
     };
 
-    const renderPage = () => {
-        switch (currentPage) {
-            case 'login':
-                return <LoginPage onLoginSuccess={handleLogin} />;
-            case 'patients':
-                return <PatientsPage onSelectPatient={handleSelectPatientForSbar} onSelectHistory={handleSelectPatientForHistory} onNavigate={handleNavigate} currentPage={currentPage} refreshKey={refreshKey} />;
-            case 'sbar':
-                return selectedPatient ? <SbarReportPage patient={selectedPatient} onBack={() => {
-                    setSelectedPatient(null);
-                    handleNavigate('patients');
-                }} onNavigate={handleNavigate} currentPage={currentPage} /> : <PatientsPage onSelectPatient={handleSelectPatientForSbar} onSelectHistory={handleSelectPatientForHistory} onNavigate={handleNavigate} currentPage={currentPage} refreshKey={refreshKey} />;
-            case 'history':
-                return selectedPatient ? <HistoryPage patient={selectedPatient} onBack={() => {
-                    setSelectedPatient(null);
-                    handleNavigate('patients');
-                }} onNavigate={handleNavigate} currentPage={currentPage} onSelectReport={handleSelectReport} /> : null;
-            case 'settings':
-                return <SettingsPage onNavigate={handleNavigate} currentPage={currentPage} />;
-            case 'reports':
-                return <ReportsPage onNavigate={handleNavigate} currentPage={currentPage} onSelectReportContext={handleSelectReportContext} />;
-            case 'reportDetail':
-                if (!selectedPatient || !selectedReport) {
-                    // Se não tiver paciente ou report, voltar para patients
-                    handleNavigate('patients');
-                    return <PatientsPage onSelectPatient={handleSelectPatientForSbar} onSelectHistory={handleSelectPatientForHistory} onNavigate={handleNavigate} currentPage={currentPage} refreshKey={refreshKey} />;
-                }
-                return <ReportDetailPage 
-                    patient={selectedPatient} 
-                    report={selectedReport} 
-                    onBack={() => {
-                        setSelectedReport(null);
-                        handleNavigate('history');
-                    }} 
-                    onNavigate={handleNavigate} 
-                    currentPage={currentPage} 
-                />;
-            case 'test':
-                return <TestSupabasePage />;
-            default:
-                // Redirect unhandled pages to patients for this example
-                return <PatientsPage onSelectPatient={handleSelectPatientForSbar} onSelectHistory={handleSelectPatientForHistory} onNavigate={handleNavigate} currentPage={currentPage} refreshKey={refreshKey} />;
+    // Componente de proteção de rotas
+    const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+        if (loadingAuth) {
+            return (
+                <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: '#101C22' }}>
+                    <div className="text-center">
+                        <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-500 mb-6 mx-auto"></div>
+                        <p className="text-gray-300 text-lg font-medium">Verificando autenticação...</p>
+                        <p className="text-gray-500 text-sm mt-2">Aguarde um momento</p>
+                    </div>
+                </div>
+            );
         }
-    }
+        
+        if (!authUser) {
+            return <Navigate to="/login" replace />;
+        }
+        
+        return <>{children}</>;
+    };
 
+    return (
+        <div className="relative flex h-auto min-h-screen w-full flex-col bg-background-light dark:bg-background-dark group/design-root">
+            <Routes>
+                <Route path="/login" element={<LoginPage onLoginSuccess={handleLogin} />} />
+                
+                <Route path="/patients" element={
+                    <ProtectedRoute>
+                        <PatientsPage 
+                            onSelectPatient={handleSelectPatientForSbar} 
+                            onSelectHistory={handleSelectPatientForHistory} 
+                            onNavigate={handleNavigate} 
+                            currentPage="patients" 
+                            refreshKey={refreshKey} 
+                        />
+                    </ProtectedRoute>
+                } />
+                
+                <Route path="/sbar" element={
+                    <ProtectedRoute>
+                        {selectedPatient ? (
+                            <SbarReportPage 
+                                patient={selectedPatient} 
+                                onBack={() => {
+                                    setSelectedPatient(null);
+                                    navigate('/patients');
+                                }} 
+                                onNavigate={handleNavigate} 
+                                currentPage="sbar" 
+                            />
+                        ) : (
+                            <Navigate to="/patients" replace />
+                        )}
+                    </ProtectedRoute>
+                } />
+                
+                <Route path="/history" element={
+                    <ProtectedRoute>
+                        {selectedPatient ? (
+                            <HistoryPage 
+                                patient={selectedPatient} 
+                                onBack={() => {
+                                    setSelectedPatient(null);
+                                    navigate('/patients');
+                                }} 
+                                onNavigate={handleNavigate} 
+                                currentPage="history" 
+                                onSelectReport={handleSelectReport} 
+                            />
+                        ) : (
+                            <Navigate to="/patients" replace />
+                        )}
+                    </ProtectedRoute>
+                } />
+                
+                <Route path="/settings" element={
+                    <ProtectedRoute>
+                        <SettingsPage onNavigate={handleNavigate} currentPage="settings" />
+                    </ProtectedRoute>
+                } />
+                
+                <Route path="/reports" element={
+                    <ProtectedRoute>
+                        <ReportsPage 
+                            onNavigate={handleNavigate} 
+                            currentPage="reports" 
+                            onSelectReportContext={handleSelectReportContext} 
+                        />
+                    </ProtectedRoute>
+                } />
+                
+                <Route path="/report-detail" element={
+                    <ProtectedRoute>
+                        {selectedPatient && selectedReport ? (
+                            <ReportDetailPage 
+                                patient={selectedPatient} 
+                                report={selectedReport} 
+                                onBack={() => {
+                                    setSelectedReport(null);
+                                    navigate('/history');
+                                }} 
+                                onNavigate={handleNavigate} 
+                                currentPage="reportDetail" 
+                            />
+                        ) : (
+                            <Navigate to="/patients" replace />
+                        )}
+                    </ProtectedRoute>
+                } />
+                
+                <Route path="/test" element={
+                    <ProtectedRoute>
+                        <TestSupabasePage />
+                    </ProtectedRoute>
+                } />
+                
+                <Route path="*" element={<Navigate to="/patients" replace />} />
+            </Routes>
+        </div>
+    );
+};
+
+// Componente principal com BrowserRouter
+const App: React.FC = () => {
     return (
         <ThemeProvider>
             <ViewportProvider>
                 <UserProvider>
-                    <div className="relative flex h-auto min-h-screen w-full flex-col bg-background-light dark:bg-background-dark group/design-root">
-                        {loadingAuth ? (
-                            <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: '#101C22' }}>
-                                <div className="text-center">
-                                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4 mx-auto"></div>
-                                    <p className="text-gray-400 dark:text-gray-400">Carregando aplicativo...</p>
-                                    {loadingTimeout && (
-                                        <p className="text-yellow-400 text-sm mt-2">Se continuar nesta tela, verifique:</p>
-                                    )}
-                                    {loadingTimeout && (
-                                        <ul className="text-gray-400 text-xs mt-2 space-y-1">
-                                            <li>✓ Variáveis de ambiente na Vercel</li>
-                                            <li>✓ Console (F12) para mais informações</li>
-                                            <li>✓ Conexão com internet</li>
-                                        </ul>
-                                    )}
-                                </div>
-                            </div>
-                        ) : (
-                            renderPage()
-                        )}
-                    </div>
+                    <BrowserRouter>
+                        <AppContent />
+                    </BrowserRouter>
                 </UserProvider>
             </ViewportProvider>
         </ThemeProvider>

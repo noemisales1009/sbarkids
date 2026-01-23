@@ -24,8 +24,20 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [user, setUser] = useState<UserData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [lastFetch, setLastFetch] = useState<number>(0);
+    
+    // Cache de 5 minutos
+    const CACHE_TIME = 300000;
 
     const refetchUser = async () => {
+        const now = Date.now();
+        
+        // Se tem cache válido, não recarregar
+        if (user && (now - lastFetch) < CACHE_TIME) {
+            setLoading(false);
+            return;
+        }
+
         try {
             setLoading(true);
             setError(null);
@@ -63,6 +75,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     access_level: data.access_level,
                     foto: data.foto
                 });
+                setLastFetch(Date.now());
                 setLoading(false);
                 return;
             }

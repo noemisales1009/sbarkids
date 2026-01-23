@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import PatientCard from './PatientCard';
 import { Patient } from '../../types';
 import { patientsService } from '../../services/patientsService';
@@ -13,33 +13,50 @@ const PatientList: React.FC<PatientListProps> = ({ onSelectPatient, onSelectHist
     const [patients, setPatients] = useState<Patient[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [lastFetch, setLastFetch] = useState<number>(0);
+
+    // Cache por 30 segundos
+    const CACHE_TIME = 30000;
+
+    const loadPatients = useCallback(async (forceRefresh = false) => {
+        const now = Date.now();
+        
+        // Se tem cache válido e não é refresh forçado, não recarregar
+        if (!forceRefresh && patients.length > 0 && (now - lastFetch) < CACHE_TIME) {
+            return;
+        }
+
+        try {
+            setLoading(true);
+            const patientsList = await patientsService.listPatients();
+            setPatients(patientsList);
+            setLastFetch(now);
+            setError(null);
+        } catch (err) {
+            console.error('Erro ao carregar pacientes:', err);
+            setError('Erro ao carregar pacientes. Tente novamente.');
+            setPatients([]);
+        } finally {
+            setLoading(false);
+        }
+    }, [patients.length, lastFetch]);
 
     useEffect(() => {
-        const loadPatients = async () => {
-            try {
-                setLoading(true);
-                const patientsList = await patientsService.listPatients();
-                setPatients(patientsList);
-                setError(null);
-            } catch (err) {
-                console.error('Erro ao carregar pacientes:', err);
-                setError('Erro ao carregar pacientes. Tente novamente.');
-                setPatients([]);
-            } finally {
-                setLoading(false);
-            }
-        };
-
         loadPatients();
     }, []);
 
-    const filteredPatients = patients.filter(patient => {
+    // Memoizar filtro para não recalcular sempre
+    const filteredPatients = useMemo(() => {
+        if (!searchTerm) return patients;
+        
         const term = searchTerm.toLowerCase();
-        return (
-            patient.name.toLowerCase().includes(term) || 
-            patient.bed_number.toString().includes(term)
-        );
-    });
+        return patients.filter(patient => {
+            return (
+                patient.name.toLowerCase().includes(term) || 
+                patient.bed_number.toString().includes(term)
+            );
+        });
+    }, [patients, searchTerm]);
 
     if (loading) {
         return (
@@ -69,6 +86,14 @@ const PatientList: React.FC<PatientListProps> = ({ onSelectPatient, onSelectHist
                         ? `Não encontramos resultados para "${searchTerm}".`
                         : "Sua lista de pacientes está vazia. Adicione um novo paciente para começar."}
                 </p>
+                {!loading && patients.length === 0 && (
+                    <button 
+                        onClick={() => loadPatients(true)}
+                        className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                    >
+                        Recarregar
+                    </button>
+                )}
             </div>
         );
     }
