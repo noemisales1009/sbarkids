@@ -154,6 +154,7 @@ export const backgroundService = {
   // ========== DISPOSITIVOS ==========
   async getDispositivos(patientId: string): Promise<Dispositivo[]> {
     try {
+      console.log('Buscando dispositivos para paciente:', patientId);
       const { data, error } = await supabase
         .from('dispositivos_pacientes')
         .select('*')
@@ -161,7 +162,11 @@ export const backgroundService = {
         .eq('is_archived', false)
         .order('data_insercao', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao buscar dispositivos:', error);
+        throw error;
+      }
+      console.log('Dispositivos encontrados:', data);
       return (data as Dispositivo[]) || [];
     } catch (error) {
       logError(error, 'backgroundService.getDispositivos');
@@ -171,15 +176,26 @@ export const backgroundService = {
 
   async saveDispositivo(dispositivo: Omit<Dispositivo, 'id' | 'created_at'>): Promise<Dispositivo | null> {
     try {
+      console.log('Salvando dispositivo:', dispositivo);
       const { data, error } = await supabase
         .from('dispositivos_pacientes')
         .insert(dispositivo)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro detalhado ao salvar dispositivo:', {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint
+        });
+        throw error;
+      }
+      console.log('Dispositivo salvo com sucesso:', data);
       return data as Dispositivo;
     } catch (error) {
+      console.error('Exceção ao salvar dispositivo:', error);
       logError(error, 'backgroundService.saveDispositivo');
       return null;
     }

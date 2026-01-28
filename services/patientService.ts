@@ -107,5 +107,51 @@ export const patientService = {
       logError(error, 'patientService.getSuportesVentilatorios');
       return [];
     }
+  },
+
+  /**
+   * Buscar comorbidades do paciente
+   */
+  async getComorbidades(patientId: string): Promise<string> {
+    try {
+      const { data: patient, error } = await supabase
+        .from('patients')
+        .select('comorbidade')
+        .eq('id', patientId)
+        .single();
+
+      if (error) {
+        logError(error, 'patientService.getComorbidades');
+        return '';
+      }
+
+      return patient?.comorbidade || '';
+    } catch (error) {
+      logError(error, 'patientService.getComorbidades');
+      return '';
+    }
+  },
+
+  /**
+   * Atualizar comorbidades do paciente
+   */
+  async updateComorbidades(patientId: string, comorbidades: string[]): Promise<boolean> {
+    try {
+      const comorbidadeStr = JSON.stringify(comorbidades);
+      const { error } = await supabase
+        .from('patients')
+        .update({ comorbidade: comorbidadeStr })
+        .eq('id', patientId);
+
+      if (error) {
+        logError(error, 'patientService.updateComorbidades');
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      logError(error, 'patientService.updateComorbidades');
+      return false;
+    }
   }
 };

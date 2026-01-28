@@ -8,6 +8,7 @@ import SbarStatusSection from '../components/sbar/SbarStatusSection';
 import SbarReadonlySection from '../components/sbar/SbarReadonlySection';
 import DiagnosticsEditor from '../components/sbar/DiagnosticsEditor';
 import SuportesVentilatoriosSection from '../components/sbar/SuportesVentilatoriosSection';
+import ComorbidadesSection from '../components/sbar/ComorbidadesSection';
 import BackgroundEditor from '../components/sbar/BackgroundEditor';
 import AlertasDisplay from '../components/sbar/AlertasDisplay';
 import BottomNavBar from '../components/patients/BottomNavBar';
@@ -734,6 +735,9 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
 
                     {/* Suportes Ventilatórios */}
                     <SuportesVentilatoriosSection patientId={patient.id} />
+
+                    {/* Comorbidades */}
+                    <ComorbidadesSection patientId={patient.id} />
 
                     {/* Editor de Diagnósticos */}
                     <div className="bg-gray-900 p-4 rounded-lg border border-gray-800">

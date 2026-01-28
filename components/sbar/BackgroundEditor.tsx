@@ -13,10 +13,109 @@ import {
   Exame,
   Dieta
 } from '../../services/backgroundService';
+import { MEDICATION_LIST, MEDICATION_DOSAGE_UNITS, DEVICE_TYPES, DEVICE_LOCATIONS, CULTURE_COLLECTION_SITES } from '../../utils/constants';
+import { PATHOGENS_LIST } from '../../utils/pathogens';
 
 interface BackgroundEditorProps {
   patientId: string;
 }
+
+// Função para calcular dias de uso considerando fuso de São Paulo
+const calculateDaysOfUsage = (dataInicio: string | null | undefined): number => {
+  try {
+    if (!dataInicio) return 0;
+    
+    // Parsear a data de início - tenta múltiplos formatos
+    let startDate = new Date(dataInicio);
+    
+    // Se não conseguir parsear, tenta outro formato
+    if (isNaN(startDate.getTime())) {
+      // Tenta formato DD/MM/YYYY
+      const parts = dataInicio.split('/');
+      if (parts.length === 3) {
+        startDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+      } else {
+        return 0;
+      }
+    }
+    
+    // Se ainda for inválida, retorna 0
+    if (isNaN(startDate.getTime())) {
+      return 0;
+    }
+    
+    // Obter data atual
+    const now = new Date();
+    
+    // Calcular diferença em milissegundos
+    const timeDifference = now.getTime() - startDate.getTime();
+    
+    // Converter para dias (1 dia = 24 * 60 * 60 * 1000 ms)
+    const daysDifference = Math.floor(timeDifference / (24 * 60 * 60 * 1000));
+    
+    return Math.max(daysDifference, 0);
+  } catch (error) {
+    console.error('Erro ao calcular dias:', error);
+    return 0;
+  }
+};
+
+// ============================================================================
+// TAB COMPONENTS
+// ============================================================================
+interface TabButtonProps {
+  label: string;
+  isActive: boolean;
+  onClick: () => void;
+}
+
+const TabButton: React.FC<TabButtonProps> = ({ label, isActive, onClick }) => (
+  <button
+    onClick={onClick}
+    className={`px-4 py-2 text-sm font-medium whitespace-nowrap transition ${
+      isActive
+        ? 'text-blue-400 border-b-2 border-blue-400'
+        : 'text-gray-400 hover:text-gray-300 border-b-2 border-transparent'
+    }`}
+  >
+    {label}
+  </button>
+);
+
+interface TabContentProps {
+  title: string;
+  addButtonLabel: string;
+  onAddClick: () => void;
+  isEmpty: boolean;
+  emptyMessage: string;
+  children: React.ReactNode;
+}
+
+const TabContent: React.FC<TabContentProps> = ({
+  title,
+  addButtonLabel,
+  onAddClick,
+  isEmpty,
+  emptyMessage,
+  children
+}) => (
+  <div className="space-y-3">
+    <div className="flex justify-between items-center">
+      <h4 className="text-sm font-bold text-gray-900 dark:text-white">{title}</h4>
+      <button
+        onClick={onAddClick}
+        className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+      >
+        {addButtonLabel}
+      </button>
+    </div>
+    {isEmpty ? (
+      <p className="text-xs text-gray-500 dark:text-gray-400 italic">{emptyMessage}</p>
+    ) : (
+      children
+    )}
+  </div>
+);
 
 const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
   const [medicacoes, setMedicacoes] = useState<Medicacao[]>([]);
@@ -26,9 +125,12 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
   const [exames, setExames] = useState<Exame[]>([]);
   const [dietas, setDietas] = useState<Dieta[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'medicacoes' | 'dispositivos' | 'culturas' | 'procedimentos' | 'exames' | 'dietas'>('medicacoes');
 
   // Modal states
   const [medicacaoModal, setMedicacaoModal] = useState<{ open: boolean; data?: Medicacao }>({ open: false });
+  const [fimMedicacaoModal, setFimMedicacaoModal] = useState<{ open: boolean; medicacao?: Medicacao }>({ open: false });
+  const [fimDispositivoModal, setFimDispositivoModal] = useState<{ open: boolean; dispositivo?: Dispositivo }>({ open: false });
   const [dispositivoModal, setDispositivoModal] = useState<{ open: boolean; data?: Dispositivo }>({ open: false });
   const [culturaModal, setCulturaModal] = useState<{ open: boolean; data?: Cultura }>({ open: false });
   const [procedimentoModal, setProcedimentoModal] = useState<{ open: boolean; data?: Procedimento }>({ open: false });
@@ -74,257 +176,313 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* MEDICAÇÕES */}
-      <div className="space-y-3">
-        <div className="flex justify-between items-center">
-          <h4 className="text-sm font-bold text-gray-900 dark:text-white">💊 Medicações</h4>
-          <button
-            onClick={() => setMedicacaoModal({ open: true })}
-            className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition"
-          >
-            + Adicionar
-          </button>
-        </div>
-        {medicacoes.length > 0 ? (
-          <div className="space-y-2">
-            {medicacoes.map((med) => (
-              <div key={med.id} className="p-3 bg-blue-900/20 border border-blue-800 rounded-lg flex justify-between items-start">
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-white">{med.nome_medicacao}</p>
-                  <p className="text-xs text-gray-300 mt-1">
-                    {med.dosagem_valor} {med.unidade_medida}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-1">
-                    Desde: {new Date(med.data_inicio).toLocaleDateString('pt-BR')}
-                    {med.data_fim && ` até ${new Date(med.data_fim).toLocaleDateString('pt-BR')}`}
-                  </p>
-                  {med.observacao && (
-                    <p className="text-xs text-gray-300 mt-2 italic">{med.observacao}</p>
-                  )}
-                </div>
-                <button
-                  onClick={() => setMedicacaoModal({ open: true, data: med })}
-                  className="ml-2 p-1 text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-800 rounded transition"
-                  title="Editar"
-                >
-                  ✏️
-                </button>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-xs text-gray-500 dark:text-gray-400 italic">Nenhuma medicação registrada</p>
-        )}
+    <div className="space-y-4">
+      {/* TAB NAVIGATION */}
+      <div className="border-b border-gray-700 flex overflow-x-auto gap-1">
+        <TabButton
+          label="💊 Medicações"
+          isActive={activeTab === 'medicacoes'}
+          onClick={() => setActiveTab('medicacoes')}
+        />
+        <TabButton
+          label="🔧 Dispositivos"
+          isActive={activeTab === 'dispositivos'}
+          onClick={() => setActiveTab('dispositivos')}
+        />
+        <TabButton
+          label="🧬 Culturas"
+          isActive={activeTab === 'culturas'}
+          onClick={() => setActiveTab('culturas')}
+        />
+        <TabButton
+          label="⚕️ Procedimentos"
+          isActive={activeTab === 'procedimentos'}
+          onClick={() => setActiveTab('procedimentos')}
+        />
+        <TabButton
+          label="🔬 Exames"
+          isActive={activeTab === 'exames'}
+          onClick={() => setActiveTab('exames')}
+        />
+        <TabButton
+          label="🍽️ Dietas"
+          isActive={activeTab === 'dietas'}
+          onClick={() => setActiveTab('dietas')}
+        />
       </div>
 
-      {/* DISPOSITIVOS */}
-      <div className="space-y-3">
-        <div className="flex justify-between items-center">
-          <h4 className="text-sm font-bold text-gray-900 dark:text-white">🔧 Dispositivos</h4>
-          <button
-            onClick={() => setDispositivoModal({ open: true })}
-            className="px-3 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600 transition"
+      {/* TAB CONTENT */}
+      <div>
+        {/* MEDICAÇÕES */}
+        {activeTab === 'medicacoes' && (
+          <TabContent
+            title="Medicações"
+            addButtonLabel="+ Adicionar"
+            onAddClick={() => setMedicacaoModal({ open: true })}
+            isEmpty={medicacoes.length === 0}
+            emptyMessage="Nenhuma medicação registrada"
           >
-            + Adicionar
-          </button>
-        </div>
-        {dispositivos.length > 0 ? (
-          <div className="space-y-2">
-            {dispositivos.map((dev) => (
-              <div key={dev.id} className="p-3 bg-green-900/20 border border-green-800 rounded-lg flex justify-between items-start">
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-white">{dev.tipo_dispositivo}</p>
-                  <p className="text-xs text-gray-300 mt-1">Localização: {dev.localizacao}</p>
-                  <p className="text-xs text-gray-400 mt-1">
-                    Inserido em: {new Date(dev.data_insercao).toLocaleDateString('pt-BR')}
-                    {dev.data_remocao && ` (Removido em ${new Date(dev.data_remocao).toLocaleDateString('pt-BR')})`}
-                  </p>
-                  {dev.observacao && (
-                    <p className="text-xs text-gray-300 mt-2 italic">{dev.observacao}</p>
-                  )}
-                </div>
-                <button
-                  onClick={() => setDispositivoModal({ open: true, data: dev })}
-                  className="ml-2 p-1 text-green-500 hover:bg-green-100 dark:hover:bg-green-800 rounded transition"
-                  title="Editar"
-                >
-                  ✏️
-                </button>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-xs text-gray-500 dark:text-gray-400 italic">Nenhum dispositivo registrado</p>
-        )}
-      </div>
-
-      {/* CULTURAS */}
-      <div className="space-y-3">
-        <div className="flex justify-between items-center">
-          <h4 className="text-sm font-bold text-gray-900 dark:text-white">🧪 Culturas</h4>
-          <button
-            onClick={() => setCulturaModal({ open: true })}
-            className="px-3 py-1 text-xs bg-purple-500 text-white rounded hover:bg-purple-600 transition"
-          >
-            + Adicionar
-          </button>
-        </div>
-        {culturas.length > 0 ? (
-          <div className="space-y-2">
-            {culturas.map((cult) => (
-              <div key={cult.id} className="p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg flex justify-between items-start">
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{cult.microorganismo}</p>
-                  <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">Local: {cult.local}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Coletado em: {new Date(cult.data_coleta).toLocaleDateString('pt-BR')}
-                  </p>
-                  {cult.observacao && (
-                    <p className="text-xs text-gray-600 dark:text-gray-300 mt-2 italic">{cult.observacao}</p>
-                  )}
-                </div>
-                <button
-                  onClick={() => setCulturaModal({ open: true, data: cult })}
-                  className="ml-2 p-1 text-purple-500 hover:bg-purple-100 dark:hover:bg-purple-800 rounded transition"
-                  title="Editar"
-                >
-                  ✏️
-                </button>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-xs text-gray-500 dark:text-gray-400 italic">Nenhuma cultura registrada</p>
-        )}
-      </div>
-
-      {/* PROCEDIMENTOS */}
-      <div className="space-y-3">
-        <div className="flex justify-between items-center">
-          <h4 className="text-sm font-bold text-gray-900 dark:text-white">⚕️ Procedimentos</h4>
-          <button
-            onClick={() => setProcedimentoModal({ open: true })}
-            className="px-3 py-1 text-xs bg-orange-500 text-white rounded hover:bg-orange-600 transition"
-          >
-            + Adicionar
-          </button>
-        </div>
-        {procedimentos.length > 0 ? (
-          <div className="space-y-2">
-            {procedimentos.map((proc) => (
-              <div key={proc.id} className="p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg flex justify-between items-start">
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{proc.nome_procedimento}</p>
-                  {proc.nome_cirurgiao && (
-                    <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">Cirurgião: {proc.nome_cirurgiao}</p>
-                  )}
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Data: {new Date(proc.data_procedimento).toLocaleDateString('pt-BR')}
-                  </p>
-                  {proc.notas && (
-                    <p className="text-xs text-gray-600 dark:text-gray-300 mt-2 italic">{proc.notas}</p>
-                  )}
-                </div>
-                <button
-                  onClick={() => setProcedimentoModal({ open: true, data: proc })}
-                  className="ml-2 p-1 text-orange-500 hover:bg-orange-100 dark:hover:bg-orange-800 rounded transition"
-                  title="Editar"
-                >
-                  ✏️
-                </button>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-xs text-gray-500 dark:text-gray-400 italic">Nenhum procedimento registrado</p>
-        )}
-      </div>
-
-      {/* EXAMES */}
-      <div className="space-y-3">
-        <div className="flex justify-between items-center">
-          <h4 className="text-sm font-bold text-gray-900 dark:text-white">🩺 Exames</h4>
-          <button
-            onClick={() => setExameModal({ open: true })}
-            className="px-3 py-1 text-xs bg-teal-500 text-white rounded hover:bg-teal-600 transition"
-          >
-            + Adicionar
-          </button>
-        </div>
-        {exames.length > 0 ? (
-          <div className="space-y-2">
-            {exames.map((exame) => (
-              <div key={exame.id} className="p-3 bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-lg flex justify-between items-start">
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{exame.nome_exame}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Data: {new Date(exame.data_exame).toLocaleDateString('pt-BR')}
-                  </p>
-                  {exame.observacao && (
-                    <p className="text-xs text-gray-600 dark:text-gray-300 mt-2 italic">{exame.observacao}</p>
-                  )}
-                </div>
-                <button
-                  onClick={() => setExameModal({ open: true, data: exame })}
-                  className="ml-2 p-1 text-teal-500 hover:bg-teal-100 dark:hover:bg-teal-800 rounded transition"
-                  title="Editar"
-                >
-                  ✏️
-                </button>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-xs text-gray-500 dark:text-gray-400 italic">Nenhum exame registrado</p>
-        )}
-      </div>
-
-      {/* DIETAS */}
-      <div className="space-y-3">
-        <div className="flex justify-between items-center">
-          <h4 className="text-sm font-bold text-gray-900 dark:text-white">🍽️ Dietas</h4>
-          <button
-            onClick={() => setDietaModal({ open: true })}
-            className="px-3 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600 transition"
-          >
-            + Adicionar
-          </button>
-        </div>
-        {dietas.length > 0 ? (
-          <div className="space-y-2">
-            {dietas.map((dieta) => (
-              <div key={dieta.id} className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg flex justify-between items-start">
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{dieta.tipo}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Desde: {new Date(dieta.data_inicio).toLocaleDateString('pt-BR')}
-                    {dieta.data_remocao && ` até ${new Date(dieta.data_remocao).toLocaleDateString('pt-BR')}`}
-                  </p>
-                  <div className="grid grid-cols-2 gap-2 mt-2 text-xs">
-                    {dieta.volume && <p className="text-gray-600 dark:text-gray-300">Volume: {dieta.volume} ml</p>}
-                    {dieta.vet && <p className="text-gray-600 dark:text-gray-300">VET: {dieta.vet} kcal</p>}
-                    {dieta.pt && <p className="text-gray-600 dark:text-gray-300">PT: {dieta.pt} g</p>}
-                    {dieta.th && <p className="text-gray-600 dark:text-gray-300">TH: {dieta.th} g</p>}
-                    {dieta.vet_at && <p className="text-gray-600 dark:text-gray-300">VET Atual: {dieta.vet_at.toFixed(1)}%</p>}
-                    {dieta.pt_at && <p className="text-gray-600 dark:text-gray-300">PT Atual: {dieta.pt_at.toFixed(1)}%</p>}
+            <div className="space-y-2">
+              {medicacoes.map((med) => {
+                const temFim = med.data_fim && new Date(med.data_fim).getTime() > 0;
+                return (
+                  <div 
+                    key={med.id} 
+                    className={`p-3 border rounded-lg flex justify-between items-start ${
+                      temFim 
+                        ? 'bg-yellow-900/20 border-yellow-700' 
+                        : 'bg-blue-900/20 border-blue-800'
+                    }`}
+                  >
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-white">{med.nome_medicacao}</p>
+                      <p className="text-xs text-gray-300 mt-1">
+                        {med.dosagem_valor} {med.unidade_medida}
+                      </p>
+                      {temFim ? (
+                        <p className="text-xs text-yellow-400 mt-1 font-semibold">
+                          Fim: {new Date(med.data_fim).toLocaleDateString('pt-BR')}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-gray-400 mt-1">
+                          {calculateDaysOfUsage(med.data_inicio)} dia{calculateDaysOfUsage(med.data_inicio) !== 1 ? 's' : ''} de uso
+                        </p>
+                      )}
+                      {med.observacao && (
+                        <p className="text-xs text-gray-300 mt-2 italic">{med.observacao}</p>
+                      )}
+                    </div>
+                    <div className="flex gap-2 ml-2">
+                      <button
+                        onClick={() => setMedicacaoModal({ open: true, data: med })}
+                        className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+                      >
+                        Editar
+                      </button>
+                      {!temFim && (
+                        <button
+                          onClick={() => setFimMedicacaoModal({ open: true, medicacao: med })}
+                          className="px-3 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600 transition"
+                        >
+                          Fim
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  {dieta.observacao && (
-                    <p className="text-xs text-gray-600 dark:text-gray-300 mt-2 italic">{dieta.observacao}</p>
-                  )}
+                );
+              })}
+            </div>
+          </TabContent>
+        )}
+
+        {/* DISPOSITIVOS */}
+        {activeTab === 'dispositivos' && (
+          <TabContent
+            title="Dispositivos"
+            addButtonLabel="+ Adicionar"
+            onAddClick={() => setDispositivoModal({ open: true })}
+            isEmpty={dispositivos.length === 0}
+            emptyMessage="Nenhum dispositivo registrado"
+          >
+            <div className="space-y-2">
+              {dispositivos.map((dev) => (
+                <div key={dev.id} className="p-3 bg-green-900/20 border border-green-800 rounded-lg flex justify-between items-start">
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-white">{dev.tipo_dispositivo}</p>
+                    <p className="text-xs text-gray-300 mt-1">Localização: {dev.localizacao}</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Inserido em: {
+                        typeof dev.data_insercao === 'string' 
+                          ? new Date(dev.data_insercao + 'T00:00:00').toLocaleDateString('pt-BR')
+                          : new Date(dev.data_insercao).toLocaleDateString('pt-BR')
+                      }
+                    </p>
+                    <p className="text-xs text-green-400 mt-1 font-semibold">
+                      {calculateDaysOfUsage(dev.data_insercao)} dia{calculateDaysOfUsage(dev.data_insercao) !== 1 ? 's' : ''} com dispositivo
+                    </p>
+                    {dev.data_remocao && (
+                      <p className="text-xs text-yellow-400 mt-1 font-semibold">
+                        Fim: {
+                          typeof dev.data_remocao === 'string'
+                            ? new Date(dev.data_remocao).toLocaleDateString('pt-BR')
+                            : new Date(dev.data_remocao).toLocaleDateString('pt-BR')
+                        }
+                      </p>
+                    )}
+                    {dev.observacao && (
+                      <p className="text-xs text-gray-300 mt-2 italic">{dev.observacao}</p>
+                    )}
+                  </div>
+                  <div className="flex gap-2 ml-2">
+                    <button
+                      onClick={() => setDispositivoModal({ open: true, data: dev })}
+                      className="px-3 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600 transition"
+                    >
+                      Editar
+                    </button>
+                    {!dev.data_remocao && (
+                      <button
+                        onClick={() => setFimDispositivoModal({ open: true, dispositivo: dev })}
+                        className="px-3 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600 transition"
+                      >
+                        Fim
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <button
-                  onClick={() => setDietaModal({ open: true, data: dieta })}
-                  className="ml-2 p-1 text-yellow-600 hover:bg-yellow-100 dark:hover:bg-yellow-800 rounded transition"
-                  title="Editar"
-                >
-                  ✏️
-                </button>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-xs text-gray-500 dark:text-gray-400 italic">Nenhuma dieta registrada</p>
+              ))}
+            </div>
+          </TabContent>
+        )}
+
+        {/* CULTURAS */}
+        {activeTab === 'culturas' && (
+          <TabContent
+            title="Culturas"
+            addButtonLabel="+ Adicionar"
+            onAddClick={() => setCulturaModal({ open: true })}
+            isEmpty={culturas.length === 0}
+            emptyMessage="Nenhuma cultura registrada"
+          >
+            <div className="space-y-2">
+              {culturas.map((cult) => (
+                <div key={cult.id} className="p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg flex justify-between items-start">
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">{cult.microorganismo}</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">Local: {cult.local}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Coletado em: {new Date(cult.data_coleta).toLocaleDateString('pt-BR')}
+                    </p>
+                    {cult.observacao && (
+                      <p className="text-xs text-gray-600 dark:text-gray-300 mt-2 italic">{cult.observacao}</p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setCulturaModal({ open: true, data: cult })}
+                    className="ml-2 px-3 py-1 text-xs bg-purple-500 text-white rounded hover:bg-purple-600 transition"
+                  >
+                    Editar
+                  </button>
+                </div>
+              ))}
+            </div>
+          </TabContent>
+        )}
+
+        {/* PROCEDIMENTOS */}
+        {activeTab === 'procedimentos' && (
+          <TabContent
+            title="Procedimentos"
+            addButtonLabel="+ Adicionar"
+            onAddClick={() => setProcedimentoModal({ open: true })}
+            isEmpty={procedimentos.length === 0}
+            emptyMessage="Nenhum procedimento registrado"
+          >
+            <div className="space-y-2">
+              {procedimentos.map((proc) => (
+                <div key={proc.id} className="p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg flex justify-between items-start">
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">{proc.nome_procedimento}</p>
+                    {proc.nome_cirurgiao && (
+                      <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">Cirurgião: {proc.nome_cirurgiao}</p>
+                    )}
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Data: {new Date(proc.data_procedimento).toLocaleDateString('pt-BR')}
+                    </p>
+                    <p className="text-xs text-blue-400 mt-1 font-semibold">
+                      Dia Pós-Operatório: +{calculateDaysOfUsage(proc.data_procedimento)} dia{calculateDaysOfUsage(proc.data_procedimento) !== 1 ? 's' : ''}
+                    </p>
+                    {proc.notas && (
+                      <p className="text-xs text-gray-600 dark:text-gray-300 mt-2 italic">{proc.notas}</p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setProcedimentoModal({ open: true, data: proc })}
+                    className="ml-2 px-3 py-1 text-xs bg-orange-500 text-white rounded hover:bg-orange-600 transition"
+                  >
+                    Editar
+                  </button>
+                </div>
+              ))}
+            </div>
+          </TabContent>
+        )}
+
+        {/* EXAMES */}
+        {activeTab === 'exames' && (
+          <TabContent
+            title="Exames"
+            addButtonLabel="+ Adicionar"
+            onAddClick={() => setExameModal({ open: true })}
+            isEmpty={exames.length === 0}
+            emptyMessage="Nenhum exame registrado"
+          >
+            <div className="space-y-2">
+              {exames.map((exame) => (
+                <div key={exame.id} className="p-3 bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-lg flex justify-between items-start">
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">{exame.nome_exame}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Data: {new Date(exame.data_exame).toLocaleDateString('pt-BR')}
+                    </p>
+                    {exame.observacao && (
+                      <p className="text-xs text-gray-600 dark:text-gray-300 mt-2 italic">{exame.observacao}</p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setExameModal({ open: true, data: exame })}
+                    className="ml-2 px-3 py-1 text-xs bg-teal-500 text-white rounded hover:bg-teal-600 transition"
+                  >
+                    Editar
+                  </button>
+                </div>
+              ))}
+            </div>
+          </TabContent>
+        )}
+
+        {/* DIETAS */}
+        {activeTab === 'dietas' && (
+          <TabContent
+            title="Dietas"
+            addButtonLabel="+ Adicionar"
+            onAddClick={() => setDietaModal({ open: true })}
+            isEmpty={dietas.length === 0}
+            emptyMessage="Nenhuma dieta registrada"
+          >
+            <div className="space-y-2">
+              {dietas.map((dieta) => (
+                <div key={dieta.id} className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg flex justify-between items-start">
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">{dieta.tipo}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Início: {new Date(dieta.data_inicio).toLocaleDateString('pt-BR')}
+                    </p>
+                    <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1 font-semibold">
+                      Dias: {calculateDaysOfUsage(dieta.data_inicio)}
+                    </p>
+                    <div className="grid grid-cols-2 gap-2 mt-2 text-xs">
+                      {dieta.volume && <p className="text-gray-600 dark:text-gray-300">Volume: {dieta.volume} ml</p>}
+                      {dieta.vet && <p className="text-gray-600 dark:text-gray-300">VET: {dieta.vet} kcal</p>}
+                      {dieta.pt && <p className="text-gray-600 dark:text-gray-300">PT: {dieta.pt} g</p>}
+                      {dieta.th && <p className="text-gray-600 dark:text-gray-300">TH: {dieta.th} g</p>}
+                      {dieta.vet_at && <p className="text-gray-600 dark:text-gray-300">VET Atual: {dieta.vet_at.toFixed(1)}%</p>}
+                      {dieta.pt_at && <p className="text-gray-600 dark:text-gray-300">PT Atual: {dieta.pt_at.toFixed(1)}%</p>}
+                    </div>
+                    {dieta.observacao && (
+                      <p className="text-xs text-gray-600 dark:text-gray-300 mt-2 italic">{dieta.observacao}</p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setDietaModal({ open: true, data: dieta })}
+                    className="ml-2 px-3 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600 transition"
+                  >
+                    Editar
+                  </button>
+                </div>
+              ))}
+            </div>
+          </TabContent>
         )}
       </div>
 
@@ -336,6 +494,28 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
           onClose={() => setMedicacaoModal({ open: false })}
           onSave={() => {
             setMedicacaoModal({ open: false });
+            loadData();
+          }}
+        />
+      )}
+
+      {fimMedicacaoModal.open && fimMedicacaoModal.medicacao && (
+        <FimMedicacaoModal
+          medicacao={fimMedicacaoModal.medicacao}
+          onClose={() => setFimMedicacaoModal({ open: false })}
+          onSave={() => {
+            setFimMedicacaoModal({ open: false });
+            loadData();
+          }}
+        />
+      )}
+
+      {fimDispositivoModal.open && fimDispositivoModal.dispositivo && (
+        <FimDispositivoModal
+          dispositivo={fimDispositivoModal.dispositivo}
+          onClose={() => setFimDispositivoModal({ open: false })}
+          onSave={() => {
+            setFimDispositivoModal({ open: false });
             loadData();
           }}
         />
@@ -423,7 +603,20 @@ const MedicacaoModal: React.FC<MedicacaoModalProps> = ({ data, patientId, onClos
     data_fim: data?.data_fim || '',
     observacao: data?.observacao || ''
   });
+  const [customMedication, setCustomMedication] = useState('');
   const [saving, setSaving] = useState(false);
+
+  const handleMedicationChange = (value: string) => {
+    setForm({ ...form, nome_medicacao: value });
+    if (value !== 'Outro') {
+      setCustomMedication('');
+    }
+  };
+
+  const handleCustomMedicationChange = (value: string) => {
+    setCustomMedication(value);
+    setForm({ ...form, nome_medicacao: value });
+  };
 
   const handleSave = async () => {
     try {
@@ -445,6 +638,8 @@ const MedicacaoModal: React.FC<MedicacaoModalProps> = ({ data, patientId, onClos
     }
   };
 
+  const isSelectingOutro = form.nome_medicacao === 'Outro';
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-gray-900 rounded-lg max-w-md w-full p-6 space-y-4">
@@ -452,13 +647,31 @@ const MedicacaoModal: React.FC<MedicacaoModalProps> = ({ data, patientId, onClos
           {data ? 'Editar Medicação' : 'Nova Medicação'}
         </h3>
 
-        <input
-          type="text"
-          placeholder="Nome da medicação"
-          value={form.nome_medicacao || ''}
-          onChange={(e) => setForm({ ...form, nome_medicacao: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-gray-400 text-sm"
-        />
+        <div>
+          <label className="text-xs text-gray-400 block mb-1">Medicação</label>
+          <select
+            value={isSelectingOutro ? 'Outro' : (form.nome_medicacao || '')}
+            onChange={(e) => handleMedicationChange(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-gray-400 text-sm"
+          >
+            <option value="">Selecione uma medicação</option>
+            {MEDICATION_LIST.map((med) => (
+              <option key={med} value={med}>
+                {med}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {isSelectingOutro && (
+          <input
+            type="text"
+            placeholder="Digite o nome da medicação"
+            value={customMedication}
+            onChange={(e) => handleCustomMedicationChange(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-gray-400 text-sm"
+          />
+        )}
 
         <div className="grid grid-cols-2 gap-3">
           <input
@@ -468,34 +681,30 @@ const MedicacaoModal: React.FC<MedicacaoModalProps> = ({ data, patientId, onClos
             onChange={(e) => setForm({ ...form, dosagem_valor: e.target.value })}
             className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-gray-400 text-sm"
           />
-          <input
-            type="text"
-            placeholder="Unidade (mg/dia)"
-            value={form.unidade_medida || ''}
-            onChange={(e) => setForm({ ...form, unidade_medida: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-gray-400 text-sm"
-          />
+          <div>
+            <select
+              value={form.unidade_medida || ''}
+              onChange={(e) => setForm({ ...form, unidade_medida: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-gray-400 text-sm"
+            >
+              <option value="">Selecione unidade</option>
+              {MEDICATION_DOSAGE_UNITS.map((unit) => (
+                <option key={unit} value={unit}>
+                  {unit}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-xs text-gray-400 block mb-1">Data Início</label>
-            <input
-              type="date"
-              value={form.data_inicio || ''}
-              onChange={(e) => setForm({ ...form, data_inicio: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white text-sm"
-            />
-          </div>
-          <div>
-            <label className="text-xs text-gray-400 block mb-1">Data Fim (opcional)</label>
-            <input
-              type="date"
-              value={form.data_fim || ''}
-              onChange={(e) => setForm({ ...form, data_fim: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white text-sm"
-            />
-          </div>
+        <div>
+          <label className="text-xs text-gray-400 block mb-1">Data de Início</label>
+          <input
+            type="date"
+            value={form.data_inicio || ''}
+            onChange={(e) => setForm({ ...form, data_inicio: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white text-sm"
+          />
         </div>
 
         <textarea
@@ -543,80 +752,138 @@ const DispositivoModal: React.FC<DispositivoModalProps> = ({ data, patientId, on
     data_remocao: data?.data_remocao || '',
     observacao: data?.observacao || ''
   });
+  const [customDevice, setCustomDevice] = useState('');
   const [saving, setSaving] = useState(false);
+
+  const handleDeviceTypeChange = (value: string) => {
+    setForm({ ...form, tipo_dispositivo: value });
+    if (value !== 'Outros') {
+      setCustomDevice('');
+    }
+  };
+
+  const handleCustomDeviceChange = (value: string) => {
+    setCustomDevice(value);
+    setForm({ ...form, tipo_dispositivo: value });
+  };
 
   const handleSave = async () => {
     try {
+      // Validação de campos obrigatórios
+      if (!form.tipo_dispositivo || !form.localizacao || !form.data_insercao) {
+        alert('Por favor, preencha todos os campos obrigatórios: Tipo, Localização e Data de Inserção');
+        return;
+      }
+
       setSaving(true);
+      
+      // Preparar dados para envio - converter strings vazias para null
+      const dataToSend = {
+        tipo_dispositivo: form.tipo_dispositivo,
+        localizacao: form.localizacao,
+        data_insercao: form.data_insercao,
+        data_remocao: form.data_remocao || null,
+        observacao: form.observacao || null,
+        paciente_id: patientId,
+        is_archived: false
+      };
+      
+      console.log('Dados para enviar:', dataToSend);
+      
       if (data?.id) {
-        await backgroundService.updateDispositivo(data.id, form as Dispositivo);
-      } else {
-        await backgroundService.saveDispositivo({
+        await backgroundService.updateDispositivo(data.id, {
           ...form,
-          paciente_id: patientId,
-          is_archived: false
-        } as Omit<Dispositivo, 'id' | 'created_at'>);
+          data_remocao: form.data_remocao || null,
+          observacao: form.observacao || null
+        } as Dispositivo);
+      } else {
+        await backgroundService.saveDispositivo(
+          dataToSend as Omit<Dispositivo, 'id' | 'created_at'>
+        );
       }
       onSave();
     } catch (error) {
       console.error('Erro ao salvar dispositivo:', error);
+      alert('Erro ao salvar dispositivo. Tente novamente.');
     } finally {
       setSaving(false);
     }
   };
 
+  const isSelectingOutro = form.tipo_dispositivo === 'Outros';
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900 rounded-lg max-w-md w-full p-6 space-y-4">
+      <div className="bg-gray-900 rounded-lg max-w-md w-full p-6 space-y-5">
         <h3 className="text-lg font-bold text-white">
           {data ? 'Editar Dispositivo' : 'Novo Dispositivo'}
         </h3>
 
-        <input
-          type="text"
-          placeholder="Tipo de dispositivo"
-          value={form.tipo_dispositivo || ''}
-          onChange={(e) => setForm({ ...form, tipo_dispositivo: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-gray-400 text-sm"
-        />
-
-        <input
-          type="text"
-          placeholder="Localização"
-          value={form.localizacao || ''}
-          onChange={(e) => setForm({ ...form, localizacao: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-gray-400 text-sm"
-        />
-
-        <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-3">
           <div>
-            <label className="text-xs text-gray-400 block mb-1">Data Inserção</label>
+            <label className="text-xs font-semibold text-gray-300 block mb-2">Tipo de dispositivo</label>
+            <select
+              value={isSelectingOutro ? 'Outros' : (form.tipo_dispositivo || '')}
+              onChange={(e) => handleDeviceTypeChange(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white text-sm focus:outline-none focus:border-blue-500"
+            >
+              <option value="">Selecione um dispositivo</option>
+              {DEVICE_TYPES.map((device) => (
+                <option key={device} value={device}>
+                  {device}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {isSelectingOutro && (
+            <input
+              type="text"
+              placeholder="Digite o tipo de dispositivo"
+              value={customDevice}
+              onChange={(e) => handleCustomDeviceChange(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-gray-500 text-sm focus:outline-none focus:border-blue-500"
+            />
+          )}
+
+          <div>
+            <label className="text-xs font-semibold text-gray-300 block mb-2">Localização</label>
+            <select
+              value={form.localizacao || ''}
+              onChange={(e) => setForm({ ...form, localizacao: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white text-sm focus:outline-none focus:border-blue-500"
+            >
+              <option value="">Selecione um local</option>
+              {DEVICE_LOCATIONS.map((location) => (
+                <option key={location} value={location}>
+                  {location}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-gray-300 block mb-2">Data Inserção</label>
             <input
               type="date"
               value={form.data_insercao || ''}
               onChange={(e) => setForm({ ...form, data_insercao: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white text-sm"
-            />
-          </div>
-          <div>
-            <label className="text-xs text-gray-400 block mb-1">Data Remoção (opcional)</label>
-            <input
-              type="date"
-              value={form.data_remocao || ''}
-              onChange={(e) => setForm({ ...form, data_remocao: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white text-sm"
+              className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white text-sm focus:outline-none focus:border-blue-500"
             />
           </div>
         </div>
 
-        <textarea
-          placeholder="Observações (opcional)"
-          value={form.observacao || ''}
-          onChange={(e) => setForm({ ...form, observacao: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-gray-400 text-sm resize-none h-20"
-        />
+        <div>
+          <label className="text-xs font-semibold text-gray-300 block mb-2">Observações (opcional)</label>
+          <textarea
+            placeholder="Digite observações..."
+            value={form.observacao || ''}
+            onChange={(e) => setForm({ ...form, observacao: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-gray-500 text-sm resize-none h-24 focus:outline-none focus:border-blue-500"
+          />
+        </div>
 
-        <div className="flex gap-2 justify-end">
+        <div className="flex gap-2 justify-end pt-2">
           <button
             onClick={onClose}
             className="px-4 py-2 text-gray-300 bg-gray-700 rounded-lg hover:bg-gray-600 transition"
@@ -625,8 +892,8 @@ const DispositivoModal: React.FC<DispositivoModalProps> = ({ data, patientId, on
           </button>
           <button
             onClick={handleSave}
-            disabled={saving}
-            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 transition"
+            disabled={saving || !form.tipo_dispositivo || !form.localizacao || !form.data_insercao}
+            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
             {saving ? 'Salvando...' : 'Salvar'}
           </button>
@@ -653,7 +920,33 @@ const CulturaModal: React.FC<CulturaModalProps> = ({ data, patientId, onClose, o
     data_coleta: data?.data_coleta || '',
     observacao: data?.observacao || ''
   });
+  const [customCollectionSite, setCustomCollectionSite] = useState('');
+  const [customPathogen, setCustomPathogen] = useState('');
   const [saving, setSaving] = useState(false);
+
+  const handleCollectionSiteChange = (value: string) => {
+    setForm({ ...form, local: value });
+    if (value !== 'Outros') {
+      setCustomCollectionSite('');
+    }
+  };
+
+  const handleCustomCollectionSiteChange = (value: string) => {
+    setCustomCollectionSite(value);
+    setForm({ ...form, local: value });
+  };
+
+  const handlePathogenChange = (value: string) => {
+    setForm({ ...form, microorganismo: value });
+    if (value !== 'Outros') {
+      setCustomPathogen('');
+    }
+  };
+
+  const handleCustomPathogenChange = (value: string) => {
+    setCustomPathogen(value);
+    setForm({ ...form, microorganismo: value });
+  };
 
   const handleSave = async () => {
     try {
@@ -675,6 +968,9 @@ const CulturaModal: React.FC<CulturaModalProps> = ({ data, patientId, onClose, o
     }
   };
 
+  const isSelectingOutroLocal = form.local === 'Outros';
+  const isSelectingOutroPathogen = form.microorganismo === 'Outros';
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-gray-900 rounded-lg max-w-md w-full p-6 space-y-4">
@@ -682,21 +978,57 @@ const CulturaModal: React.FC<CulturaModalProps> = ({ data, patientId, onClose, o
           {data ? 'Editar Cultura' : 'Nova Cultura'}
         </h3>
 
-        <input
-          type="text"
-          placeholder="Local da coleta"
-          value={form.local || ''}
-          onChange={(e) => setForm({ ...form, local: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-gray-400 text-sm"
-        />
+        <div>
+          <label className="text-xs text-gray-400 block mb-1">Local da coleta</label>
+          <select
+            value={isSelectingOutroLocal ? 'Outros' : (form.local || '')}
+            onChange={(e) => handleCollectionSiteChange(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-gray-400 text-sm"
+          >
+            <option value="">Selecione um local</option>
+            {CULTURE_COLLECTION_SITES.map((site) => (
+              <option key={site} value={site}>
+                {site}
+              </option>
+            ))}
+          </select>
+        </div>
 
-        <input
-          type="text"
-          placeholder="Microorganismo"
-          value={form.microorganismo || ''}
-          onChange={(e) => setForm({ ...form, microorganismo: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-gray-400 text-sm"
-        />
+        {isSelectingOutroLocal && (
+          <input
+            type="text"
+            placeholder="Digite o local da coleta"
+            value={customCollectionSite}
+            onChange={(e) => handleCustomCollectionSiteChange(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-gray-400 text-sm"
+          />
+        )}
+
+        <div>
+          <label className="text-xs text-gray-400 block mb-1">Microrganismo</label>
+          <select
+            value={isSelectingOutroPathogen ? 'Outros' : (form.microorganismo || '')}
+            onChange={(e) => handlePathogenChange(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-gray-400 text-sm"
+          >
+            <option value="">Selecione um microrganismo</option>
+            {PATHOGENS_LIST.map((pathogen) => (
+              <option key={pathogen} value={pathogen}>
+                {pathogen}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {isSelectingOutroPathogen && (
+          <input
+            type="text"
+            placeholder="Digite o microrganismo"
+            value={customPathogen}
+            onChange={(e) => handleCustomPathogenChange(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-gray-400 text-sm"
+          />
+        )}
 
         <input
           type="date"
@@ -773,54 +1105,74 @@ const ProcedimentoModal: React.FC<ProcedimentoModalProps> = ({ data, patientId, 
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900 rounded-lg max-w-md w-full p-6 space-y-4">
-        <h3 className="text-lg font-bold text-white">
-          {data ? 'Editar Procedimento' : 'Novo Procedimento'}
-        </h3>
-
-        <input
-          type="text"
-          placeholder="Nome do procedimento"
-          value={form.nome_procedimento || ''}
-          onChange={(e) => setForm({ ...form, nome_procedimento: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-gray-400 text-sm"
-        />
-
-        <input
-          type="date"
-          value={form.data_procedimento || ''}
-          onChange={(e) => setForm({ ...form, data_procedimento: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white text-sm"
-        />
-
-        <input
-          type="text"
-          placeholder="Nome do cirurgião (opcional)"
-          value={form.nome_cirurgiao || ''}
-          onChange={(e) => setForm({ ...form, nome_cirurgiao: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-gray-400 text-sm"
-        />
-
-        <textarea
-          placeholder="Notas (opcional)"
-          value={form.notas || ''}
-          onChange={(e) => setForm({ ...form, notas: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-gray-400 text-sm resize-none h-20"
-        />
-
-        <div className="flex gap-2 justify-end">
+      <div className="bg-gray-900 rounded-lg max-w-md w-full p-6 space-y-5">
+        <div className="flex justify-between items-center">
+          <h3 className="text-lg font-bold text-white">
+            {data ? 'Editar Cirurgia' : 'Cadastrar Cirurgia'}
+          </h3>
           <button
             onClick={onClose}
-            className="px-4 py-2 text-gray-300 bg-gray-700 rounded-lg hover:bg-gray-600 transition"
+            className="text-gray-400 hover:text-white transition"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div>
+          <label className="text-sm font-semibold text-gray-300 block mb-2">Procedimento</label>
+          <input
+            type="text"
+            placeholder="Ex: Apendicitomia"
+            value={form.nome_procedimento || ''}
+            onChange={(e) => setForm({ ...form, nome_procedimento: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-gray-500 text-sm focus:outline-none focus:border-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="text-sm font-semibold text-gray-300 block mb-2">Data</label>
+          <input
+            type="date"
+            value={form.data_procedimento || ''}
+            onChange={(e) => setForm({ ...form, data_procedimento: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white text-sm focus:outline-none focus:border-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="text-sm font-semibold text-gray-300 block mb-2">Cirurgião</label>
+          <input
+            type="text"
+            placeholder="Dr(a). Sobrenome"
+            value={form.nome_cirurgiao || ''}
+            onChange={(e) => setForm({ ...form, nome_cirurgiao: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-gray-500 text-sm focus:outline-none focus:border-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="text-sm font-semibold text-gray-300 block mb-2">Observação (Opcional)</label>
+          <textarea
+            placeholder="Digite aqui..."
+            value={form.notas || ''}
+            onChange={(e) => setForm({ ...form, notas: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-gray-500 text-sm resize-none h-24 focus:outline-none focus:border-blue-500"
+          />
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 py-2 text-gray-300 bg-gray-700 rounded-lg hover:bg-gray-600 transition font-semibold"
           >
             Cancelar
           </button>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50 transition"
+            className="flex-1 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
-            {saving ? 'Salvando...' : 'Salvar'}
+            {saving ? 'Cadastrando...' : 'Cadastrar'}
           </button>
         </div>
       </div>
@@ -962,118 +1314,147 @@ const DietaModal: React.FC<DietaModalProps> = ({ data, patientId, onClose, onSav
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-gray-900 rounded-lg max-w-2xl w-full p-6 space-y-4 my-8">
+      <div className="bg-gray-900 rounded-lg max-w-2xl w-full p-6 space-y-5 my-8">
         <h3 className="text-lg font-bold text-white">
           {data ? 'Editar Dieta' : 'Nova Dieta'}
         </h3>
 
-        <input
-          type="text"
-          placeholder="Tipo de dieta"
-          value={form.tipo || ''}
-          onChange={(e) => setForm({ ...form, tipo: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-gray-400 text-sm"
-        />
+        <div>
+          <label className="text-sm font-semibold text-gray-300 block mb-2">Tipo de dieta</label>
+          <select
+            value={form.tipo || ''}
+            onChange={(e) => setForm({ ...form, tipo: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white text-sm focus:outline-none focus:border-blue-500"
+          >
+            <option value="">Selecione um tipo</option>
+            <option value="Oral">Oral</option>
+            <option value="Enteral">Enteral</option>
+            <option value="Parenteral">Parenteral</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="text-sm font-semibold text-gray-300 block mb-2">Data Início</label>
+          <input
+            type="date"
+            value={form.data_inicio || ''}
+            onChange={(e) => setForm({ ...form, data_inicio: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white text-sm focus:outline-none focus:border-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="text-sm font-semibold text-gray-300 block mb-2">Volume (ml)</label>
+          <input
+            type="number"
+            step="0.01"
+            placeholder="Volume em ml"
+            value={form.volume || ''}
+            onChange={(e) => setForm({ ...form, volume: e.target.value ? parseFloat(e.target.value) : null })}
+            className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-gray-500 text-sm focus:outline-none focus:border-blue-500"
+          />
+        </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs text-gray-400 block mb-1">Data Início</label>
-            <input
-              type="date"
-              value={form.data_inicio || ''}
-              onChange={(e) => setForm({ ...form, data_inicio: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white text-sm"
-            />
-          </div>
-          <div>
-            <label className="text-xs text-gray-400 block mb-1">Data Remoção (opcional)</label>
-            <input
-              type="date"
-              value={form.data_remocao || ''}
-              onChange={(e) => setForm({ ...form, data_remocao: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white text-sm"
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-3 gap-3">
-          <div>
-            <label className="text-xs text-gray-400 block mb-1">Volume (ml)</label>
+            <label className="text-sm font-semibold text-gray-300 block mb-2">VET (kcal)</label>
             <input
               type="number"
               step="0.01"
-              placeholder="Volume"
-              value={form.volume || ''}
-              onChange={(e) => setForm({ ...form, volume: e.target.value ? parseFloat(e.target.value) : null })}
-              className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-gray-400 text-sm"
-            />
-          </div>
-          <div>
-            <label className="text-xs text-gray-400 block mb-1">VET (kcal)</label>
-            <input
-              type="number"
-              step="0.01"
-              placeholder="VET"
+              placeholder="VET atingido"
               value={form.vet || ''}
               onChange={(e) => setForm({ ...form, vet: e.target.value ? parseFloat(e.target.value) : null })}
-              className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-gray-400 text-sm"
+              className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-gray-500 text-sm focus:outline-none focus:border-blue-500"
             />
           </div>
           <div>
-            <label className="text-xs text-gray-400 block mb-1">VET Pleno (kcal)</label>
+            <label className="text-sm font-semibold text-gray-300 block mb-2">VET Pleno (kcal)</label>
             <input
               type="number"
               step="0.01"
-              placeholder="VET Pleno"
+              placeholder="VET pleno"
               value={form.vet_pleno || ''}
               onChange={(e) => setForm({ ...form, vet_pleno: e.target.value ? parseFloat(e.target.value) : null })}
-              className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-gray-400 text-sm"
+              className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-gray-500 text-sm focus:outline-none focus:border-blue-500"
             />
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs text-gray-400 block mb-1">PT (g)</label>
+            <label className="text-sm font-semibold text-gray-300 block mb-2">PT (g)</label>
             <input
               type="number"
               step="0.01"
-              placeholder="PT"
+              placeholder="PT atingida"
               value={form.pt || ''}
               onChange={(e) => setForm({ ...form, pt: e.target.value ? parseFloat(e.target.value) : null })}
-              className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-gray-400 text-sm"
+              className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-gray-500 text-sm focus:outline-none focus:border-blue-500"
             />
           </div>
           <div>
-            <label className="text-xs text-gray-400 block mb-1">PT g/dia</label>
+            <label className="text-sm font-semibold text-gray-300 block mb-2">PT g/dia</label>
             <input
               type="number"
               step="0.01"
-              placeholder="PT g/dia"
+              placeholder="PT plena"
               value={form.pt_g_dia || ''}
               onChange={(e) => setForm({ ...form, pt_g_dia: e.target.value ? parseFloat(e.target.value) : null })}
-              className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-gray-400 text-sm"
-            />
-          </div>
-          <div>
-            <label className="text-xs text-gray-400 block mb-1">TH (g)</label>
-            <input
-              type="number"
-              step="0.01"
-              placeholder="TH"
-              value={form.th || ''}
-              onChange={(e) => setForm({ ...form, th: e.target.value ? parseFloat(e.target.value) : null })}
-              className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-gray-400 text-sm"
+              className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-gray-500 text-sm focus:outline-none focus:border-blue-500"
             />
           </div>
         </div>
 
-        <textarea
-          placeholder="Observações (opcional)"
-          value={form.observacao || ''}
-          onChange={(e) => setForm({ ...form, observacao: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-gray-400 text-sm resize-none h-20"
-        />
+        <div>
+          <label className="text-sm font-semibold text-gray-300 block mb-2">TH (g)</label>
+          <input
+            type="number"
+            step="0.01"
+            placeholder="Carboidrato total"
+            value={form.th || ''}
+            onChange={(e) => setForm({ ...form, th: e.target.value ? parseFloat(e.target.value) : null })}
+            className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-gray-500 text-sm focus:outline-none focus:border-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="text-sm font-semibold text-gray-300 block mb-2">Observações (opcional)</label>
+          <textarea
+            placeholder="Digite aqui..."
+            value={form.observacao || ''}
+            onChange={(e) => setForm({ ...form, observacao: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder:text-gray-500 text-sm resize-none h-24 focus:outline-none focus:border-blue-500"
+          />
+        </div>
+
+        {/* CÁLCULOS AUTOMÁTICOS */}
+        {(form.vet || form.vet_pleno || form.pt || form.pt_g_dia) && (
+          <div className="bg-blue-900/30 border border-blue-700 rounded-lg p-4 space-y-3">
+            <h4 className="text-sm font-bold text-blue-400 flex items-center gap-2">
+              📊 Cálculos Automáticos
+            </h4>
+            
+            <div className="grid grid-cols-2 gap-3">
+              {form.vet && form.vet_pleno && form.vet_pleno > 0 && (
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">VET AT:</p>
+                  <p className="text-lg font-bold text-white">
+                    {((form.vet / form.vet_pleno) * 100).toFixed(1)}%
+                  </p>
+                </div>
+              )}
+              
+              {form.pt && form.pt_g_dia && form.pt_g_dia > 0 && (
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">PT AT:</p>
+                  <p className="text-lg font-bold text-white">
+                    {((form.pt / form.pt_g_dia) * 100).toFixed(1)}%
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="flex gap-2 justify-end">
           <button
@@ -1095,4 +1476,163 @@ const DietaModal: React.FC<DietaModalProps> = ({ data, patientId, onClose, onSav
   );
 };
 
+// ============================================================================
+// MODAL: FIM MEDICAÇÃO
+// ============================================================================
+interface FimMedicacaoModalProps {
+  medicacao: Medicacao;
+  onClose: () => void;
+  onSave: () => void;
+}
+
+const FimMedicacaoModal: React.FC<FimMedicacaoModalProps> = ({ medicacao, onClose, onSave }) => {
+  const [dataFim, setDataFim] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    try {
+      if (!dataFim) {
+        alert('Por favor, selecione uma data');
+        return;
+      }
+
+      setSaving(true);
+      await backgroundService.updateMedicacao(medicacao.id, {
+        ...medicacao,
+        data_fim: dataFim
+      });
+      onSave();
+    } catch (error) {
+      console.error('Erro ao registrar fim da medicação:', error);
+      alert('Erro ao registrar fim da medicação');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-gray-900 rounded-lg max-w-md w-full p-6 space-y-4">
+        <h3 className="text-lg font-bold text-white">
+          Registrar Fim da Medicação
+        </h3>
+        
+        <div className="bg-blue-900/20 border border-blue-800 p-3 rounded">
+          <p className="text-sm font-semibold text-white">{medicacao.nome_medicacao}</p>
+          <p className="text-xs text-gray-300 mt-1">
+            {medicacao.dosagem_valor} {medicacao.unidade_medida}
+          </p>
+        </div>
+
+        <div>
+          <label className="text-xs text-gray-400 block mb-1">Data de Fim</label>
+          <input
+            type="date"
+            value={dataFim}
+            onChange={(e) => setDataFim(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white text-sm"
+          />
+        </div>
+
+        <div className="flex gap-2 justify-end">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-gray-300 bg-gray-700 rounded-lg hover:bg-gray-600 transition"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 disabled:opacity-50 transition"
+          >
+            {saving ? 'Salvando...' : 'Registrar Fim'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// MODAL: FIM DISPOSITIVO
+// ============================================================================
+interface FimDispositivoModalProps {
+  dispositivo: Dispositivo;
+  onClose: () => void;
+  onSave: () => void;
+}
+
+const FimDispositivoModal: React.FC<FimDispositivoModalProps> = ({ dispositivo, onClose, onSave }) => {
+  const [dataRemocao, setDataRemocao] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    try {
+      if (!dataRemocao) {
+        alert('Por favor, selecione uma data');
+        return;
+      }
+
+      setSaving(true);
+      await backgroundService.updateDispositivo(dispositivo.id, {
+        ...dispositivo,
+        data_remocao: dataRemocao
+      });
+      onSave();
+    } catch (error) {
+      console.error('Erro ao registrar fim do dispositivo:', error);
+      alert('Erro ao registrar fim do dispositivo');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-gray-900 rounded-lg max-w-md w-full p-6 space-y-4">
+        <h3 className="text-lg font-bold text-white">
+          Registrar Retirada do Dispositivo
+        </h3>
+        
+        <div className="bg-green-900/20 border border-green-800 p-3 rounded">
+          <p className="text-sm font-semibold text-white">{dispositivo.tipo_dispositivo}</p>
+          <p className="text-xs text-gray-300 mt-1">Localização: {dispositivo.localizacao}</p>
+          <p className="text-xs text-gray-300 mt-1">
+            Inserido em: {new Date(dispositivo.data_insercao + 'T00:00:00').toLocaleDateString('pt-BR')}
+          </p>
+        </div>
+
+        <div>
+          <label className="text-xs text-gray-400 block mb-1">Data de Retirada</label>
+          <input
+            type="date"
+            value={dataRemocao}
+            onChange={(e) => setDataRemocao(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white text-sm"
+          />
+        </div>
+
+        <div className="flex gap-2 justify-end">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-gray-300 bg-gray-700 rounded-lg hover:bg-gray-600 transition"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 disabled:opacity-50 transition"
+          >
+            {saving ? 'Salvando...' : 'Registrar Retirada'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default BackgroundEditor;
+
+

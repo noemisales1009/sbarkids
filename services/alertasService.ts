@@ -88,6 +88,27 @@ export const alertasService = {
       console.log(`   - Tasks: ${taskAlertasFormatted.length}`);
       console.log(`   - Alertas Paciente: ${alertasPacienteFormatted.length}`);
       
+      // Debug: mostrar dados de um alerta de cada fonte
+      if (taskAlertasFormatted.length > 0) {
+        console.log('📌 Exemplo TASK:', {
+          id: taskAlertasFormatted[0].id_alerta,
+          prazo_limite_formatado: taskAlertasFormatted[0].prazo_limite_formatado,
+          prazo_formatado: taskAlertasFormatted[0].prazo_formatado,
+          deadline: taskAlertasFormatted[0].deadline,
+          created_at: taskAlertasFormatted[0].created_at
+        });
+      }
+      
+      if (alertasPacienteFormatted.length > 0) {
+        console.log('📌 Exemplo ALERTA_PACIENTE:', {
+          id: alertasPacienteFormatted[0].id_alerta,
+          prazo_limite_formatado: alertasPacienteFormatted[0].prazo_limite_formatado,
+          prazo_formatado: alertasPacienteFormatted[0].prazo_formatado,
+          deadline: alertasPacienteFormatted[0].deadline,
+          created_at: alertasPacienteFormatted[0].created_at
+        });
+      }
+      
       return allAlertas as Alerta[];
     } catch (error) {
       console.error('❌ ERRO em getAlertas:', error);
@@ -133,6 +154,100 @@ export const alertasService = {
       console.error('❌ ERRO em getForaDoPrazo:', error);
       logError(error, 'alertasService.getForaDoPrazo');
       return [];
+    }
+  },
+
+  /**
+   * Atualiza a justificativa de um alerta
+   */
+  async updateJustificativa(alertaId: string, justificativa: string, fonte: 'tasks' | 'alertas_paciente'): Promise<boolean> {
+    try {
+      console.log(`📍 alertasService.updateJustificativa - Atualizando ${fonte}/${alertaId}`);
+
+      const tableName = fonte === 'tasks' ? 'tasks' : 'alertas_paciente';
+
+      const { error } = await supabase
+        .from(tableName)
+        .update({ 
+          justification: justificativa,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', parseInt(alertaId));
+
+      if (error) {
+        console.error(`❌ Erro ao atualizar justificativa em ${tableName}:`, error);
+        logError(error, `alertasService.updateJustificativa - ${tableName}`);
+        return false;
+      }
+
+      console.log(`✅ Justificativa atualizada com sucesso em ${tableName}`);
+      return true;
+    } catch (error) {
+      console.error('❌ ERRO em updateJustificativa:', error);
+      logError(error, 'alertasService.updateJustificativa');
+      return false;
+    }
+  },
+
+  /**
+   * Marca um alerta como concluído
+   */
+  async marcarComoConcluido(alertaId: string, fonte: 'tasks' | 'alertas_paciente'): Promise<boolean> {
+    try {
+      console.log(`📍 alertasService.marcarComoConcluido - Marcando ${fonte}/${alertaId} como concluído`);
+
+      const tableName = fonte === 'tasks' ? 'tasks' : 'alertas_paciente';
+      const statusColumn = tableName === 'tasks' ? 'status' : 'status';
+
+      const { error } = await supabase
+        .from(tableName)
+        .update({ 
+          [statusColumn]: 'concluido',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', parseInt(alertaId));
+
+      if (error) {
+        console.error(`❌ Erro ao marcar como concluído em ${tableName}:`, error);
+        logError(error, `alertasService.marcarComoConcluido - ${tableName}`);
+        return false;
+      }
+
+      console.log(`✅ Alerta marcado como concluído em ${tableName}`);
+      return true;
+    } catch (error) {
+      console.error('❌ ERRO em marcarComoConcluido:', error);
+      logError(error, 'alertasService.marcarComoConcluido');
+      return false;
+    }
+  },
+
+  /**
+   * Deleta um alerta
+   */
+  async deleteAlerta(alertaId: string, fonte: 'tasks' | 'alertas_paciente'): Promise<boolean> {
+    try {
+      console.log(`📍 alertasService.deleteAlerta - Deletando ${fonte}/${alertaId}`);
+
+      const tableName = fonte === 'tasks' ? 'tasks' : 'alertas_paciente';
+
+      const { error } = await supabase
+        .from(tableName)
+        .delete()
+        .eq('id', parseInt(alertaId));
+
+      if (error) {
+        console.error(`❌ Erro ao deletar alerta em ${tableName}:`, error);
+        logError(error, `alertasService.deleteAlerta - ${tableName}`);
+        return false;
+      }
+
+      console.log(`✅ Alerta deletado com sucesso de ${tableName}`);
+      return true;
+    } catch (error) {
+      console.error('❌ ERRO em deleteAlerta:', error);
+      logError(error, 'alertasService.deleteAlerta');
+      return false;
     }
   }
 };
