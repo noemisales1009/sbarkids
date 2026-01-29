@@ -6,14 +6,14 @@ import SbarSection from '../components/sbar/SbarSection';
 import SbarFooter from '../components/sbar/SbarFooter';
 import SbarStatusSection from '../components/sbar/SbarStatusSection';
 import SbarReadonlySection from '../components/sbar/SbarReadonlySection';
-import DiagnosticsEditor from '../components/sbar/DiagnosticsEditor';
 import SuportesVentilatoriosSection from '../components/sbar/SuportesVentilatoriosSection';
 import ComorbidadesSection from '../components/sbar/ComorbidadesSection';
 import BackgroundEditor from '../components/sbar/BackgroundEditor';
 import AlertasDisplay from '../components/sbar/AlertasDisplay';
 import BottomNavBar from '../components/patients/BottomNavBar';
-import AssessmentPlan from '../components/sbar/AssessmentPlan';
-import RecommendationPlan from '../components/sbar/RecommendationPlan';
+import AssessmentSimple from '../components/sbar/AssessmentSimple';
+import RecommendationSimple from '../components/sbar/RecommendationSimple';
+import { DiagnosticoSelector } from '../components/sbar/index';
 import { clinicalRoundsService } from '../services/clinicalRoundsService';
 import { recommendationService, ClinicalRoundRecommendation } from '../services/recommendationService';
 import { assessmentService, ClinicalRoundAssessment } from '../services/assessmentService';
@@ -22,6 +22,7 @@ import { userService } from '../services/userService';
 import { alertasService, Alerta } from '../services/alertasService';
 import { patientService } from '../services/patientService';
 import { patientsService } from '../services/patientsService';
+import { diagnosticosSelecionadosService } from '../services/diagnosticosSelecionadosService';
 
 interface SbarReportPageProps {
     patient: Patient;
@@ -739,89 +740,84 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
                     {/* Comorbidades */}
                     <ComorbidadesSection patientId={patient.id} />
 
-                    {/* Editor de Diagnósticos */}
+                    {/* Seletor de Diagnósticos */}
                     <div className="bg-gray-900 p-4 rounded-lg border border-gray-800">
                         <h3 className="text-lg font-bold text-white mb-4">S - Situação</h3>
-                        <DiagnosticsEditor patientId={patient.id} />
+                        <DiagnosticoSelector 
+                            pacienteId={patient.id}
+                            onSaveMessage={(message) => {
+                                setSaveMessage({ 
+                                    type: message.includes('✅') ? 'success' : 'error', 
+                                    text: message 
+                                });
+                                setTimeout(() => setSaveMessage(null), 3000);
+                            }}
+                            onSave={async (diagnosticos) => {
+                                // Separar diagnósticos principais (pergunta 1) e secundários (pergunta 2)
+                                const principais = diagnosticos.filter(d => d.tipo === 'principal');
+                                const secundarios = diagnosticos.filter(d => d.tipo === 'secundario');
+
+                                console.log('Iniciando salvamento de:', { principais, secundarios });
+
+                                try {
+                                    // Salvar principais (pergunta_id = 1)
+                                    if (principais.length > 0) {
+                                        console.log('Salvando principais:', principais);
+                                        const successPrincipais = await diagnosticosSelecionadosService.saveDiagnosticos(
+                                            patient.id,
+                                            1, // DIAGNOSTICO_PRINCIPAIS_ID
+                                            principais
+                                        );
+                                        console.log('Resultado principais:', successPrincipais);
+                                        if (!successPrincipais) throw new Error('Erro ao salvar diagnósticos principais');
+                                    }
+
+                                    // Salvar secundários (pergunta_id = 2)
+                                    if (secundarios.length > 0) {
+                                        console.log('Salvando secundários:', secundarios);
+                                        const successSecundarios = await diagnosticosSelecionadosService.saveDiagnosticos(
+                                            patient.id,
+                                            2, // DIAGNOSTICO_SECUNDARIOS_ID
+                                            secundarios
+                                        );
+                                        console.log('Resultado secundários:', successSecundarios);
+                                        if (!successSecundarios) throw new Error('Erro ao salvar diagnósticos secundários');
+                                    }
+
+                                    console.log('✅ Diagnósticos salvos com sucesso!');
+                                } catch (error) {
+                                    console.error('Erro ao salvar:', error);
+                                    throw error;
+                                }
+                            }}
+                        />
                     </div>
+
                     {/* Background Editor - Medicações, Dispositivos, Culturas, Procedimentos */}
                     <div className="bg-gray-900 p-4 rounded-lg border border-gray-800">
                         <h3 className="text-lg font-bold text-white mb-4">B - Breve Histórico</h3>
                         <BackgroundEditor patientId={patient.id} />
                     </div>
 
-                    <AssessmentPlan
-                        morning={assessmentMorning}
-                        afternoon={assessmentAfternoon}
-                        night={assessmentNight}
-                        currentUserId={CURRENT_USER_ID}
-                        currentUserName={currentUserName}
-                        roundId={currentRoundId || undefined}
-                        patientId={patient.id}
-                        shiftStatus={assessmentStatus}
-                        selectedShift={selectedShift}
-                        onShiftChange={setSelectedShift}
-                        onMorningChange={(key, value) => 
-                            setAssessmentMorning({ ...assessmentMorning, [key]: value })
-                        }
-                        onAfternoonChange={(key, value) => 
-                            setAssessmentAfternoon({ ...assessmentAfternoon, [key]: value })
-                        }
-                        onNightChange={(key, value) => 
-                            setAssessmentNight({ ...assessmentNight, [key]: value })
-                        }
-                        onSaved={(message) => setSaveMessage({ type: message.includes('✅') ? 'success' : 'error', text: message })}
-                    />
-
                     {/* Alertas do Paciente */}
                     <div className="bg-gray-900 p-4 rounded-lg border border-gray-800">
                         <AlertasDisplay patientId={patient.id} alertas={alertas} />
                     </div>
 
-                    {/* Recomendação / Plano */}
-                    <RecommendationPlan
-                        morning={recommendationMorning}
-                        afternoon={recommendationAfternoon}
-                        night={recommendationNight}
-                        currentUserId={CURRENT_USER_ID}
-                        currentUserName={currentUserName}
-                        roundId={currentRoundId || undefined}
+                    <AssessmentSimple
                         patientId={patient.id}
-                        shiftStatus={recommendationStatus}
-                        selectedShift={selectedShift}
-                        onShiftChange={setSelectedShift}
-                        onMorningChange={(key, value) => 
-                            setRecommendationMorning({ ...recommendationMorning, [key]: value })
-                        }
-                        onAfternoonChange={(key, value) => 
-                            setRecommendationAfternoon({ ...recommendationAfternoon, [key]: value })
-                        }
-                        onNightChange={(key, value) => 
-                            setRecommendationNight({ ...recommendationNight, [key]: value })
-                        }
+                        roundId={currentRoundId || undefined}
+                        currentUserName={currentUserName}
                         onSaved={(message) => setSaveMessage({ type: message.includes('✅') ? 'success' : 'error', text: message })}
                     />
 
-                    {/* Botão Unificado para Salvar Avaliação e Recomendação */}
-                    <div className="flex justify-end">
-                        <button
-                            onClick={handleSaveAssessmentAndRecommendation}
-                            disabled={saving}
-                            className="px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition flex items-center gap-2 text-lg"
-                        >
-                            {saving ? (
-                                <>
-                                    <span className="animate-spin">⏳</span>
-                                    Salvando...
-                                </>
-                            ) : (
-                                <>
-                                    <span>💾</span>
-                                    Salvar SBAR
-                                </>
-                            )}
-                        </button>
-                    </div>
+                    {/* Recomendação / Plano */}
+                    <RecommendationSimple
+                        patientId={patient.id}
+                        roundId={currentRoundId || undefined}
+                        currentUserName={currentUserName}
+                        onSaved={(message) => setSaveMessage({ type: message.includes('✅') ? 'success' : 'error', text: message })}
+                    />
 
                     {/* Mensagem de status */}
                     {saveMessage && (
