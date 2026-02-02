@@ -89,25 +89,57 @@ const ReportDetailContent: React.FC<ReportDetailContentProps> = ({ report, patie
                     </div>
                 </div>
 
-                {/* A - Assessment */}
-                <Section title="A - Assessment (Avaliação)" icon="assessment">
-                    <ShiftContent shift="Manhã" content={report.sbar.assessment.morning} emoji="🌅" />
-                    <ShiftContent shift="Tarde" content={report.sbar.assessment.afternoon} emoji="☀️" />
-                    <ShiftContent shift="Noite" content={report.sbar.assessment.night} emoji="🌙" />
-                    {!report.sbar.assessment.morning && !report.sbar.assessment.afternoon && !report.sbar.assessment.night && (
-                        <p className="text-gray-500 print:text-gray-600 italic">Nenhuma avaliação registrada</p>
-                    )}
-                </Section>
+                {/* Organizando por Turno */}
+                {(report.sbar.assessment.morning || report.sbar.recommendation.morning) && (
+                    <Section title="🌅 Manhã" icon="schedule">
+                        {report.sbar.assessment.morning && (
+                            <div className="bg-gray-900 p-3 print:bg-white print:border print:border-gray-200">
+                                <h4 className="font-semibold text-blue-400 print:text-gray-700 mb-2">📋 A - Assessment (Avaliação)</h4>
+                                <p className="whitespace-pre-wrap text-gray-300 print:text-black">{report.sbar.assessment.morning}</p>
+                            </div>
+                        )}
+                        {report.sbar.recommendation.morning && (
+                            <div className="bg-gray-900 p-3 print:bg-white print:border print:border-gray-200">
+                                <h4 className="font-semibold text-green-400 print:text-gray-700 mb-2">📝 R - Recomendação / Plano</h4>
+                                <p className="whitespace-pre-wrap text-gray-300 print:text-black">{report.sbar.recommendation.morning}</p>
+                            </div>
+                        )}
+                    </Section>
+                )}
 
-                {/* R - Recomendação */}
-                <Section title="R - Recomendação / Plano" icon="assignment">
-                    <ShiftContent shift="Manhã" content={report.sbar.recommendation.morning} emoji="🌅" />
-                    <ShiftContent shift="Tarde" content={report.sbar.recommendation.afternoon} emoji="☀️" />
-                    <ShiftContent shift="Noite" content={report.sbar.recommendation.night} emoji="🌙" />
-                    {!report.sbar.recommendation.morning && !report.sbar.recommendation.afternoon && !report.sbar.recommendation.night && (
-                        <p className="text-gray-500 print:text-gray-600 italic">Nenhuma recomendação registrada</p>
-                    )}
-                </Section>
+                {(report.sbar.assessment.afternoon || report.sbar.recommendation.afternoon) && (
+                    <Section title="☀️ Tarde" icon="schedule">
+                        {report.sbar.assessment.afternoon && (
+                            <div className="bg-gray-900 p-3 print:bg-white print:border print:border-gray-200">
+                                <h4 className="font-semibold text-blue-400 print:text-gray-700 mb-2">📋 A - Assessment (Avaliação)</h4>
+                                <p className="whitespace-pre-wrap text-gray-300 print:text-black">{report.sbar.assessment.afternoon}</p>
+                            </div>
+                        )}
+                        {report.sbar.recommendation.afternoon && (
+                            <div className="bg-gray-900 p-3 print:bg-white print:border print:border-gray-200">
+                                <h4 className="font-semibold text-green-400 print:text-gray-700 mb-2">📝 R - Recomendação / Plano</h4>
+                                <p className="whitespace-pre-wrap text-gray-300 print:text-black">{report.sbar.recommendation.afternoon}</p>
+                            </div>
+                        )}
+                    </Section>
+                )}
+
+                {(report.sbar.assessment.night || report.sbar.recommendation.night) && (
+                    <Section title="🌙 Noite" icon="schedule">
+                        {report.sbar.assessment.night && (
+                            <div className="bg-gray-900 p-3 print:bg-white print:border print:border-gray-200">
+                                <h4 className="font-semibold text-blue-400 print:text-gray-700 mb-2">📋 A - Assessment (Avaliação)</h4>
+                                <p className="whitespace-pre-wrap text-gray-300 print:text-black">{report.sbar.assessment.night}</p>
+                            </div>
+                        )}
+                        {report.sbar.recommendation.night && (
+                            <div className="bg-gray-900 p-3 print:bg-white print:border print:border-gray-200">
+                                <h4 className="font-semibold text-green-400 print:text-gray-700 mb-2">📝 R - Recomendação / Plano</h4>
+                                <p className="whitespace-pre-wrap text-gray-300 print:text-black">{report.sbar.recommendation.night}</p>
+                            </div>
+                        )}
+                    </Section>
+                )}
             </div>
         </div>
     );

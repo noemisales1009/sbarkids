@@ -118,7 +118,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onNavigate, currentPage, onSe
                         id: round.id,
                         patient: patient as Patient,
                         datetime,
-                        status: patient.status || 'Normal',
+                        status: patient.status || 'estavel',
                         author,
                         assessment: {
                             morning: round.assessment_morning || '',

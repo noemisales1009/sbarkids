@@ -11,9 +11,10 @@ interface HistoryListProps {
         afternoon: boolean;
         night: boolean;
     };
+    selectedDate?: string;
 }
 
-const HistoryList: React.FC<HistoryListProps> = ({ onSelectReport, patientId, selectedShifts = { morning: true, afternoon: true, night: true } }) => {
+const HistoryList: React.FC<HistoryListProps> = ({ onSelectReport, patientId, selectedShifts = { morning: true, afternoon: true, night: true }, selectedDate = '' }) => {
     const [rounds, setRounds] = useState<HistoryRound[]>([]);
     const [loading, setLoading] = useState(true);
     const [lastFetch, setLastFetch] = useState<number>(0);
@@ -51,75 +52,84 @@ const HistoryList: React.FC<HistoryListProps> = ({ onSelectReport, patientId, se
         }
     }, [patientId]);
 
-    // Converter HistoryRound em HistoryItemData para compatibilidade com HistoryItem
-    const convertToHistoryItem = (round: HistoryRound, shift: 'morning' | 'afternoon' | 'night'): HistoryItemData => {
-        const shiftLabel = {
-            morning: 'Manhã',
-            afternoon: 'Tarde',
-            night: 'Noite'
-        }[shift];
-
-        const shiftEmoji = {
-            morning: '🌅',
-            afternoon: '☀️',
-            night: '🌙'
-        }[shift];
-
-        // Gerar descrição resumida
-        const assessmentText = round.assessment[shift];
-        const recommendationText = round.recommendation[shift];
-        const description = assessmentText || recommendationText 
-            ? (assessmentText.substring(0, 100) || recommendationText.substring(0, 100)) + '...'
-            : 'Sem dados preenchidos neste turno';
-
+    // Converter HistoryRound em HistoryItemData agrupado por data
+    const convertToHistoryItem = (round: HistoryRound): HistoryItemData => {
         // Formatar data
         const date = new Date(round.created_at);
         const dateStr = date.toLocaleDateString('pt-BR');
         const timeStr = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
+        // Criar descrição com os turnos preenchidos
+        const shiftLabels: string[] = [];
+        const shiftDescriptions: string[] = [];
+
+        if (round.assessment.morning || round.recommendation.morning) {
+            shiftLabels.push('🌅 Manhã');
+            shiftDescriptions.push(round.assessment.morning || round.recommendation.morning);
+        }
+        if (round.assessment.afternoon || round.recommendation.afternoon) {
+            shiftLabels.push('☀️ Tarde');
+            shiftDescriptions.push(round.assessment.afternoon || round.recommendation.afternoon);
+        }
+        if (round.assessment.night || round.recommendation.night) {
+            shiftLabels.push('🌙 Noite');
+            shiftDescriptions.push(round.assessment.night || round.recommendation.night);
+        }
+
+        // Descrição resumida (primeiros 100 caracteres)
+        const description = shiftDescriptions.length > 0
+            ? shiftDescriptions[0].substring(0, 100) + '...'
+            : 'Sem dados preenchidos neste dia';
+
+        // Autor (primeiro que preencheu)
+        const author = round.saved_by_names.morning || 
+                      round.saved_by_names.afternoon || 
+                      round.saved_by_names.night || 
+                      'Não preenchido';
+
         return {
-            datetime: `${dateStr} - ${timeStr} ${shiftEmoji} ${shiftLabel}`,
+            datetime: `${dateStr} - ${timeStr}`,
             status: round.status === 'instavel' ? 'Urgente' : 
                     round.status === 'em_risco' ? 'Atenção' : 
                     round.status === 'estavel' ? 'Normal' : 'Informativo',
-            description,
-            author: round.saved_by_names[shift] || 'Não preenchido',
+            description: shiftLabels.join(' | ') + '\n' + description,
+            author,
             sbar: {
                 situation: '',
                 background: '',
-                assessment: {
-                    morning: shift === 'morning' ? round.assessment.morning : '',
-                    afternoon: shift === 'afternoon' ? round.assessment.afternoon : '',
-                    night: shift === 'night' ? round.assessment.night : ''
-                },
-                recommendation: {
-                    morning: shift === 'morning' ? round.recommendation.morning : '',
-                    afternoon: shift === 'afternoon' ? round.recommendation.afternoon : '',
-                    night: shift === 'night' ? round.recommendation.night : ''
-                }
+                assessment: round.assessment,
+                recommendation: round.recommendation
             }
         };
     };
 
-    // Gerar lista de itens de histórico (um item por turno preenchido) - MEMOIZADO
+    // Gerar lista de itens de histórico (um item por data) - MEMOIZADO
     const historyItems: HistoryItemData[] = useMemo(() => {
         const items: HistoryItemData[] = [];
         
         rounds.forEach(round => {
-            // Verificar quais turnos têm dados E estão selecionados
-            if (selectedShifts.morning && (round.assessment.morning || round.recommendation.morning)) {
-                items.push(convertToHistoryItem(round, 'morning'));
-            }
-            if (selectedShifts.afternoon && (round.assessment.afternoon || round.recommendation.afternoon)) {
-                items.push(convertToHistoryItem(round, 'afternoon'));
-            }
-            if (selectedShifts.night && (round.assessment.night || round.recommendation.night)) {
-                items.push(convertToHistoryItem(round, 'night'));
+            // Verificar se algum turno selecionado tem dados
+            const hasMorning = selectedShifts.morning && (round.assessment.morning || round.recommendation.morning);
+            const hasAfternoon = selectedShifts.afternoon && (round.assessment.afternoon || round.recommendation.afternoon);
+            const hasNight = selectedShifts.night && (round.assessment.night || round.recommendation.night);
+
+            // Se tem pelo menos um turno selecionado com dados, incluir
+            if (hasMorning || hasAfternoon || hasNight) {
+                // Filtrar por data se selecionada
+                if (selectedDate) {
+                    const roundDate = new Date(round.created_at);
+                    const roundDateStr = roundDate.toISOString().split('T')[0]; // YYYY-MM-DD
+                    if (roundDateStr !== selectedDate) {
+                        return; // Skip this round
+                    }
+                }
+                
+                items.push(convertToHistoryItem(round));
             }
         });
         
         return items;
-    }, [rounds, selectedShifts]);
+    }, [rounds, selectedShifts, selectedDate]);
 
     if (loading) {
         return (
