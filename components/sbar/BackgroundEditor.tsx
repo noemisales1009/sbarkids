@@ -20,35 +20,60 @@ interface BackgroundEditorProps {
   patientId: string;
 }
 
+// Função para converter datas entre formatos
+const convertDateFormat = (dateStr: string | null | undefined): string => {
+  if (!dateStr) return '';
+  dateStr = String(dateStr).trim();
+  // Se já está em YYYY-MM-DD, retorna como está
+  if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) return dateStr;
+  // Se está em DD/MM/YYYY, converte
+  if (dateStr.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+    const [dia, mes, ano] = dateStr.split('/');
+    return `${ano}-${mes}-${dia}`;
+  }
+  return dateStr;
+};
+
 // Função para calcular dias de uso considerando fuso de São Paulo
 const calculateDaysOfUsage = (dataInicio: string | null | undefined): number => {
   try {
     if (!dataInicio) return 0;
     
-    // Parsear a data de início - tenta múltiplos formatos
-    let startDate = new Date(dataInicio);
+    // Remover espaços
+    dataInicio = dataInicio.trim();
     
-    // Se não conseguir parsear, tenta outro formato
-    if (isNaN(startDate.getTime())) {
-      // Tenta formato DD/MM/YYYY
+    let startDate: Date;
+    
+    // Tentar parsear como ISO (YYYY-MM-DD)
+    if (dataInicio.includes('-') && !dataInicio.includes('/')) {
+      startDate = new Date(dataInicio + 'T00:00:00');
+    }
+    // Tentar parsear como brasileiro (DD/MM/YYYY)
+    else if (dataInicio.includes('/')) {
       const parts = dataInicio.split('/');
       if (parts.length === 3) {
-        startDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+        startDate = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
       } else {
         return 0;
       }
     }
+    // Tentar parsear como data genérica
+    else {
+      startDate = new Date(dataInicio);
+    }
     
     // Se ainda for inválida, retorna 0
     if (isNaN(startDate.getTime())) {
+      console.warn('Data inválida:', dataInicio);
       return 0;
     }
     
-    // Obter data atual
+    // Obter data atual (sem considerar hora)
     const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     
     // Calcular diferença em milissegundos
-    const timeDifference = now.getTime() - startDate.getTime();
+    const timeDifference = today.getTime() - startDate.getTime();
     
     // Converter para dias (1 dia = 24 * 60 * 60 * 1000 ms)
     const daysDifference = Math.floor(timeDifference / (24 * 60 * 60 * 1000));
@@ -145,6 +170,8 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
   const loadData = async () => {
     try {
       setLoading(true);
+      console.log('📦 Carregando dados do background para paciente:', patientId);
+      
       const [meds, devs, cults, procs, exs, diets] = await Promise.all([
         backgroundService.getMedicacoes(patientId),
         backgroundService.getDispositivos(patientId),
@@ -154,6 +181,13 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
         backgroundService.getDietas(patientId)
       ]);
 
+      console.log('💊 Medicações carregadas:', meds.length);
+      console.log('🔧 Dispositivos carregados:', devs.length);
+      console.log('🧬 Culturas carregadas:', cults.length);
+      console.log('⚕️ Procedimentos carregados:', procs.length);
+      console.log('🔬 Exames carregados:', exs.length);
+      console.log('🍽️ Dietas carregadas:', diets.length);
+
       setMedicacoes(meds);
       setDispositivos(devs);
       setCulturas(cults);
@@ -161,7 +195,7 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
       setExames(exs);
       setDietas(diets);
     } catch (error) {
-      console.error('Erro ao carregar background:', error);
+      console.error('❌ Erro ao carregar background:', error);
     } finally {
       setLoading(false);
     }
@@ -239,13 +273,20 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
                       <p className="text-xs text-gray-300 mt-1">
                         {med.dosagem_valor} {med.unidade_medida}
                       </p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        Início: {
+                          med.data_inicio.includes('-')
+                            ? new Date(med.data_inicio + 'T00:00:00').toLocaleDateString('pt-BR')
+                            : med.data_inicio
+                        }
+                      </p>
                       {temFim ? (
                         <p className="text-xs text-yellow-400 mt-1 font-semibold">
                           Fim: {new Date(med.data_fim).toLocaleDateString('pt-BR')}
                         </p>
                       ) : (
-                        <p className="text-xs text-gray-400 mt-1">
-                          {calculateDaysOfUsage(med.data_inicio)} dia{calculateDaysOfUsage(med.data_inicio) !== 1 ? 's' : ''} de uso
+                        <p className="text-xs text-green-400 mt-1 font-semibold">
+                          ✓ {calculateDaysOfUsage(med.data_inicio)} dia{calculateDaysOfUsage(med.data_inicio) !== 1 ? 's' : ''} de uso
                         </p>
                       )}
                       {med.observacao && (
@@ -619,20 +660,38 @@ const MedicacaoModal: React.FC<MedicacaoModalProps> = ({ data, patientId, onClos
   };
 
   const handleSave = async () => {
+    // Validar campos obrigatórios
+    if (!form.nome_medicacao || !form.dosagem_valor || !form.unidade_medida || !form.data_inicio) {
+      alert('Por favor, preencha todos os campos obrigatórios');
+      return;
+    }
+
     try {
       setSaving(true);
+      console.log('💊 Salvando medicação:', form);
+      
+      // Preparar dados para envio - garantir que datas estejam em YYYY-MM-DD
+      const medicacaoData: Omit<Medicacao, 'id' | 'created_at'> = {
+        ...form,
+        paciente_id: patientId,
+        is_archived: false,
+        data_inicio: convertDateFormat(form.data_inicio || ''),
+        data_fim: form.data_fim && form.data_fim.trim() ? convertDateFormat(form.data_fim) : null
+      } as any;
+      
+      console.log('📤 Enviando dados:', medicacaoData);
+      
       if (data?.id) {
-        await backgroundService.updateMedicacao(data.id, form as Medicacao);
+        const result = await backgroundService.updateMedicacao(data.id, medicacaoData as any);
+        console.log('✅ Medicação atualizada:', result);
       } else {
-        await backgroundService.saveMedicacao({
-          ...form,
-          paciente_id: patientId,
-          is_archived: false
-        } as Omit<Medicacao, 'id' | 'created_at'>);
+        const result = await backgroundService.saveMedicacao(medicacaoData);
+        console.log('✅ Medicação salva:', result);
       }
       onSave();
     } catch (error) {
-      console.error('Erro ao salvar medicação:', error);
+      console.error('❌ Erro ao salvar medicação:', error);
+      alert('Erro ao salvar medicação. Tente novamente.');
     } finally {
       setSaving(false);
     }
@@ -701,8 +760,29 @@ const MedicacaoModal: React.FC<MedicacaoModalProps> = ({ data, patientId, onClos
           <label className="text-xs text-gray-400 block mb-1">Data de Início</label>
           <input
             type="date"
-            value={form.data_inicio || ''}
-            onChange={(e) => setForm({ ...form, data_inicio: e.target.value })}
+            value={
+              form.data_inicio 
+                ? (form.data_inicio.includes('-') 
+                    ? form.data_inicio 
+                    : (() => {
+                        const parts = form.data_inicio.split('/');
+                        return parts.length === 3 
+                          ? `${parts[2]}-${String(parts[1]).padStart(2, '0')}-${String(parts[0]).padStart(2, '0')}` 
+                          : form.data_inicio;
+                      })()
+                  )
+                : ''
+            }
+            onChange={(e) => {
+              // Converter de YYYY-MM-DD para DD/MM/YYYY para armazenar
+              const dateValue = e.target.value;
+              if (dateValue) {
+                const [year, month, day] = dateValue.split('-');
+                setForm({ ...form, data_inicio: `${day}/${month}/${year}` });
+              } else {
+                setForm({ ...form, data_inicio: '' });
+              }
+            }}
             className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white text-sm"
           />
         </div>
@@ -776,34 +856,33 @@ const DispositivoModal: React.FC<DispositivoModalProps> = ({ data, patientId, on
       }
 
       setSaving(true);
+      console.log('🔧 Salvando dispositivo:', form);
       
-      // Preparar dados para envio - converter strings vazias para null
+      // Preparar dados para envio - converter strings vazias para null e datas para YYYY-MM-DD
       const dataToSend = {
         tipo_dispositivo: form.tipo_dispositivo,
         localizacao: form.localizacao,
-        data_insercao: form.data_insercao,
-        data_remocao: form.data_remocao || null,
-        observacao: form.observacao || null,
+        data_insercao: convertDateFormat(form.data_insercao),
+        data_remocao: form.data_remocao && form.data_remocao.toString().trim() ? convertDateFormat(form.data_remocao) : null,
+        observacao: form.observacao && form.observacao.trim() ? form.observacao : null,
         paciente_id: patientId,
         is_archived: false
       };
       
-      console.log('Dados para enviar:', dataToSend);
+      console.log('📤 Dados para enviar:', dataToSend);
       
       if (data?.id) {
-        await backgroundService.updateDispositivo(data.id, {
-          ...form,
-          data_remocao: form.data_remocao || null,
-          observacao: form.observacao || null
-        } as Dispositivo);
+        const result = await backgroundService.updateDispositivo(data.id, dataToSend as Dispositivo);
+        console.log('✅ Dispositivo atualizado:', result);
       } else {
-        await backgroundService.saveDispositivo(
+        const result = await backgroundService.saveDispositivo(
           dataToSend as Omit<Dispositivo, 'id' | 'created_at'>
         );
+        console.log('✅ Dispositivo salvo:', result);
       }
       onSave();
     } catch (error) {
-      console.error('Erro ao salvar dispositivo:', error);
+      console.error('❌ Erro ao salvar dispositivo:', error);
       alert('Erro ao salvar dispositivo. Tente novamente.');
     } finally {
       setSaving(false);
@@ -949,20 +1028,34 @@ const CulturaModal: React.FC<CulturaModalProps> = ({ data, patientId, onClose, o
   };
 
   const handleSave = async () => {
+    // Validar campos obrigatórios
+    if (!form.local || !form.microorganismo || !form.data_coleta) {
+      alert('Por favor, preencha todos os campos obrigatórios: Local, Microrganismo e Data');
+      return;
+    }
+
     try {
       setSaving(true);
+      console.log('🧬 Salvando cultura:', form);
+      
+      const culturaData: Omit<Cultura, 'id' | 'created_at'> = {
+        ...form,
+        paciente_id: patientId,
+        is_archived: false,
+        data_coleta: convertDateFormat(form.data_coleta || '')
+      } as any;
+
       if (data?.id) {
-        await backgroundService.updateCultura(data.id, form as Cultura);
+        const result = await backgroundService.updateCultura(data.id, culturaData as any);
+        console.log('✅ Cultura atualizada:', result);
       } else {
-        await backgroundService.saveCultura({
-          ...form,
-          paciente_id: patientId,
-          is_archived: false
-        } as Omit<Cultura, 'id' | 'created_at'>);
+        const result = await backgroundService.saveCultura(culturaData);
+        console.log('✅ Cultura salva:', result);
       }
       onSave();
     } catch (error) {
-      console.error('Erro ao salvar cultura:', error);
+      console.error('❌ Erro ao salvar cultura:', error);
+      alert('Erro ao salvar cultura. Tente novamente.');
     } finally {
       setSaving(false);
     }
@@ -1084,20 +1177,34 @@ const ProcedimentoModal: React.FC<ProcedimentoModalProps> = ({ data, patientId, 
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
+    // Validar campos obrigatórios
+    if (!form.nome_procedimento || !form.data_procedimento) {
+      alert('Por favor, preencha todos os campos obrigatórios: Procedimento e Data');
+      return;
+    }
+
     try {
       setSaving(true);
+      console.log('⚕️ Salvando procedimento:', form);
+      
+      const procedimentoData = {
+        ...form,
+        paciente_id: patientId,
+        is_archived: false,
+        data_procedimento: convertDateFormat(form.data_procedimento || '')
+      } as Omit<Procedimento, 'id' | 'created_at'>;
+
       if (data?.id) {
-        await backgroundService.updateProcedimento(data.id, form as Procedimento);
+        const result = await backgroundService.updateProcedimento(data.id, procedimentoData as any);
+        console.log('✅ Procedimento atualizado:', result);
       } else {
-        await backgroundService.saveProcedimento({
-          ...form,
-          paciente_id: patientId,
-          is_archived: false
-        } as Omit<Procedimento, 'id' | 'created_at'>);
+        const result = await backgroundService.saveProcedimento(procedimentoData);
+        console.log('✅ Procedimento salvo:', result);
       }
       onSave();
     } catch (error) {
-      console.error('Erro ao salvar procedimento:', error);
+      console.error('❌ Erro ao salvar procedimento:', error);
+      alert('Erro ao salvar procedimento. Tente novamente.');
     } finally {
       setSaving(false);
     }
@@ -1199,20 +1306,34 @@ const ExameModal: React.FC<ExameModalProps> = ({ data, patientId, onClose, onSav
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
+    // Validar campos obrigatórios
+    if (!form.nome_exame || !form.data_exame) {
+      alert('Por favor, preencha todos os campos obrigatórios: Nome e Data');
+      return;
+    }
+
     try {
       setSaving(true);
+      console.log('🔬 Salvando exame:', form);
+      
+      const exameData = {
+        ...form,
+        paciente_id: patientId,
+        is_archived: false,
+        data_exame: convertDateFormat(form.data_exame || '')
+      } as Omit<Exame, 'id' | 'created_at'>;
+
       if (data?.id) {
-        await backgroundService.updateExame(data.id, form as Exame);
+        const result = await backgroundService.updateExame(data.id, exameData as any);
+        console.log('✅ Exame atualizado:', result);
       } else {
-        await backgroundService.saveExame({
-          ...form,
-          paciente_id: patientId,
-          is_archived: false
-        } as Omit<Exame, 'id' | 'created_at'>);
+        const result = await backgroundService.saveExame(exameData);
+        console.log('✅ Exame salvo:', result);
       }
       onSave();
     } catch (error) {
-      console.error('Erro ao salvar exame:', error);
+      console.error('❌ Erro ao salvar exame:', error);
+      alert('Erro ao salvar exame. Tente novamente.');
     } finally {
       setSaving(false);
     }
@@ -1293,20 +1414,35 @@ const DietaModal: React.FC<DietaModalProps> = ({ data, patientId, onClose, onSav
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
+    // Validar campos obrigatórios
+    if (!form.tipo || !form.data_inicio) {
+      alert('Por favor, preencha todos os campos obrigatórios: Tipo e Data de Início');
+      return;
+    }
+
     try {
       setSaving(true);
+      console.log('🍽️ Salvando dieta:', form);
+      
+      const dietaData = {
+        ...form,
+        paciente_id: patientId,
+        is_archived: false,
+        data_inicio: convertDateFormat(form.data_inicio || ''),
+        data_remocao: form.data_remocao ? convertDateFormat(form.data_remocao) : null
+      } as Omit<Dieta, 'id' | 'created_at' | 'updated_at' | 'vet_at' | 'pt_at'>;
+
       if (data?.id) {
-        await backgroundService.updateDieta(data.id, form as Dieta);
+        const result = await backgroundService.updateDieta(data.id, dietaData as any);
+        console.log('✅ Dieta atualizada:', result);
       } else {
-        await backgroundService.saveDieta({
-          ...form,
-          paciente_id: patientId,
-          is_archived: false
-        } as Omit<Dieta, 'id' | 'created_at' | 'updated_at' | 'vet_at' | 'pt_at'>);
+        const result = await backgroundService.saveDieta(dietaData);
+        console.log('✅ Dieta salva:', result);
       }
       onSave();
     } catch (error) {
-      console.error('Erro ao salvar dieta:', error);
+      console.error('❌ Erro ao salvar dieta:', error);
+      alert('Erro ao salvar dieta. Tente novamente.');
     } finally {
       setSaving(false);
     }

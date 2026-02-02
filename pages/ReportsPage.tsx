@@ -33,7 +33,7 @@ interface ReportsPageProps {
 
 const ReportsPage: React.FC<ReportsPageProps> = ({ onNavigate, currentPage, onSelectReportContext }) => {
     const [statusFilter, setStatusFilter] = useState<string>('');
-    const [dateFilter, setDateFilter] = useState<string>(new Date().toISOString().split('T')[0]);
+    const [dateFilter, setDateFilter] = useState<string>('');
     const [selectedReports, setSelectedReports] = useState<Set<string>>(new Set());
     const [reports, setReports] = useState<GlobalReportItem[]>([]);
     const [loading, setLoading] = useState(true);
@@ -57,103 +57,105 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onNavigate, currentPage, onSe
             setLoading(true);
             setLastFetch(Date.now());
             
-            // Buscar direto da VIEW patient_reports_view com limite e filtro de data
-            const threeDaysAgo = new Date();
-            threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+            console.log('📊 Buscando relatórios de clinical_rounds_simple...');
             
-            const { data: viewData, error } = await supabase
-                .from('patient_reports_view')
+            // Buscar de clinical_rounds_simple
+            const { data: roundsData, error } = await supabase
+                .from('clinical_rounds_simple')
                 .select('*')
-                .gte('report_date', threeDaysAgo.toISOString().split('T')[0])
-                .order('report_date', { ascending: false })
+                .order('created_at', { ascending: false })
                 .limit(100); // Limitar a 100 registros mais recentes
 
-            if (error) throw error;
-            if (!viewData || viewData.length === 0) {
+            if (error) {
+                console.error('❌ Erro ao buscar relatórios:', error);
+                throw error;
+            }
+
+            if (!roundsData || roundsData.length === 0) {
+                console.log('ℹ️ Nenhum relatório encontrado');
                 setReports([]);
                 setLoading(false);
                 return;
             }
 
-            // Mapear os dados da VIEW para o formato GlobalReportItem
-            const allReports: GlobalReportItem[] = viewData.map((row: any) => {
-                // Determinar autor (priorizar o mais recente)
-                const author = row.recommendation_night_author || 
-                             row.recommendation_afternoon_author || 
-                             row.recommendation_morning_author ||
-                             row.assessment_night_author || 
-                             row.assessment_afternoon_author || 
-                             row.assessment_morning_author || 
-                             'Não informado';
+            console.log(`📊 ${roundsData.length} relatórios encontrados`);
 
-                // Formatar data
-                const date = new Date(row.report_date);
-                const datetime = date.toLocaleString('pt-BR', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
+            // Buscar dados dos pacientes
+            const patientIds = [...new Set(roundsData.map(r => r.patient_id))];
+            const { data: patientsData } = await supabase
+                .from('patients')
+                .select('*')
+                .in('id', patientIds);
 
-                // Formatar recommendation (concatenar campos do JSONB)
-                const formatRecommendation = (data: any): string => {
-                    if (!data) return '';
-                    const parts = [];
-                    if (data.respiratorio) parts.push(`Respiratório: ${data.respiratorio}`);
-                    if (data.hemodinamico) parts.push(`Hemodinâmico: ${data.hemodinamico}`);
-                    if (data.neurologico) parts.push(`Neurológico: ${data.neurologico}`);
-                    if (data.metabolico_renal) parts.push(`Metabólico/Renal: ${data.metabolico_renal}`);
-                    if (data.pendencias) parts.push(`Pendências: ${data.pendencias}`);
-                    return parts.join('\n');
-                };
+            const patientMap = new Map(patientsData?.map(p => [p.id, p]) || []);
 
-                return {
-                    id: `${row.patient_id}-${row.round_id}`,
-                    patient: {
-                        id: row.patient_id,
-                        name: row.patient_name,
-                        bed_number: row.bed_number,
-                        dob: row.dob,
-                        mother_name: row.mother_name,
-                        status: row.patient_status || 'estavel'
-                    },
-                    datetime,
-                    status: mapStatusToDisplay(row.patient_status || 'estavel'),
-                    author,
-                    assessment: {
-                        morning: row.assessment_morning || '',
-                        afternoon: row.assessment_afternoon || '',
-                        night: row.assessment_night || ''
-                    },
-                    recommendation: {
-                        morning: formatRecommendation(row.recommendation_morning),
-                        afternoon: formatRecommendation(row.recommendation_afternoon),
-                        night: formatRecommendation(row.recommendation_night)
-                    }
-                };
-            });
+            // Mapear os dados de clinical_rounds_simple para GlobalReportItem
+            const allReports: GlobalReportItem[] = roundsData
+                .map((round: any) => {
+                    const patient = patientMap.get(round.patient_id);
+                    if (!patient) return null;
 
+                    // Formatar data
+                    const date = new Date(round.created_at);
+                    const datetime = date.toLocaleString('pt-BR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+
+                    // Determinar autor (qualquer um que tenha preenchido)
+                    const author = round.assessment_morning_saved_by_name || 
+                                 round.assessment_afternoon_saved_by_name || 
+                                 round.assessment_night_saved_by_name ||
+                                 round.recommendation_morning_saved_by_name || 
+                                 round.recommendation_afternoon_saved_by_name || 
+                                 round.recommendation_night_saved_by_name || 
+                                 'Não informado';
+
+                    return {
+                        id: round.id,
+                        patient: patient as Patient,
+                        datetime,
+                        status: patient.status || 'Normal',
+                        author,
+                        assessment: {
+                            morning: round.assessment_morning || '',
+                            afternoon: round.assessment_afternoon || '',
+                            night: round.assessment_night || ''
+                        },
+                        recommendation: {
+                            morning: round.recommendation_morning || '',
+                            afternoon: round.recommendation_afternoon || '',
+                            night: round.recommendation_night || ''
+                        }
+                    };
+                })
+                .filter((item): item is GlobalReportItem => item !== null);
+
+            console.log(`📊 ${allReports.length} relatórios processados`);
             setReports(allReports);
+            setLoading(false);
         } catch (error) {
-            console.error('Erro ao carregar relatórios:', error);
-        } finally {
+            console.error('❌ Erro ao carregar relatórios:', error);
+            setReports([]);
             setLoading(false);
         }
     };
 
-    const mapStatusToDisplay = (status: string): string => {
-        const statusMap: Record<string, string> = {
-            'estavel': 'Normal',
-            'instavel': 'Urgente',
-            'em_risco': 'Atenção'
-        };
-        return statusMap[status] || 'Normal';
-    };
-
     const filteredReports = reports.filter(item => {
-        const matchesStatus = statusFilter ? item.status === statusFilter : true;
-        const matchesDate = dateFilter ? item.datetime.includes(dateFilter.split('-').reverse().join('/')) : true;
+        // Converter status para lowercase para comparação correta
+        const itemStatus = typeof item.status === 'string' ? item.status.toLowerCase() : '';
+        const filterStatus = statusFilter.toLowerCase();
+        const matchesStatus = filterStatus ? itemStatus === filterStatus : true;
+        
+        // Extrair apenas a data (DD/MM/YYYY) do datetime para comparação
+        // datetime vem como "02/02/2026, 10:52" então pega tudo antes da vírgula
+        const itemDate = item.datetime.split(',')[0].trim();
+        const filterDate = dateFilter ? dateFilter.split('-').reverse().join('/') : '';
+        const matchesDate = filterDate ? itemDate === filterDate : true;
+        
         return matchesStatus && matchesDate;
     });
 
@@ -373,9 +375,9 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onNavigate, currentPage, onSe
                         onChange={(e) => setStatusFilter(e.target.value)}
                     >
                         <option value="">Todos os Status</option>
-                        <option value="Normal">Estável</option>
-                        <option value="Urgente">Instável</option>
-                        <option value="Atenção">Em risco</option>
+                        <option value="estavel">Estável</option>
+                        <option value="instavel">Instável</option>
+                        <option value="em_risco">Em risco</option>
                     </select>
                 </div>
                 <div className="flex-1">

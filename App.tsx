@@ -15,6 +15,7 @@ import { supabase } from './lib/supabase';
 import { patientsService } from './services/patientsService';
 import { UserProvider } from './contexts/UserContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { initializeDailyClearanceService } from './services/dailyClearanceService';
 
 interface AuthUser {
     id: string;
@@ -47,6 +48,13 @@ const AppContent: React.FC = () => {
         } catch (error) {
             console.error('Erro ao restaurar estado:', error);
         }
+    }, []);
+
+    // Inicializar serviço de limpeza diária (00:05 São Paulo)
+    useEffect(() => {
+        console.log('📅 Inicializando serviço de limpeza diária...');
+        const cleanup = initializeDailyClearanceService();
+        return cleanup;
     }, []);
 
     // Salvar estados no sessionStorage quando mudarem
@@ -290,7 +298,6 @@ const AppContent: React.FC = () => {
                             <SbarReportPage 
                                 patient={selectedPatient} 
                                 onBack={() => {
-                                    setSelectedPatient(null);
                                     navigate('/patients');
                                 }} 
                                 onNavigate={handleNavigate} 
@@ -308,7 +315,6 @@ const AppContent: React.FC = () => {
                             <HistoryPage 
                                 patient={selectedPatient} 
                                 onBack={() => {
-                                    setSelectedPatient(null);
                                     navigate('/patients');
                                 }} 
                                 onNavigate={handleNavigate} 
@@ -344,7 +350,6 @@ const AppContent: React.FC = () => {
                                 patient={selectedPatient} 
                                 report={selectedReport} 
                                 onBack={() => {
-                                    setSelectedReport(null);
                                     navigate('/history');
                                 }} 
                                 onNavigate={handleNavigate} 

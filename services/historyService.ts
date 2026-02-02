@@ -43,94 +43,53 @@ export const historyService = {
       
       const patientStatus = patientData?.status || 'estavel';
       
-      // 2. Buscar todos os clinical_rounds do paciente
+      // 2. Buscar todos os registros de clinical_rounds_simple do paciente
       const { data: rounds, error: roundsError } = await supabase
-        .from('clinical_rounds')
+        .from('clinical_rounds_simple')
         .select('*')
         .eq('patient_id', patientId)
         .order('created_at', { ascending: false });
 
       if (roundsError) {
+        console.error('❌ Erro ao buscar rounds:', roundsError);
         logError(roundsError, 'historyService.getPatientRoundsHistory.rounds');
         return [];
       }
 
       if (!rounds || rounds.length === 0) {
-        console.log('📚 Nenhum round encontrado');
+        console.log('📚 Nenhum round encontrado em clinical_rounds_simple');
         return [];
       }
 
-      console.log(`📚 ${rounds.length} rounds encontrados`);
+      console.log(`📚 ${rounds.length} rounds encontrados em clinical_rounds_simple`);
 
-      // 3. Para cada round, buscar os dados de assessment e recommendation
-      const historyRounds: HistoryRound[] = [];
-
-      for (const round of rounds) {
-        let assessmentData = null;
-        let recommendationData = null;
-        try {
-          const { data, error, status } = await supabase
-            .from('assessment_shifts')
-            .select('*')
-            .eq('round_id', round.id)
-            .single();
-          if (!error || (error && status !== 406)) {
-            assessmentData = data;
-          }
-        } catch (err) {
-          // ignora erro 406
+      // 3. Converter os registros de clinical_rounds_simple em HistoryRound
+      const historyRounds: HistoryRound[] = rounds.map(round => ({
+        id: round.id,
+        created_at: round.created_at,
+        patient_id: round.patient_id,
+        status: patientStatus,
+        assessment: {
+          morning: round.assessment_morning || '',
+          afternoon: round.assessment_afternoon || '',
+          night: round.assessment_night || ''
+        },
+        recommendation: {
+          morning: round.recommendation_morning || '',
+          afternoon: round.recommendation_afternoon || '',
+          night: round.recommendation_night || ''
+        },
+        saved_by_names: {
+          morning: round.assessment_morning_saved_by_name || round.recommendation_morning_saved_by_name || null,
+          afternoon: round.assessment_afternoon_saved_by_name || round.recommendation_afternoon_saved_by_name || null,
+          night: round.assessment_night_saved_by_name || round.recommendation_night_saved_by_name || null
         }
-        try {
-          const { data, error, status } = await supabase
-            .from('recommendation_shifts')
-            .select('*')
-            .eq('round_id', round.id)
-            .single();
-          if (!error || (error && status !== 406)) {
-            recommendationData = data;
-          }
-        } catch (err) {
-          // ignora erro 406
-        }
-
-        // Montar o objeto de histórico usando o status do paciente
-        const historyRound: HistoryRound = {
-          id: round.id,
-          created_at: round.created_at,
-          patient_id: round.patient_id,
-          status: patientStatus, // Usa o status da tabela patients
-          assessment: {
-            morning: assessmentData?.morning_data ? 
-              formatAssessmentData(assessmentData.morning_data) : '',
-            afternoon: assessmentData?.afternoon_data ? 
-              formatAssessmentData(assessmentData.afternoon_data) : '',
-            night: assessmentData?.night_data ? 
-              formatAssessmentData(assessmentData.night_data) : ''
-          },
-          recommendation: {
-            morning: recommendationData?.morning_data ? 
-              formatRecommendationData(recommendationData.morning_data) : '',
-            afternoon: recommendationData?.afternoon_data ? 
-              formatRecommendationData(recommendationData.afternoon_data) : '',
-            night: recommendationData?.night_data ? 
-              formatRecommendationData(recommendationData.night_data) : ''
-          },
-          saved_by_names: {
-            morning: assessmentData?.morning_saved_by_name || 
-                     recommendationData?.morning_saved_by_name || null,
-            afternoon: assessmentData?.afternoon_saved_by_name || 
-                       recommendationData?.afternoon_saved_by_name || null,
-            night: assessmentData?.night_saved_by_name || 
-                   recommendationData?.night_saved_by_name || null
-          }
-        };
-
-        historyRounds.push(historyRound);
-      }
+      }));
 
       console.log(`📚 ${historyRounds.length} rounds processados`);
       return historyRounds;
     } catch (error) {
+      console.error('❌ Exception em getPatientRoundsHistory:', error);
       logError(error, 'historyService.getPatientRoundsHistory');
       return [];
     }

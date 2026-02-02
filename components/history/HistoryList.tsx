@@ -6,9 +6,14 @@ import { historyService, HistoryRound } from '../../services/historyService';
 interface HistoryListProps {
     onSelectReport: (report: HistoryItemData) => void;
     patientId: string;
+    selectedShifts?: {
+        morning: boolean;
+        afternoon: boolean;
+        night: boolean;
+    };
 }
 
-const HistoryList: React.FC<HistoryListProps> = ({ onSelectReport, patientId }) => {
+const HistoryList: React.FC<HistoryListProps> = ({ onSelectReport, patientId, selectedShifts = { morning: true, afternoon: true, night: true } }) => {
     const [rounds, setRounds] = useState<HistoryRound[]>([]);
     const [loading, setLoading] = useState(true);
     const [lastFetch, setLastFetch] = useState<number>(0);
@@ -101,20 +106,20 @@ const HistoryList: React.FC<HistoryListProps> = ({ onSelectReport, patientId }) 
         const items: HistoryItemData[] = [];
         
         rounds.forEach(round => {
-            // Verificar quais turnos têm dados
-            if (round.assessment.morning || round.recommendation.morning) {
+            // Verificar quais turnos têm dados E estão selecionados
+            if (selectedShifts.morning && (round.assessment.morning || round.recommendation.morning)) {
                 items.push(convertToHistoryItem(round, 'morning'));
             }
-            if (round.assessment.afternoon || round.recommendation.afternoon) {
+            if (selectedShifts.afternoon && (round.assessment.afternoon || round.recommendation.afternoon)) {
                 items.push(convertToHistoryItem(round, 'afternoon'));
             }
-            if (round.assessment.night || round.recommendation.night) {
+            if (selectedShifts.night && (round.assessment.night || round.recommendation.night)) {
                 items.push(convertToHistoryItem(round, 'night'));
             }
         });
         
         return items;
-    }, [rounds]);
+    }, [rounds, selectedShifts]);
 
     if (loading) {
         return (

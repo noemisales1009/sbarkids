@@ -63,12 +63,18 @@ export const clinicalRoundsSimpleService = {
       };
 
       // Buscar registro existente
-      const { data: existingData, error: selectError } = await supabase
+      let selectQuery = supabase
         .from('clinical_rounds_simple')
         .select('id')
-        .eq('patient_id', patientId)
-        .eq('round_id', roundId || null)
-        .single();
+        .eq('patient_id', patientId);
+      
+      if (roundId) {
+        selectQuery = selectQuery.eq('round_id', roundId);
+      } else {
+        selectQuery = selectQuery.is('round_id', null);
+      }
+      
+      const { data: existingData, error: selectError } = await selectQuery.single();
 
       if (selectError && selectError.code !== 'PGRST116') {
         console.warn('⚠️ Erro ao buscar registro:', selectError);
@@ -130,12 +136,18 @@ export const clinicalRoundsSimpleService = {
       };
 
       // Buscar registro existente
-      const { data: existingData, error: selectError } = await supabase
+      let selectQuery = supabase
         .from('clinical_rounds_simple')
         .select('id')
-        .eq('patient_id', patientId)
-        .eq('round_id', roundId || null)
-        .single();
+        .eq('patient_id', patientId);
+      
+      if (roundId) {
+        selectQuery = selectQuery.eq('round_id', roundId);
+      } else {
+        selectQuery = selectQuery.is('round_id', null);
+      }
+      
+      const { data: existingData, error: selectError } = await selectQuery.single();
 
       if (selectError && selectError.code !== 'PGRST116') {
         console.warn('⚠️ Erro ao buscar registro:', selectError);
