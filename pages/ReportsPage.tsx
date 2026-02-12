@@ -6,6 +6,7 @@ import DesktopLayout from '../components/layout/DesktopLayout';
 import { Patient } from '../components/patients/PatientCard';
 import { supabase } from '../lib/supabase';
 import { historyService } from '../services/historyService';
+import { alertasService, Alerta } from '../services/alertasService';
 
 interface GlobalReportItem {
     id: string;
@@ -36,6 +37,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onNavigate, currentPage, onSe
     const [dateFilter, setDateFilter] = useState<string>('');
     const [selectedReports, setSelectedReports] = useState<Set<string>>(new Set());
     const [reports, setReports] = useState<GlobalReportItem[]>([]);
+    const [alertasPorPaciente, setAlertasPorPaciente] = useState<Record<string, Alerta[]>>({});
     const [loading, setLoading] = useState(true);
     const [lastFetch, setLastFetch] = useState<number>(0);
     
@@ -136,6 +138,20 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onNavigate, currentPage, onSe
 
             console.log(`📊 ${allReports.length} relatórios processados`);
             setReports(allReports);
+
+            // Buscar alertas para cada paciente
+            const alertasMap: Record<string, Alerta[]> = {};
+            for (const report of allReports) {
+                try {
+                    const alertas = await alertasService.getAlertas(report.patient.id);
+                    alertasMap[report.patient.id] = alertas;
+                } catch (error) {
+                    console.error(`Erro ao buscar alertas para paciente ${report.patient.id}:`, error);
+                    alertasMap[report.patient.id] = [];
+                }
+            }
+            setAlertasPorPaciente(alertasMap);
+            
             setLoading(false);
         } catch (error) {
             console.error('❌ Erro ao carregar relatórios:', error);
@@ -269,6 +285,24 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onNavigate, currentPage, onSe
                                         <p className="text-sm pl-8 text-justify leading-relaxed">{item.recommendation.morning}</p>
                                     </div>
                                 )}
+
+                                {/* Alertas da Manhã */}
+                                {alertasPorPaciente[item.patient.id]?.filter((a: any) => a.shift_criacao === 'morning').length > 0 && (
+                                    <div className="mt-4 pt-3 border-t border-gray-300">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className="font-bold bg-red-100 px-2 py-1 rounded text-red-700">⚠</span>
+                                            <span className="font-semibold text-sm text-red-700">ALERTAS CLÍNICOS</span>
+                                        </div>
+                                        {alertasPorPaciente[item.patient.id]?.filter((a: any) => a.shift_criacao === 'morning').map((alert: any) => (
+                                            <div key={alert.id_alerta} className="text-xs mb-2 border-l-2 border-red-300 pl-3">
+                                                <p className="font-semibold">{alert.alertaclinico}</p>
+                                                <p className="text-gray-600">Responsável: {alert.responsavel}</p>
+                                                <p className="text-gray-600">Status: {alert.status}</p>
+                                                {alert.justificativa && <p className="italic text-gray-600">Justificativa: {alert.justificativa}</p>}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         )}
 
@@ -299,6 +333,24 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onNavigate, currentPage, onSe
                                         <p className="text-sm pl-8 text-justify leading-relaxed">{item.recommendation.afternoon}</p>
                                     </div>
                                 )}
+
+                                {/* Alertas da Tarde */}
+                                {alertasPorPaciente[item.patient.id]?.filter((a: any) => a.shift_criacao === 'afternoon').length > 0 && (
+                                    <div className="mt-4 pt-3 border-t border-gray-300">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className="font-bold bg-red-100 px-2 py-1 rounded text-red-700">⚠</span>
+                                            <span className="font-semibold text-sm text-red-700">ALERTAS CLÍNICOS</span>
+                                        </div>
+                                        {alertasPorPaciente[item.patient.id]?.filter((a: any) => a.shift_criacao === 'afternoon').map((alert: any) => (
+                                            <div key={alert.id_alerta} className="text-xs mb-2 border-l-2 border-red-300 pl-3">
+                                                <p className="font-semibold">{alert.alertaclinico}</p>
+                                                <p className="text-gray-600">Responsável: {alert.responsavel}</p>
+                                                <p className="text-gray-600">Status: {alert.status}</p>
+                                                {alert.justificativa && <p className="italic text-gray-600">Justificativa: {alert.justificativa}</p>}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         )}
 
@@ -327,6 +379,24 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onNavigate, currentPage, onSe
                                             <span className="font-semibold text-sm">RECOMENDAÇÃO / PLANO</span>
                                         </div>
                                         <p className="text-sm pl-8 text-justify leading-relaxed">{item.recommendation.night}</p>
+                                    </div>
+                                )}
+
+                                {/* Alertas da Noite */}
+                                {alertasPorPaciente[item.patient.id]?.filter((a: any) => a.shift_criacao === 'night').length > 0 && (
+                                    <div className="mt-4 pt-3 border-t border-gray-300">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className="font-bold bg-red-100 px-2 py-1 rounded text-red-700">⚠</span>
+                                            <span className="font-semibold text-sm text-red-700">ALERTAS CLÍNICOS</span>
+                                        </div>
+                                        {alertasPorPaciente[item.patient.id]?.filter((a: any) => a.shift_criacao === 'night').map((alert: any) => (
+                                            <div key={alert.id_alerta} className="text-xs mb-2 border-l-2 border-red-300 pl-3">
+                                                <p className="font-semibold">{alert.alertaclinico}</p>
+                                                <p className="text-gray-600">Responsável: {alert.responsavel}</p>
+                                                <p className="text-gray-600">Status: {alert.status}</p>
+                                                {alert.justificativa && <p className="italic text-gray-600">Justificativa: {alert.justificativa}</p>}
+                                            </div>
+                                        ))}
                                     </div>
                                 )}
                             </div>

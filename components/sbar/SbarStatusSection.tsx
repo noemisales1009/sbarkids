@@ -12,10 +12,9 @@ const statusConfig: Record<PatientStatus, { icon: string; bgColor: string; textC
 
 interface SbarStatusSectionProps {
     currentStatus: PatientStatus | null;
-    onStatusChange: (status: PatientStatus) => void;
 }
 
-const SbarStatusSection: React.FC<SbarStatusSectionProps> = ({ currentStatus, onStatusChange }) => {
+const SbarStatusSection: React.FC<SbarStatusSectionProps> = ({ currentStatus }) => {
     
     const config = currentStatus ? statusConfig[currentStatus] : null;
 
@@ -23,20 +22,8 @@ const SbarStatusSection: React.FC<SbarStatusSectionProps> = ({ currentStatus, on
         <div className="flex flex-col rounded-xl border border-gray-800 bg-gray-900/50">
             <p className="p-4 text-white text-base font-medium leading-normal border-b border-gray-800">Status do Paciente</p>
             <div className="p-4 space-y-4">
-                <div className="w-full">
-                     <select
-                        value={currentStatus || ''}
-                        onChange={(e) => onStatusChange(e.target.value as PatientStatus)}
-                        className="form-select w-full h-11 rounded-lg border-gray-700 bg-gray-800 text-white focus:ring-primary focus:border-primary"
-                    >
-                        <option value="" disabled>Selecione um status</option>
-                        {statusOptions.map(option => (
-                            <option key={option} value={option}>{statusConfig[option].label}</option>
-                        ))}
-                    </select>
-                </div>
                  {config && currentStatus && (
-                     <div className="flex items-center gap-3 rounded-lg bg-gray-800 p-3 mt-2">
+                     <div className="flex items-center gap-3 rounded-lg bg-gray-800 p-3">
                         <div className={`flex shrink-0 items-center justify-center rounded-lg size-10 ${config.bgColor}`}>
                             <span className={`material-symbols-outlined ${config.textColor}`}>{config.icon}</span>
                         </div>

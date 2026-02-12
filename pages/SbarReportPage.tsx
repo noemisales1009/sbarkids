@@ -6,13 +6,11 @@ import SbarSection from '../components/sbar/SbarSection';
 import SbarFooter from '../components/sbar/SbarFooter';
 import SbarStatusSection from '../components/sbar/SbarStatusSection';
 import SbarReadonlySection from '../components/sbar/SbarReadonlySection';
-import SuportesVentilatoriosSection from '../components/sbar/SuportesVentilatoriosSection';
 import ComorbidadesSection from '../components/sbar/ComorbidadesSection';
 import BackgroundEditor from '../components/sbar/BackgroundEditor';
 import AlertasDisplay from '../components/sbar/AlertasDisplay';
 import BottomNavBar from '../components/patients/BottomNavBar';
 import AssessmentSimple from '../components/sbar/AssessmentSimple';
-import RecommendationSimple from '../components/sbar/RecommendationSimple';
 import { DiagnosticoSelector } from '../components/sbar/index';
 import { clinicalRoundsService } from '../services/clinicalRoundsService';
 import { recommendationService, ClinicalRoundRecommendation } from '../services/recommendationService';
@@ -648,20 +646,20 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
     };
     
     return (
-        <div className="relative flex min-h-screen w-full flex-col bg-gray-950">
+        <div className="relative flex min-h-screen w-full flex-col bg-background-light dark:bg-background-dark">
             <main className="flex-1 pb-32 sm:pb-20">
                 <div className="flex flex-col p-4 gap-4">
                     {/* Informações do Paciente */}
-                    <div className="bg-gray-900 p-4 rounded-lg border border-gray-800">
+                    <div className="bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm">
                         <div className="flex items-start justify-between mb-3">
                             <div className="flex-1">
-                                <h1 className="text-white text-2xl font-bold">{patient.name}</h1>
-                                <p className="text-gray-400 text-sm mt-1">Leito {patient.bed_number}</p>
+                                <h1 className="text-gray-900 dark:text-white text-2xl font-bold">{patient.name}</h1>
+                                <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">Leito {patient.bed_number}</p>
                             </div>
                             {onBack && (
                                 <button
                                     onClick={onBack}
-                                    className="flex items-center gap-1 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-lg text-gray-300 text-sm transition-colors"
+                                    className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg text-gray-700 dark:text-gray-300 text-sm transition-colors"
                                 >
                                     <span className="material-symbols-outlined text-base">arrow_back</span>
                                     Voltar
@@ -670,9 +668,9 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
                         </div>
                         
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                            <div className="bg-gray-800 p-2 rounded-lg">
-                                <p className="text-gray-400 text-xs mb-1">Idade</p>
-                                <p className="text-white text-sm font-semibold">
+                            <div className="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg">
+                                <p className="text-gray-600 dark:text-gray-400 text-xs mb-1">Idade</p>
+                                <p className="text-gray-900 dark:text-white text-sm font-semibold">
                                     {(() => {
                                         const birthDate = new Date(patient.dob);
                                         const today = new Date();
@@ -684,9 +682,9 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
                                 </p>
                             </div>
                             
-                            <div className="bg-gray-800 p-2 rounded-lg">
-                                <p className="text-gray-400 text-xs mb-1">Dias Int.</p>
-                                <p className="text-white text-sm font-semibold">
+                            <div className="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg">
+                                <p className="text-gray-600 dark:text-gray-400 text-xs mb-1">Dias Int.</p>
+                                <p className="text-gray-900 dark:text-white text-sm font-semibold">
                                     {(() => {
                                         if (!patient.dt_internacao) return '0 dias';
                                         const admissionDate = new Date(patient.dt_internacao + 'T00:00:00');
@@ -699,30 +697,30 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
                                 </p>
                             </div>
                             
-                            <div className="bg-gray-800 p-2 rounded-lg">
-                                <p className="text-gray-400 text-xs mb-1">Nascimento</p>
-                                <p className="text-white text-sm font-semibold">
+                            <div className="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg">
+                                <p className="text-gray-600 dark:text-gray-400 text-xs mb-1">Nascimento</p>
+                                <p className="text-gray-900 dark:text-white text-sm font-semibold">
                                     {new Date(patient.dob).toLocaleDateString('pt-BR')}
                                 </p>
                             </div>
                             
-                            <div className="bg-gray-800 p-2 rounded-lg">
-                                <p className="text-gray-400 text-xs mb-1">Admissão</p>
-                                <p className="text-white text-sm font-semibold">
+                            <div className="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg">
+                                <p className="text-gray-600 dark:text-gray-400 text-xs mb-1">Admissão</p>
+                                <p className="text-gray-900 dark:text-white text-sm font-semibold">
                                     {patient.dt_internacao ? new Date(patient.dt_internacao).toLocaleDateString('pt-BR') : '-'}
                                 </p>
                             </div>
                             
-                            <div className="bg-gray-800 p-2 rounded-lg">
-                                <p className="text-gray-400 text-xs mb-1">Peso</p>
-                                <p className="text-white text-sm font-semibold">
+                            <div className="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg">
+                                <p className="text-gray-600 dark:text-gray-400 text-xs mb-1">Peso</p>
+                                <p className="text-gray-900 dark:text-white text-sm font-semibold">
                                     {patient.peso ? `${patient.peso} kg` : '-'}
                                 </p>
                             </div>
                             
-                            <div className="bg-gray-800 p-2 rounded-lg">
-                                <p className="text-gray-400 text-xs mb-1">Mãe</p>
-                                <p className="text-white text-sm font-semibold truncate">
+                            <div className="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg">
+                                <p className="text-gray-600 dark:text-gray-400 text-xs mb-1">Mãe</p>
+                                <p className="text-gray-900 dark:text-white text-sm font-semibold truncate">
                                     {patient.mother_name || '-'}
                                 </p>
                             </div>
@@ -731,18 +729,14 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
 
                     <SbarStatusSection 
                         currentStatus={status} 
-                        onStatusChange={setStatus}
                     />
-
-                    {/* Suportes Ventilatórios */}
-                    <SuportesVentilatoriosSection patientId={patient.id} />
 
                     {/* Comorbidades */}
                     <ComorbidadesSection patientId={patient.id} />
 
                     {/* Seletor de Diagnósticos */}
-                    <div className="bg-gray-900 p-4 rounded-lg border border-gray-800">
-                        <h3 className="text-lg font-bold text-white mb-4">S - Situação</h3>
+                    <div className="bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm">
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">S - Situação</h3>
                         <DiagnosticoSelector 
                             pacienteId={patient.id}
                             onSaveMessage={(message) => {
@@ -794,14 +788,9 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
                     </div>
 
                     {/* Background Editor - Medicações, Dispositivos, Culturas, Procedimentos */}
-                    <div className="bg-gray-900 p-4 rounded-lg border border-gray-800">
-                        <h3 className="text-lg font-bold text-white mb-4">B - Breve Histórico</h3>
+                    <div className="bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm">
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">B - Breve Histórico</h3>
                         <BackgroundEditor patientId={patient.id} />
-                    </div>
-
-                    {/* Alertas do Paciente */}
-                    <div className="bg-gray-900 p-4 rounded-lg border border-gray-800">
-                        <AlertasDisplay patientId={patient.id} alertas={alertas} />
                     </div>
 
                     <AssessmentSimple
@@ -811,13 +800,10 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
                         onSaved={(message) => setSaveMessage({ type: message.includes('✅') ? 'success' : 'error', text: message })}
                     />
 
-                    {/* Recomendação / Plano */}
-                    <RecommendationSimple
-                        patientId={patient.id}
-                        roundId={currentRoundId || undefined}
-                        currentUserName={currentUserName}
-                        onSaved={(message) => setSaveMessage({ type: message.includes('✅') ? 'success' : 'error', text: message })}
-                    />
+                    {/* Alertas do Paciente */}
+                    <div className="bg-gray-900 p-4 rounded-lg border border-gray-800">
+                        <AlertasDisplay patientId={patient.id} roundId={currentRoundId || undefined} alertas={alertas} />
+                    </div>
 
                     {/* Mensagem de status */}
                     {saveMessage && (

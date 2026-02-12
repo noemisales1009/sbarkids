@@ -133,11 +133,11 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
   const currentData = shiftData[selectedShift];
 
   return (
-    <div className="bg-gray-900 p-4 rounded-lg border border-gray-800">
-      <h3 className="text-lg font-bold text-white mb-4">A - Assessment (Avaliação)</h3>
+    <div className="bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm">
+      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">A - Assessment (Avaliação)</h3>
 
       {/* Tabs de Turnos */}
-      <div className="flex gap-2 mb-4 border-b border-gray-700 flex-wrap">
+      <div className="flex gap-2 mb-4 border-b border-gray-300 dark:border-gray-700 flex-wrap">
         {Object.entries(shiftData).map(([shift, { label }]) => {
           const isCurrentShift = selectedShift === shift;
           return (
@@ -146,8 +146,8 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
               onClick={() => setSelectedShift(shift as 'morning' | 'afternoon' | 'night')}
               className={`px-4 py-2 font-semibold transition ${
                 isCurrentShift
-                  ? 'text-blue-400 border-b-2 border-blue-400'
-                  : 'text-gray-400 hover:text-gray-200'
+                  ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
               }`}
             >
               {label}
@@ -162,7 +162,7 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
           value={currentData.content}
           onChange={(e) => currentData.setContent(e.target.value)}
           placeholder="Digite a avaliação do paciente..."
-          className="w-full p-3 rounded-lg border border-gray-600 bg-gray-700 text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-gray-800 whitespace-pre-wrap"
+          className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-gray-800 whitespace-pre-wrap"
           rows={8}
           wrap="soft"
         />
@@ -170,9 +170,9 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
 
       {/* Info de salvamento */}
       {currentData.info.savedBy && (
-        <div className="mb-4 p-3 bg-gray-800 rounded-lg border border-gray-700 text-sm text-gray-300">
-          <p>💾 Salvo por: <span className="text-blue-400 font-medium">{currentData.info.savedBy}</span></p>
-          <p>🕐 Em: <span className="text-blue-400 font-medium">{currentData.info.savedAt}</span></p>
+        <div className="mb-4 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-300">
+          <p>💾 Salvo por: <span className="text-blue-600 dark:text-blue-400 font-medium">{currentData.info.savedBy}</span></p>
+          <p>🕐 Em: <span className="text-blue-600 dark:text-blue-400 font-medium">{currentData.info.savedAt}</span></p>
         </div>
       )}
 
@@ -180,7 +180,7 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
       <button
         onClick={handleSave}
         disabled={saving}
-        className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white font-semibold rounded-lg transition"
+        className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white font-semibold rounded-lg transition"
       >
         {saving ? '⏳ Salvando...' : '💾 Salvar Avaliação'}
       </button>

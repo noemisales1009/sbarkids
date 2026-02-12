@@ -165,14 +165,21 @@ export const alertasService = {
       console.log(`📍 alertasService.updateJustificativa - Atualizando ${fonte}/${alertaId}`);
 
       const tableName = fonte === 'tasks' ? 'tasks' : 'alertas_paciente';
+      
+      // Verificar se é um UUID ou número
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(alertaId);
+      const id = isUUID ? alertaId : parseInt(alertaId);
+
+      // Nome da coluna varia conforme a tabela
+      const columnName = fonte === 'tasks' ? 'justification' : 'justificativa';
 
       const { error } = await supabase
         .from(tableName)
         .update({ 
-          justification: justificativa,
+          [columnName]: justificativa,
           updated_at: new Date().toISOString()
         })
-        .eq('id', parseInt(alertaId));
+        .eq('id', id);
 
       if (error) {
         console.error(`❌ Erro ao atualizar justificativa em ${tableName}:`, error);

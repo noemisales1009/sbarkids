@@ -78,20 +78,20 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     };
 
     return (
-        <div className="flex min-h-screen w-full flex-col items-center justify-center p-4" style={{ backgroundColor: '#101C22' }}>
+        <div className="flex min-h-screen w-full flex-col items-center justify-center p-4 bg-gray-100 dark:bg-gray-900">
             <div className="flex w-full max-w-sm flex-col items-center gap-6">
                 {/* Logo Section */}
                 <div className="flex flex-col items-center gap-3 pb-4">
-                    <div className="relative flex h-20 w-20 items-center justify-center rounded-2xl" style={{ backgroundColor: '#10374A' }}>
-                        <span className="material-symbols-outlined text-5xl" style={{ color: '#13A2EA' }}>
+                    <div className="relative flex h-20 w-20 items-center justify-center rounded-2xl bg-blue-100 dark:bg-blue-900/30">
+                        <span className="material-symbols-outlined text-5xl text-blue-600 dark:text-blue-400">
                             waving_hand
                         </span>
                     </div>
-                    <h1 className="text-2xl font-bold text-slate-800 dark:text-white">SBAR KIDS</h1>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">SBAR KIDS</h1>
                 </div>
 
                 {/* Headline */}
-                <h2 className="text-slate-200 dark:text-white tracking-tight text-[32px] font-bold leading-tight text-center">Acesse sua conta</h2>
+                <h2 className="text-gray-900 dark:text-white tracking-tight text-[32px] font-bold leading-tight text-center">Acesse sua conta</h2>
 
                 {/* Form */}
                 <div className="flex w-full flex-col items-stretch gap-4" onKeyPress={handleKeyPress}>
@@ -115,8 +115,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                         </div>
                     )}
                     <button 
-                        className="flex h-14 w-full items-center justify-center rounded-lg px-6 text-base font-bold text-white shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-background-dark disabled:opacity-60 disabled:cursor-not-allowed"
-                        style={{ backgroundColor: '#13a4ec' }}
+                        className="flex h-14 w-full items-center justify-center rounded-lg px-6 text-base font-bold text-white shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-background-dark disabled:opacity-60 disabled:cursor-not-allowed bg-blue-600 hover:bg-blue-700"
                         onClick={handleLogin}
                         disabled={loading || !emailOrId || !password}
                     >

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Componente para exibir e editar Background (B - Breve Histórico)
  * Medicações, Dispositivos, Culturas, Procedimentos, Exames e Dietas
  */
@@ -13,6 +13,8 @@ import {
   Exame,
   Dieta
 } from '../../services/backgroundService';
+import { balanceHidricoService, BalancoHidrico } from '../../services/balanceHidricoService';
+import { diureseService, Diurese } from '../../services/diureseService';
 import { MEDICATION_LIST, MEDICATION_DOSAGE_UNITS, DEVICE_TYPES, DEVICE_LOCATIONS, CULTURE_COLLECTION_SITES } from '../../utils/constants';
 import { PATHOGENS_LIST } from '../../utils/pathogens';
 
@@ -109,8 +111,8 @@ const TabButton: React.FC<TabButtonProps> = ({ label, isActive, onClick }) => (
 
 interface TabContentProps {
   title: string;
-  addButtonLabel: string;
-  onAddClick: () => void;
+  addButtonLabel?: string;
+  onAddClick?: () => void;
   isEmpty: boolean;
   emptyMessage: string;
   children: React.ReactNode;
@@ -127,12 +129,14 @@ const TabContent: React.FC<TabContentProps> = ({
   <div className="space-y-3">
     <div className="flex justify-between items-center">
       <h4 className="text-sm font-bold text-gray-900 dark:text-white">{title}</h4>
-      <button
-        onClick={onAddClick}
-        className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition"
-      >
-        {addButtonLabel}
-      </button>
+      {addButtonLabel && onAddClick && (
+        <button
+          onClick={onAddClick}
+          className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+        >
+          {addButtonLabel}
+        </button>
+      )}
     </div>
     {isEmpty ? (
       <p className="text-xs text-gray-500 dark:text-gray-400 italic">{emptyMessage}</p>
@@ -149,14 +153,13 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
   const [procedimentos, setProcedimentos] = useState<Procedimento[]>([]);
   const [exames, setExames] = useState<Exame[]>([]);
   const [dietas, setDietas] = useState<Dieta[]>([]);
+  const [balanceHidrico, setBalanceHidrico] = useState<BalancoHidrico[]>([]);
+  const [diurese, setDiurese] = useState<Diurese[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'medicacoes' | 'dispositivos' | 'culturas' | 'procedimentos' | 'exames' | 'dietas'>('medicacoes');
+  const [activeTab, setActiveTab] = useState<'medicacoes' | 'dispositivos' | 'culturas' | 'procedimentos' | 'exames' | 'dietas' | 'balancoHidrico' | 'diurese'>('medicacoes');
 
-  // Modal states
-  const [medicacaoModal, setMedicacaoModal] = useState<{ open: boolean; data?: Medicacao }>({ open: false });
+  // Modal states (desativado - componente em modo leitura)
   const [fimMedicacaoModal, setFimMedicacaoModal] = useState<{ open: boolean; medicacao?: Medicacao }>({ open: false });
-  const [fimDispositivoModal, setFimDispositivoModal] = useState<{ open: boolean; dispositivo?: Dispositivo }>({ open: false });
-  const [dispositivoModal, setDispositivoModal] = useState<{ open: boolean; data?: Dispositivo }>({ open: false });
   const [culturaModal, setCulturaModal] = useState<{ open: boolean; data?: Cultura }>({ open: false });
   const [procedimentoModal, setProcedimentoModal] = useState<{ open: boolean; data?: Procedimento }>({ open: false });
   const [exameModal, setExameModal] = useState<{ open: boolean; data?: Exame }>({ open: false });
@@ -172,13 +175,15 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
       setLoading(true);
       console.log('📦 Carregando dados do background para paciente:', patientId);
       
-      const [meds, devs, cults, procs, exs, diets] = await Promise.all([
+      const [meds, devs, cults, procs, exs, diets, bhidricos, diur] = await Promise.all([
         backgroundService.getMedicacoes(patientId),
         backgroundService.getDispositivos(patientId),
         backgroundService.getCulturas(patientId),
         backgroundService.getProcedimentos(patientId),
         backgroundService.getExames(patientId),
-        backgroundService.getDietas(patientId)
+        backgroundService.getDietas(patientId),
+        balanceHidricoService.getBalanceHidrico(patientId),
+        diureseService.getDiurese(patientId)
       ]);
 
       console.log('💊 Medicações carregadas:', meds.length);
@@ -187,6 +192,8 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
       console.log('⚕️ Procedimentos carregados:', procs.length);
       console.log('🔬 Exames carregados:', exs.length);
       console.log('🍽️ Dietas carregadas:', diets.length);
+      console.log('💧 Balanço Hídrico carregado:', bhidricos.length);
+      console.log('💧 Diurese carregada:', diur.length);
 
       setMedicacoes(meds);
       setDispositivos(devs);
@@ -194,6 +201,8 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
       setProcedimentos(procs);
       setExames(exs);
       setDietas(diets);
+      setBalanceHidrico(bhidricos);
+      setDiurese(diur);
     } catch (error) {
       console.error('❌ Erro ao carregar background:', error);
     } finally {
@@ -243,6 +252,16 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
           isActive={activeTab === 'dietas'}
           onClick={() => setActiveTab('dietas')}
         />
+        <TabButton
+          label="💧 Balanço Hídrico"
+          isActive={activeTab === 'balancoHidrico'}
+          onClick={() => setActiveTab('balancoHidrico')}
+        />
+        <TabButton
+          label="💦 Diurese"
+          isActive={activeTab === 'diurese'}
+          onClick={() => setActiveTab('diurese')}
+        />
       </div>
 
       {/* TAB CONTENT */}
@@ -251,8 +270,6 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
         {activeTab === 'medicacoes' && (
           <TabContent
             title="Medicações"
-            addButtonLabel="+ Adicionar"
-            onAddClick={() => setMedicacaoModal({ open: true })}
             isEmpty={medicacoes.length === 0}
             emptyMessage="Nenhuma medicação registrada"
           >
@@ -262,53 +279,35 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
                 return (
                   <div 
                     key={med.id} 
-                    className={`p-3 border rounded-lg flex justify-between items-start ${
+                    className={`p-3 border rounded-lg ${
                       temFim 
                         ? 'bg-yellow-900/20 border-yellow-700' 
                         : 'bg-blue-900/20 border-blue-800'
                     }`}
                   >
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold text-white">{med.nome_medicacao}</p>
-                      <p className="text-xs text-gray-300 mt-1">
-                        {med.dosagem_valor} {med.unidade_medida}
+                    <p className="text-sm font-semibold text-white">{med.nome_medicacao}</p>
+                    <p className="text-xs text-gray-300 mt-1">
+                      {med.dosagem_valor} {med.unidade_medida}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Início: {
+                        med.data_inicio.includes('-')
+                          ? new Date(med.data_inicio + 'T00:00:00').toLocaleDateString('pt-BR')
+                          : med.data_inicio
+                      }
+                    </p>
+                    {temFim ? (
+                      <p className="text-xs text-yellow-400 mt-1 font-semibold">
+                        Fim: {new Date(med.data_fim).toLocaleDateString('pt-BR')}
                       </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        Início: {
-                          med.data_inicio.includes('-')
-                            ? new Date(med.data_inicio + 'T00:00:00').toLocaleDateString('pt-BR')
-                            : med.data_inicio
-                        }
+                    ) : (
+                      <p className="text-xs text-green-400 mt-1 font-semibold">
+                        ✓ {calculateDaysOfUsage(med.data_inicio)} dia{calculateDaysOfUsage(med.data_inicio) !== 1 ? 's' : ''} de uso
                       </p>
-                      {temFim ? (
-                        <p className="text-xs text-yellow-400 mt-1 font-semibold">
-                          Fim: {new Date(med.data_fim).toLocaleDateString('pt-BR')}
-                        </p>
-                      ) : (
-                        <p className="text-xs text-green-400 mt-1 font-semibold">
-                          ✓ {calculateDaysOfUsage(med.data_inicio)} dia{calculateDaysOfUsage(med.data_inicio) !== 1 ? 's' : ''} de uso
-                        </p>
-                      )}
-                      {med.observacao && (
-                        <p className="text-xs text-gray-300 mt-2 italic">{med.observacao}</p>
-                      )}
-                    </div>
-                    <div className="flex gap-2 ml-2">
-                      <button
-                        onClick={() => setMedicacaoModal({ open: true, data: med })}
-                        className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition"
-                      >
-                        Editar
-                      </button>
-                      {!temFim && (
-                        <button
-                          onClick={() => setFimMedicacaoModal({ open: true, medicacao: med })}
-                          className="px-3 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600 transition"
-                        >
-                          Fim
-                        </button>
-                      )}
-                    </div>
+                    )}
+                    {med.observacao && (
+                      <p className="text-xs text-gray-300 mt-2 italic">{med.observacao}</p>
+                    )}
                   </div>
                 );
               })}
@@ -320,56 +319,36 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
         {activeTab === 'dispositivos' && (
           <TabContent
             title="Dispositivos"
-            addButtonLabel="+ Adicionar"
-            onAddClick={() => setDispositivoModal({ open: true })}
             isEmpty={dispositivos.length === 0}
             emptyMessage="Nenhum dispositivo registrado"
           >
             <div className="space-y-2">
               {dispositivos.map((dev) => (
-                <div key={dev.id} className="p-3 bg-green-900/20 border border-green-800 rounded-lg flex justify-between items-start">
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-white">{dev.tipo_dispositivo}</p>
-                    <p className="text-xs text-gray-300 mt-1">Localização: {dev.localizacao}</p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      Inserido em: {
-                        typeof dev.data_insercao === 'string' 
-                          ? new Date(dev.data_insercao + 'T00:00:00').toLocaleDateString('pt-BR')
-                          : new Date(dev.data_insercao).toLocaleDateString('pt-BR')
+                <div key={dev.id} className="p-3 bg-green-900/20 border border-green-800 rounded-lg">
+                  <p className="text-sm font-semibold text-white">{dev.tipo_dispositivo}</p>
+                  <p className="text-xs text-gray-300 mt-1">Localização: {dev.localizacao}</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Inserido em: {
+                      typeof dev.data_insercao === 'string' 
+                        ? new Date(dev.data_insercao + 'T00:00:00').toLocaleDateString('pt-BR')
+                        : new Date(dev.data_insercao).toLocaleDateString('pt-BR')
+                    }
+                  </p>
+                  <p className="text-xs text-green-400 mt-1 font-semibold">
+                    {calculateDaysOfUsage(dev.data_insercao)} dia{calculateDaysOfUsage(dev.data_insercao) !== 1 ? 's' : ''} com dispositivo
+                  </p>
+                  {dev.data_remocao && (
+                    <p className="text-xs text-yellow-400 mt-1 font-semibold">
+                      Fim: {
+                        typeof dev.data_remocao === 'string'
+                          ? new Date(dev.data_remocao).toLocaleDateString('pt-BR')
+                          : new Date(dev.data_remocao).toLocaleDateString('pt-BR')
                       }
                     </p>
-                    <p className="text-xs text-green-400 mt-1 font-semibold">
-                      {calculateDaysOfUsage(dev.data_insercao)} dia{calculateDaysOfUsage(dev.data_insercao) !== 1 ? 's' : ''} com dispositivo
-                    </p>
-                    {dev.data_remocao && (
-                      <p className="text-xs text-yellow-400 mt-1 font-semibold">
-                        Fim: {
-                          typeof dev.data_remocao === 'string'
-                            ? new Date(dev.data_remocao).toLocaleDateString('pt-BR')
-                            : new Date(dev.data_remocao).toLocaleDateString('pt-BR')
-                        }
-                      </p>
-                    )}
-                    {dev.observacao && (
-                      <p className="text-xs text-gray-300 mt-2 italic">{dev.observacao}</p>
-                    )}
-                  </div>
-                  <div className="flex gap-2 ml-2">
-                    <button
-                      onClick={() => setDispositivoModal({ open: true, data: dev })}
-                      className="px-3 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600 transition"
-                    >
-                      Editar
-                    </button>
-                    {!dev.data_remocao && (
-                      <button
-                        onClick={() => setFimDispositivoModal({ open: true, dispositivo: dev })}
-                        className="px-3 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600 transition"
-                      >
-                        Fim
-                      </button>
-                    )}
-                  </div>
+                  )}
+                  {dev.observacao && (
+                    <p className="text-xs text-gray-300 mt-2 italic">{dev.observacao}</p>
+                  )}
                 </div>
               ))}
             </div>
@@ -380,30 +359,20 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
         {activeTab === 'culturas' && (
           <TabContent
             title="Culturas"
-            addButtonLabel="+ Adicionar"
-            onAddClick={() => setCulturaModal({ open: true })}
             isEmpty={culturas.length === 0}
             emptyMessage="Nenhuma cultura registrada"
           >
             <div className="space-y-2">
               {culturas.map((cult) => (
-                <div key={cult.id} className="p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg flex justify-between items-start">
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white">{cult.microorganismo}</p>
-                    <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">Local: {cult.local}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Coletado em: {new Date(cult.data_coleta).toLocaleDateString('pt-BR')}
-                    </p>
-                    {cult.observacao && (
-                      <p className="text-xs text-gray-600 dark:text-gray-300 mt-2 italic">{cult.observacao}</p>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => setCulturaModal({ open: true, data: cult })}
-                    className="ml-2 px-3 py-1 text-xs bg-purple-500 text-white rounded hover:bg-purple-600 transition"
-                  >
-                    Editar
-                  </button>
+                <div key={cult.id} className="p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{cult.microorganismo}</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">Local: {cult.local}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Coletado em: {new Date(cult.data_coleta).toLocaleDateString('pt-BR')}
+                  </p>
+                  {cult.observacao && (
+                    <p className="text-xs text-gray-600 dark:text-gray-300 mt-2 italic">{cult.observacao}</p>
+                  )}
                 </div>
               ))}
             </div>
@@ -414,35 +383,25 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
         {activeTab === 'procedimentos' && (
           <TabContent
             title="Procedimentos"
-            addButtonLabel="+ Adicionar"
-            onAddClick={() => setProcedimentoModal({ open: true })}
             isEmpty={procedimentos.length === 0}
             emptyMessage="Nenhum procedimento registrado"
           >
             <div className="space-y-2">
               {procedimentos.map((proc) => (
-                <div key={proc.id} className="p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg flex justify-between items-start">
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white">{proc.nome_procedimento}</p>
-                    {proc.nome_cirurgiao && (
-                      <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">Cirurgião: {proc.nome_cirurgiao}</p>
-                    )}
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Data: {new Date(proc.data_procedimento).toLocaleDateString('pt-BR')}
-                    </p>
-                    <p className="text-xs text-blue-400 mt-1 font-semibold">
-                      Dia Pós-Operatório: +{calculateDaysOfUsage(proc.data_procedimento)} dia{calculateDaysOfUsage(proc.data_procedimento) !== 1 ? 's' : ''}
-                    </p>
-                    {proc.notas && (
-                      <p className="text-xs text-gray-600 dark:text-gray-300 mt-2 italic">{proc.notas}</p>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => setProcedimentoModal({ open: true, data: proc })}
-                    className="ml-2 px-3 py-1 text-xs bg-orange-500 text-white rounded hover:bg-orange-600 transition"
-                  >
-                    Editar
-                  </button>
+                <div key={proc.id} className="p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{proc.nome_procedimento}</p>
+                  {proc.nome_cirurgiao && (
+                    <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">Cirurgião: {proc.nome_cirurgiao}</p>
+                  )}
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Data: {new Date(proc.data_procedimento).toLocaleDateString('pt-BR')}
+                  </p>
+                  <p className="text-xs text-blue-400 mt-1 font-semibold">
+                    Dia Pós-Operatório: +{calculateDaysOfUsage(proc.data_procedimento)} dia{calculateDaysOfUsage(proc.data_procedimento) !== 1 ? 's' : ''}
+                  </p>
+                  {proc.notas && (
+                    <p className="text-xs text-gray-600 dark:text-gray-300 mt-2 italic">{proc.notas}</p>
+                  )}
                 </div>
               ))}
             </div>
@@ -453,29 +412,19 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
         {activeTab === 'exames' && (
           <TabContent
             title="Exames"
-            addButtonLabel="+ Adicionar"
-            onAddClick={() => setExameModal({ open: true })}
             isEmpty={exames.length === 0}
             emptyMessage="Nenhum exame registrado"
           >
             <div className="space-y-2">
               {exames.map((exame) => (
-                <div key={exame.id} className="p-3 bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-lg flex justify-between items-start">
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white">{exame.nome_exame}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Data: {new Date(exame.data_exame).toLocaleDateString('pt-BR')}
-                    </p>
-                    {exame.observacao && (
-                      <p className="text-xs text-gray-600 dark:text-gray-300 mt-2 italic">{exame.observacao}</p>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => setExameModal({ open: true, data: exame })}
-                    className="ml-2 px-3 py-1 text-xs bg-teal-500 text-white rounded hover:bg-teal-600 transition"
-                  >
-                    Editar
-                  </button>
+                <div key={exame.id} className="p-3 bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-lg">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{exame.nome_exame}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Data: {new Date(exame.data_exame).toLocaleDateString('pt-BR')}
+                  </p>
+                  {exame.observacao && (
+                    <p className="text-xs text-gray-600 dark:text-gray-300 mt-2 italic">{exame.observacao}</p>
+                  )}
                 </div>
               ))}
             </div>
@@ -486,15 +435,13 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
         {activeTab === 'dietas' && (
           <TabContent
             title="Dietas"
-            addButtonLabel="+ Adicionar"
-            onAddClick={() => setDietaModal({ open: true })}
             isEmpty={dietas.length === 0}
             emptyMessage="Nenhuma dieta registrada"
           >
             <div className="space-y-2">
               {dietas.map((dieta) => (
-                <div key={dieta.id} className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg flex justify-between items-start">
-                  <div className="flex-1">
+                <div key={dieta.id} className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg space-y-3">
+                  <div>
                     <p className="text-sm font-semibold text-gray-900 dark:text-white">{dieta.tipo}</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       Início: {new Date(dieta.data_inicio).toLocaleDateString('pt-BR')}
@@ -507,19 +454,159 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
                       {dieta.vet && <p className="text-gray-600 dark:text-gray-300">VET: {dieta.vet} kcal</p>}
                       {dieta.pt && <p className="text-gray-600 dark:text-gray-300">PT: {dieta.pt} g</p>}
                       {dieta.th && <p className="text-gray-600 dark:text-gray-300">TH: {dieta.th} g</p>}
-                      {dieta.vet_at && <p className="text-gray-600 dark:text-gray-300">VET Atual: {dieta.vet_at.toFixed(1)}%</p>}
-                      {dieta.pt_at && <p className="text-gray-600 dark:text-gray-300">PT Atual: {dieta.pt_at.toFixed(1)}%</p>}
                     </div>
                     {dieta.observacao && (
                       <p className="text-xs text-gray-600 dark:text-gray-300 mt-2 italic">{dieta.observacao}</p>
                     )}
                   </div>
-                  <button
-                    onClick={() => setDietaModal({ open: true, data: dieta })}
-                    className="ml-2 px-3 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600 transition"
-                  >
-                    Editar
-                  </button>
+
+                  {/* CÁLCULOS AUTOMÁTICOS */}
+                  {(dieta.vet || dieta.vet_pleno || dieta.pt || dieta.pt_g_dia) && (
+                    <div className="bg-blue-900/30 border border-blue-700 rounded-lg p-3 space-y-2">
+                      <h5 className="text-xs font-bold text-blue-400 flex items-center gap-2">
+                        📊 Cálculos Automáticos
+                      </h5>
+                      
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        {dieta.vet && dieta.vet_pleno && dieta.vet_pleno > 0 && (
+                          <div>
+                            <p className="text-gray-400 mb-1">VET AT:</p>
+                            <p className="font-bold text-white">
+                              {((dieta.vet / dieta.vet_pleno) * 100).toFixed(1)}%
+                            </p>
+                            <p className="text-gray-500 text-xs mt-1">
+                              {dieta.vet} kcal/dia de {dieta.vet_pleno} kcal/dia
+                            </p>
+                          </div>
+                        )}
+                        
+                        {dieta.pt && dieta.pt_g_dia && dieta.pt_g_dia > 0 && (
+                          <div>
+                            <p className="text-gray-400 mb-1">PT AT:</p>
+                            <p className="font-bold text-white">
+                              {((dieta.pt / dieta.pt_g_dia) * 100).toFixed(1)}%
+                            </p>
+                            <p className="text-gray-500 text-xs mt-1">
+                              {dieta.pt} g/dia de {dieta.pt_g_dia} g/dia
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </TabContent>
+        )}
+
+        {/* BALANÇO HÍDRICO */}
+        {activeTab === 'balancoHidrico' && (
+          <TabContent
+            title="Balanço Hídrico"
+            isEmpty={balanceHidrico.length === 0}
+            emptyMessage="Nenhum balanço hídrico registrado"
+          >
+            <div className="space-y-2">
+              {balanceHidrico.map((balance) => (
+                <div key={balance.id} className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg space-y-2">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                      Balanço Hídrico
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {new Date(balance.data_registro).toLocaleDateString('pt-BR', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Volume</p>
+                      <p className="font-bold text-gray-900 dark:text-white">{balance.volume.toFixed(2)} ml</p>
+                    </div>
+                    <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Peso</p>
+                      <p className="font-bold text-gray-900 dark:text-white">{balance.peso.toFixed(2)} kg</p>
+                    </div>
+                  </div>
+
+                  {/* RESULTADO DO CÁLCULO */}
+                  <div className="bg-purple-900/30 border border-purple-700 rounded-lg p-3">
+                    <div className="text-center">
+                      <p className="text-xs text-purple-400 mb-2">Resultado</p>
+                      <p className="text-lg font-bold text-white">
+                        {balance.resultado > 0 ? '+' : ''}{(balance.resultado * 100).toFixed(2)}%
+                      </p>
+                      <p className="text-xs text-purple-300 mt-1">
+                        {balance.resultado > 0 ? 'Ganho' : balance.resultado < 0 ? 'Perda' : 'Equilibrado'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </TabContent>
+        )}
+
+        {/* DIURESE */}
+        {activeTab === 'diurese' && (
+          <TabContent
+            title="Diurese"
+            isEmpty={diurese.length === 0}
+            emptyMessage="Nenhuma diurese registrada"
+          >
+            <div className="space-y-2">
+              {diurese.map((diur) => (
+                <div key={diur.id} className="p-3 bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 rounded-lg space-y-2">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                      Diurese
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {new Date(diur.data_registro).toLocaleDateString('pt-BR', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 text-sm">
+                    <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Volume</p>
+                      <p className="font-bold text-gray-900 dark:text-white">{diur.volume.toFixed(2)}</p>
+                      <p className="text-xs text-gray-500">ml</p>
+                    </div>
+                    <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Peso</p>
+                      <p className="font-bold text-gray-900 dark:text-white">{diur.peso.toFixed(2)}</p>
+                      <p className="text-xs text-gray-500">kg</p>
+                    </div>
+                    <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Horas</p>
+                      <p className="font-bold text-gray-900 dark:text-white">{diur.horas}</p>
+                      <p className="text-xs text-gray-500">h</p>
+                    </div>
+                  </div>
+
+                  {/* RESULTADO DO CÁLCULO */}
+                  <div className="bg-cyan-900/30 border border-cyan-700 rounded-lg p-3">
+                    <div className="text-center">
+                      <p className="text-xs text-cyan-400 mb-2">Resultado</p>
+                      <p className="text-lg font-bold text-white">
+                        {diur.resultado.toFixed(2)}
+                      </p>
+                      <p className="text-xs text-cyan-300 mt-1">mL/kg/h</p>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
@@ -527,100 +614,7 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
         )}
       </div>
 
-      {/* MODAIS */}
-      {medicacaoModal.open && (
-        <MedicacaoModal
-          data={medicacaoModal.data}
-          patientId={patientId}
-          onClose={() => setMedicacaoModal({ open: false })}
-          onSave={() => {
-            setMedicacaoModal({ open: false });
-            loadData();
-          }}
-        />
-      )}
-
-      {fimMedicacaoModal.open && fimMedicacaoModal.medicacao && (
-        <FimMedicacaoModal
-          medicacao={fimMedicacaoModal.medicacao}
-          onClose={() => setFimMedicacaoModal({ open: false })}
-          onSave={() => {
-            setFimMedicacaoModal({ open: false });
-            loadData();
-          }}
-        />
-      )}
-
-      {fimDispositivoModal.open && fimDispositivoModal.dispositivo && (
-        <FimDispositivoModal
-          dispositivo={fimDispositivoModal.dispositivo}
-          onClose={() => setFimDispositivoModal({ open: false })}
-          onSave={() => {
-            setFimDispositivoModal({ open: false });
-            loadData();
-          }}
-        />
-      )}
-
-      {dispositivoModal.open && (
-        <DispositivoModal
-          data={dispositivoModal.data}
-          patientId={patientId}
-          onClose={() => setDispositivoModal({ open: false })}
-          onSave={() => {
-            setDispositivoModal({ open: false });
-            loadData();
-          }}
-        />
-      )}
-
-      {culturaModal.open && (
-        <CulturaModal
-          data={culturaModal.data}
-          patientId={patientId}
-          onClose={() => setCulturaModal({ open: false })}
-          onSave={() => {
-            setCulturaModal({ open: false });
-            loadData();
-          }}
-        />
-      )}
-
-      {procedimentoModal.open && (
-        <ProcedimentoModal
-          data={procedimentoModal.data}
-          patientId={patientId}
-          onClose={() => setProcedimentoModal({ open: false })}
-          onSave={() => {
-            setProcedimentoModal({ open: false });
-            loadData();
-          }}
-        />
-      )}
-
-      {exameModal.open && (
-        <ExameModal
-          data={exameModal.data}
-          patientId={patientId}
-          onClose={() => setExameModal({ open: false })}
-          onSave={() => {
-            setExameModal({ open: false });
-            loadData();
-          }}
-        />
-      )}
-
-      {dietaModal.open && (
-        <DietaModal
-          data={dietaModal.data}
-          patientId={patientId}
-          onClose={() => setDietaModal({ open: false })}
-          onSave={() => {
-            setDietaModal({ open: false });
-            loadData();
-          }}
-        />
-      )}
+      {/* MODAIS DESATIVADOS - COMPONENTE EM MODO LEITURA */}
     </div>
   );
 };
@@ -1770,5 +1764,7 @@ const FimDispositivoModal: React.FC<FimDispositivoModalProps> = ({ dispositivo, 
 };
 
 export default BackgroundEditor;
+
+
 
 

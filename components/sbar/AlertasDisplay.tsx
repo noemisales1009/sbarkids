@@ -4,18 +4,31 @@
  * Pode receber alertas de duas fontes:
  * 1. tasks_view_horario_br
  * 2. alertas_paciente_view_completa
+ * 
+ * Agora exibe os alertas agrupados por turno (Manhã, Tarde, Noite)
+ * e mostra a avaliação (assessment) correspondente para cada turno
  */
 
 import React, { useState, useEffect } from 'react';
 import { alertasService, Alerta } from '../../services/alertasService';
+import { shiftFilterService } from '../../services/shiftFilterService';
+import { clinicalRoundsSimpleService, ClinicalRoundsSimple } from '../../services/clinicalRoundsSimpleService';
 
 interface AlertasDisplayProps {
   patientId: string;
+  roundId?: string;
   alertas?: Alerta[];
 }
 
-const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, alertas: propsAlertas }) => {
+const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, roundId, alertas: propsAlertas }) => {
   const [alertas, setAlertas] = useState<Alerta[]>(propsAlertas || []);
+  const [assessment, setAssessment] = useState<ClinicalRoundsSimple | null>(null);
+  const [alertasPorTurno, setAlertasPorTurno] = useState<{
+    morning: Alerta[];
+    afternoon: Alerta[];
+    night: Alerta[];
+  }>({ morning: [], afternoon: [], night: [] });
+  const [usarTurnos, setUsarTurnos] = useState(false);
   const [loading, setLoading] = useState(!propsAlertas);
   const [expanded, setExpanded] = useState(false);
   const [justificativaModal, setJustificativaModal] = useState<{ visible: boolean; alertaId: string; texto: string }>({
@@ -25,27 +38,72 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, alertas: pro
   });
 
   useEffect(() => {
+    // Carregar assessment se roundId foi passado
+    if (roundId) {
+      loadAssessment();
+    }
+
     // Se foram passadas alertas como props, usa elas
     if (propsAlertas && propsAlertas.length > 0) {
       console.log('📍 AlertasDisplay recebeu alertas como props:', propsAlertas);
       setAlertas(propsAlertas);
+      
+      // Verificar se os alertas têm o campo shift_criacao
+      const temShift = propsAlertas.some((a: any) => a.shift_criacao);
+      setUsarTurnos(temShift);
+      
+      if (temShift) {
+        // Agrupar por turno
+        const agrupados = {
+          morning: propsAlertas.filter(a => (a as any).shift_criacao === 'morning'),
+          afternoon: propsAlertas.filter(a => (a as any).shift_criacao === 'afternoon'),
+          night: propsAlertas.filter(a => (a as any).shift_criacao === 'night')
+        };
+        setAlertasPorTurno(agrupados);
+      }
+      
       setLoading(false);
       return;
     }
 
     // Caso contrário, carrega do alertasService (comportamento padrão)
     loadAlertas();
-  }, [patientId, propsAlertas]);
+  }, [patientId, roundId, propsAlertas]);
 
   const loadAlertas = async () => {
     try {
       setLoading(true);
       const data = await alertasService.getAlertas(patientId);
       setAlertas(data);
+      
+      // Verificar se os alertas têm o campo shift_criacao
+      const temShift = data.some((a: any) => a.shift_criacao);
+      setUsarTurnos(temShift);
+      
+      if (temShift) {
+        // Agrupar por turno
+        const agrupados = {
+          morning: data.filter(a => (a as any).shift_criacao === 'morning'),
+          afternoon: data.filter(a => (a as any).shift_criacao === 'afternoon'),
+          night: data.filter(a => (a as any).shift_criacao === 'night')
+        };
+        setAlertasPorTurno(agrupados);
+      }
     } catch (error) {
       console.error('Erro ao carregar alertas:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadAssessment = async () => {
+    if (!roundId) return;
+    
+    try {
+      const data = await clinicalRoundsSimpleService.getByRound(patientId, roundId);
+      setAssessment(data);
+    } catch (error) {
+      console.error('Erro ao carregar assessment:', error);
     }
   };
 
@@ -230,7 +288,374 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, alertas: pro
             <div className="text-center py-6 text-gray-500 dark:text-gray-400">
               ✓ Nenhum alerta registrado
             </div>
+          ) : usarTurnos ? (
+            // Exibição por turno
+            <div className="space-y-4">
+              {/* Turno Manhã */}
+              <div>
+                <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+                  🌅 Manhã (7:01 - 13:00)
+                  {alertasPorTurno.morning.length > 0 && (
+                    <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-orange-500 text-white text-xs font-semibold">
+                      {alertasPorTurno.morning.length}
+                    </span>
+                  )}
+                </h4>
+                
+                {/* Assessment da Manhã */}
+                {assessment && assessment.assessment_morning && (
+                  <div className="mb-3 ml-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <p className="text-xs font-bold text-blue-900 dark:text-blue-300 mb-2">📝 Avaliação (Assessment)</p>
+                    <p className="text-sm text-gray-900 dark:text-white mb-2 whitespace-pre-wrap">{assessment.assessment_morning}</p>
+                    {assessment.assessment_morning_saved_by_name && (
+                      <div className="text-xs text-gray-600 dark:text-gray-400 border-t border-blue-200 dark:border-blue-800 pt-2">
+                        <span>💾 Salvo por: <strong>{assessment.assessment_morning_saved_by_name}</strong></span>
+                        {assessment.assessment_morning_saved_at && (
+                          <span className="block">
+                            🕐 Em: {new Date(assessment.assessment_morning_saved_at).toLocaleString('pt-BR')}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {alertasPorTurno.morning.length === 0 ? (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 ml-6">Nenhum alerta neste turno</p>
+                ) : (
+                  <div className="space-y-2">
+                    {alertasPorTurno.morning.map((alerta) => (
+                      <div
+                        key={alerta.id_alerta}
+                        className={`p-4 rounded-lg border-l-4 ml-4 ${getStatusColor(
+                          alerta.live_status
+                        )} border-l-orange-500`}
+                      >
+                        <div className="flex items-start justify-between gap-4 mb-3">
+                          <div className="flex items-start gap-3 flex-1">
+                            <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center shrink-0 mt-0.5">
+                              <span className="text-white text-lg">🔔</span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-gray-900 dark:text-white break-word">
+                                {alerta.alertaclinico}
+                              </p>
+                              <div className="mt-2 space-y-1 text-sm">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-gray-600 dark:text-gray-400">👤 Responsável:</span>
+                                  <span className="text-gray-900 dark:text-white font-medium">
+                                    {alerta.responsavel}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-gray-600 dark:text-gray-400">📅 Prazo:</span>
+                                  <span className="text-gray-900 dark:text-white font-medium">
+                                    {alerta.prazo_limite_formatado || 'Sem prazo'}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-gray-600 dark:text-gray-400">⏱ Tempo:</span>
+                                  <span className="text-gray-900 dark:text-white font-medium">
+                                    {alerta.prazo_formatado || 'Sem prazo'}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-xs">
+                                  <span className="text-gray-600 dark:text-gray-400">🕐 Horário:</span>
+                                  <span>{alerta.hora_criacao_formatado}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="shrink-0">
+                            <span
+                              className={`inline-block px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${getStatusBadgeColor(
+                                alerta.live_status
+                              )}`}
+                            >
+                              {getStatusLabel(alerta.live_status)}
+                            </span>
+                          </div>
+                        </div>
+                        {alerta.justificativa && (
+                          <div className="mt-3 p-2 bg-white/50 dark:bg-gray-800/50 rounded border border-gray-200 dark:border-gray-700">
+                            <p className="text-xs text-gray-700 dark:text-gray-300">
+                              <strong>Justificativa:</strong> {alerta.justificativa}
+                            </p>
+                          </div>
+                        )}
+                        <div className="mt-4 flex gap-2">
+                          <button
+                            onClick={() => handleJustificar(alerta.id_alerta)}
+                            className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition-colors flex items-center gap-2"
+                          >
+                            📝 Justificar
+                          </button>
+                          <button
+                            onClick={() => handleConcluir(alerta.id_alerta)}
+                            className="px-4 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded-md font-medium transition-colors flex items-center gap-2"
+                          >
+                            ✓ Concluir
+                          </button>
+                          <button
+                            onClick={() => handleDeletar(alerta.id_alerta)}
+                            className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-md font-medium transition-colors flex items-center gap-2"
+                          >
+                            🗑 Deletar
+                          </button>
+                        </div>
+                        <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                          Criado por: <strong>{alerta.created_by_name}</strong>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Turno Tarde */}
+              <div>
+                <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+                  ☀️ Tarde (13:01 - 19:00)
+                  {alertasPorTurno.afternoon.length > 0 && (
+                    <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-yellow-500 text-white text-xs font-semibold">
+                      {alertasPorTurno.afternoon.length}
+                    </span>
+                  )}
+                </h4>
+                
+                {/* Assessment da Tarde */}
+                {assessment && assessment.assessment_afternoon && (
+                  <div className="mb-3 ml-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <p className="text-xs font-bold text-blue-900 dark:text-blue-300 mb-2">📝 Avaliação (Assessment)</p>
+                    <p className="text-sm text-gray-900 dark:text-white mb-2 whitespace-pre-wrap">{assessment.assessment_afternoon}</p>
+                    {assessment.assessment_afternoon_saved_by_name && (
+                      <div className="text-xs text-gray-600 dark:text-gray-400 border-t border-blue-200 dark:border-blue-800 pt-2">
+                        <span>💾 Salvo por: <strong>{assessment.assessment_afternoon_saved_by_name}</strong></span>
+                        {assessment.assessment_afternoon_saved_at && (
+                          <span className="block">
+                            🕐 Em: {new Date(assessment.assessment_afternoon_saved_at).toLocaleString('pt-BR')}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {alertasPorTurno.afternoon.length === 0 ? (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 ml-6">Nenhum alerta neste turno</p>
+                ) : (
+                  <div className="space-y-2">
+                    {alertasPorTurno.afternoon.map((alerta) => (
+                      <div
+                        key={alerta.id_alerta}
+                        className={`p-4 rounded-lg border-l-4 ml-4 ${getStatusColor(
+                          alerta.live_status
+                        )} border-l-yellow-500`}
+                      >
+                        <div className="flex items-start justify-between gap-4 mb-3">
+                          <div className="flex items-start gap-3 flex-1">
+                            <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center shrink-0 mt-0.5">
+                              <span className="text-white text-lg">🔔</span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-gray-900 dark:text-white break-word">
+                                {alerta.alertaclinico}
+                              </p>
+                              <div className="mt-2 space-y-1 text-sm">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-gray-600 dark:text-gray-400">👤 Responsável:</span>
+                                  <span className="text-gray-900 dark:text-white font-medium">
+                                    {alerta.responsavel}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-gray-600 dark:text-gray-400">📅 Prazo:</span>
+                                  <span className="text-gray-900 dark:text-white font-medium">
+                                    {alerta.prazo_limite_formatado || 'Sem prazo'}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-gray-600 dark:text-gray-400">⏱ Tempo:</span>
+                                  <span className="text-gray-900 dark:text-white font-medium">
+                                    {alerta.prazo_formatado || 'Sem prazo'}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-xs">
+                                  <span className="text-gray-600 dark:text-gray-400">🕐 Horário:</span>
+                                  <span>{alerta.hora_criacao_formatado}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="shrink-0">
+                            <span
+                              className={`inline-block px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${getStatusBadgeColor(
+                                alerta.live_status
+                              )}`}
+                            >
+                              {getStatusLabel(alerta.live_status)}
+                            </span>
+                          </div>
+                        </div>
+                        {alerta.justificativa && (
+                          <div className="mt-3 p-2 bg-white/50 dark:bg-gray-800/50 rounded border border-gray-200 dark:border-gray-700">
+                            <p className="text-xs text-gray-700 dark:text-gray-300">
+                              <strong>Justificativa:</strong> {alerta.justificativa}
+                            </p>
+                          </div>
+                        )}
+                        <div className="mt-4 flex gap-2">
+                          <button
+                            onClick={() => handleJustificar(alerta.id_alerta)}
+                            className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition-colors flex items-center gap-2"
+                          >
+                            📝 Justificar
+                          </button>
+                          <button
+                            onClick={() => handleConcluir(alerta.id_alerta)}
+                            className="px-4 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded-md font-medium transition-colors flex items-center gap-2"
+                          >
+                            ✓ Concluir
+                          </button>
+                          <button
+                            onClick={() => handleDeletar(alerta.id_alerta)}
+                            className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-md font-medium transition-colors flex items-center gap-2"
+                          >
+                            🗑 Deletar
+                          </button>
+                        </div>
+                        <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                          Criado por: <strong>{alerta.created_by_name}</strong>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Turno Noite */}
+              <div>
+                <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+                  🌙 Noite (19:01 - 07:00)
+                  {alertasPorTurno.night.length > 0 && (
+                    <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-indigo-500 text-white text-xs font-semibold">
+                      {alertasPorTurno.night.length}
+                    </span>
+                  )}
+                </h4>
+                
+                {/* Assessment da Noite */}
+                {assessment && assessment.assessment_night && (
+                  <div className="mb-3 ml-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <p className="text-xs font-bold text-blue-900 dark:text-blue-300 mb-2">📝 Avaliação (Assessment)</p>
+                    <p className="text-sm text-gray-900 dark:text-white mb-2 whitespace-pre-wrap">{assessment.assessment_night}</p>
+                    {assessment.assessment_night_saved_by_name && (
+                      <div className="text-xs text-gray-600 dark:text-gray-400 border-t border-blue-200 dark:border-blue-800 pt-2">
+                        <span>💾 Salvo por: <strong>{assessment.assessment_night_saved_by_name}</strong></span>
+                        {assessment.assessment_night_saved_at && (
+                          <span className="block">
+                            🕐 Em: {new Date(assessment.assessment_night_saved_at).toLocaleString('pt-BR')}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {alertasPorTurno.night.length === 0 ? (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 ml-6">Nenhum alerta neste turno</p>
+                ) : (
+                  <div className="space-y-2">
+                    {alertasPorTurno.night.map((alerta) => (
+                      <div
+                        key={alerta.id_alerta}
+                        className={`p-4 rounded-lg border-l-4 ml-4 ${getStatusColor(
+                          alerta.live_status
+                        )} border-l-indigo-500`}
+                      >
+                        <div className="flex items-start justify-between gap-4 mb-3">
+                          <div className="flex items-start gap-3 flex-1">
+                            <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center shrink-0 mt-0.5">
+                              <span className="text-white text-lg">🔔</span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-gray-900 dark:text-white break-word">
+                                {alerta.alertaclinico}
+                              </p>
+                              <div className="mt-2 space-y-1 text-sm">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-gray-600 dark:text-gray-400">👤 Responsável:</span>
+                                  <span className="text-gray-900 dark:text-white font-medium">
+                                    {alerta.responsavel}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-gray-600 dark:text-gray-400">📅 Prazo:</span>
+                                  <span className="text-gray-900 dark:text-white font-medium">
+                                    {alerta.prazo_limite_formatado || 'Sem prazo'}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-gray-600 dark:text-gray-400">⏱ Tempo:</span>
+                                  <span className="text-gray-900 dark:text-white font-medium">
+                                    {alerta.prazo_formatado || 'Sem prazo'}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-xs">
+                                  <span className="text-gray-600 dark:text-gray-400">🕐 Horário:</span>
+                                  <span>{alerta.hora_criacao_formatado}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="shrink-0">
+                            <span
+                              className={`inline-block px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${getStatusBadgeColor(
+                                alerta.live_status
+                              )}`}
+                            >
+                              {getStatusLabel(alerta.live_status)}
+                            </span>
+                          </div>
+                        </div>
+                        {alerta.justificativa && (
+                          <div className="mt-3 p-2 bg-white/50 dark:bg-gray-800/50 rounded border border-gray-200 dark:border-gray-700">
+                            <p className="text-xs text-gray-700 dark:text-gray-300">
+                              <strong>Justificativa:</strong> {alerta.justificativa}
+                            </p>
+                          </div>
+                        )}
+                        <div className="mt-4 flex gap-2">
+                          <button
+                            onClick={() => handleJustificar(alerta.id_alerta)}
+                            className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition-colors flex items-center gap-2"
+                          >
+                            📝 Justificar
+                          </button>
+                          <button
+                            onClick={() => handleConcluir(alerta.id_alerta)}
+                            className="px-4 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded-md font-medium transition-colors flex items-center gap-2"
+                          >
+                            ✓ Concluir
+                          </button>
+                          <button
+                            onClick={() => handleDeletar(alerta.id_alerta)}
+                            className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-md font-medium transition-colors flex items-center gap-2"
+                          >
+                            🗑 Deletar
+                          </button>
+                        </div>
+                        <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                          Criado por: <strong>{alerta.created_by_name}</strong>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           ) : (
+            // Exibição padrão (sem turno)
             alertas.map((alerta) => (
               <div
                 key={alerta.id_alerta}

@@ -179,11 +179,11 @@ const AssessmentPlan: React.FC<AssessmentPlanProps> = ({
   };
 
   return (
-    <div className="bg-gray-900 p-4 rounded-lg border border-gray-800">
-      <h3 className="text-lg font-bold text-white mb-4">A - Assessment (Avaliação)</h3>
+    <div className="bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm">
+      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">A - Assessment (Avaliação)</h3>
 
       {/* Tabs de Turnos */}
-      <div className="flex gap-2 mb-4 border-b border-gray-700 flex-wrap">
+      <div className="flex gap-2 mb-4 border-b border-gray-300 dark:border-gray-700 flex-wrap">
         {Object.entries(shiftData).map(([shift, { label }]) => {
           const isCurrentShift = selectedShift === shift;
           return (
@@ -192,8 +192,8 @@ const AssessmentPlan: React.FC<AssessmentPlanProps> = ({
               onClick={() => handleShiftChange(shift as 'morning' | 'afternoon' | 'night')}
               className={`px-4 py-2 font-semibold transition ${
                 isCurrentShift
-                  ? 'text-blue-400 border-b-2 border-blue-400'
-                  : 'text-gray-400 hover:text-gray-200'
+                  ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
               }`}
             >
               {label}
@@ -210,28 +210,28 @@ const AssessmentPlan: React.FC<AssessmentPlanProps> = ({
           const hasContent = currentData.data[category.key]?.trim().length > 0;
           
           return (
-            <div key={category.key} className="border border-gray-600 rounded-lg">
+            <div key={category.key} className="border border-gray-300 dark:border-gray-600 rounded-lg">
               <button
                 onClick={() => setExpandedCategory(isExpanded ? null : category.key)}
-                className="w-full flex items-center justify-between p-3 hover:bg-gray-800 transition appearance-none"
+                className="w-full flex items-center justify-between p-3 hover:bg-gray-100 dark:hover:bg-gray-800 transition appearance-none"
               >
-                <div className="flex items-center gap-3 font-semibold text-gray-300 text-lg">
-                  <span className="material-symbols-outlined text-2xl shrink-0 text-blue-400">{category.icon}</span>
+                <div className="flex items-center gap-3 font-semibold text-gray-700 dark:text-gray-300 text-lg">
+                  <span className="material-symbols-outlined text-2xl shrink-0 text-blue-600 dark:text-blue-400">{category.icon}</span>
                   <span className="grow text-left">{category.title}</span>
-                  {hasContent && <span className="text-green-400 text-lg">✓</span>}
+                  {hasContent && <span className="text-green-600 dark:text-green-400 text-lg">✓</span>}
                 </div>
-                <span className={`text-gray-400 transition-transform shrink-0 ${isExpanded ? 'rotate-180' : ''}`}>
+                <span className={`text-gray-600 dark:text-gray-400 transition-transform shrink-0 ${isExpanded ? 'rotate-180' : ''}`}>
                   ▼
                 </span>
               </button>
               
               {isExpanded && (
-                <div className="p-3 border-t border-gray-600 bg-gray-800">
+                <div className="p-3 border-t border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800">
                   <textarea
                     value={currentData.data[category.key]}
                     onChange={(e) => currentData.onChange(category.key, e.target.value)}
                     placeholder={category.placeholder}
-                    className="w-full p-3 rounded-lg border border-gray-600 bg-gray-700 text-white placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-gray-800 whitespace-pre-wrap"
+                    className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-gray-800 whitespace-pre-wrap"
                     rows={6}
                     wrap="soft"
                     autoFocus

@@ -13,44 +13,44 @@ interface ShiftSelectorProps {
 const ShiftSelector: React.FC<ShiftSelectorProps> = ({ selectedShifts, onShiftToggle, onPrint }) => {
   return (
     <div className="mb-6 print:hidden">
-      <div className="bg-gray-800 rounded-lg p-4 space-y-4">
-        <h3 className="text-white font-bold text-base mb-3 flex items-center gap-2">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 space-y-4 border border-gray-200 dark:border-gray-700 shadow-sm">
+        <h3 className="text-gray-900 dark:text-white font-bold text-base mb-3 flex items-center gap-2">
           <span className="material-symbols-outlined">schedule</span>
           Selecione os Turnos para Imprimir
         </h3>
         
         <div className="grid grid-cols-3 gap-2">
           {/* Manhã */}
-          <label className="flex items-center gap-2 p-3 bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-600 transition-colors">
+          <label className="flex items-center gap-2 p-3 bg-gray-100 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
             <input
               type="checkbox"
               checked={selectedShifts.morning}
               onChange={() => onShiftToggle('morning')}
               className="w-4 h-4 rounded accent-blue-500"
             />
-            <span className="text-white font-medium text-sm">🌅 Manhã</span>
+            <span className="text-gray-900 dark:text-white font-medium text-sm">🌅 Manhã</span>
           </label>
 
           {/* Tarde */}
-          <label className="flex items-center gap-2 p-3 bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-600 transition-colors">
+          <label className="flex items-center gap-2 p-3 bg-gray-100 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
             <input
               type="checkbox"
               checked={selectedShifts.afternoon}
               onChange={() => onShiftToggle('afternoon')}
               className="w-4 h-4 rounded accent-blue-500"
             />
-            <span className="text-white font-medium text-sm">☀️ Tarde</span>
+            <span className="text-gray-900 dark:text-white font-medium text-sm">☀️ Tarde</span>
           </label>
 
           {/* Noite */}
-          <label className="flex items-center gap-2 p-3 bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-600 transition-colors">
+          <label className="flex items-center gap-2 p-3 bg-gray-100 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
             <input
               type="checkbox"
               checked={selectedShifts.night}
               onChange={() => onShiftToggle('night')}
               className="w-4 h-4 rounded accent-blue-500"
             />
-            <span className="text-white font-medium text-sm">🌙 Noite</span>
+            <span className="text-gray-900 dark:text-white font-medium text-sm">🌙 Noite</span>
           </label>
         </div>
 

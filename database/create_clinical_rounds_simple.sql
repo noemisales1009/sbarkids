@@ -5,8 +5,10 @@ CREATE TABLE public.clinical_rounds_simple (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   patient_id uuid NOT NULL,
   round_id uuid NULL,
+  reference_date date NULL DEFAULT CURRENT_DATE,
   created_at timestamp with time zone NULL DEFAULT now(),
   updated_at timestamp with time zone NULL DEFAULT now(),
+  created_by uuid NULL DEFAULT auth.uid(),
   
   -- Assessment - Manhã
   assessment_morning text NULL,
@@ -44,6 +46,10 @@ CREATE TABLE public.clinical_rounds_simple (
   recommendation_night_saved_by_name text NULL,
   recommendation_night_saved_at timestamp with time zone NULL,
   
+  -- Archival - quando arquivado, os dados digitados somem
+  is_archived boolean NULL DEFAULT false,
+  archived_at timestamp with time zone NULL,
+  
   CONSTRAINT clinical_rounds_simple_pkey PRIMARY KEY (id),
   CONSTRAINT clinical_rounds_simple_assessment_morning_saved_by_fkey FOREIGN KEY (assessment_morning_saved_by) REFERENCES users (id) ON DELETE SET NULL,
   CONSTRAINT clinical_rounds_simple_assessment_afternoon_saved_by_fkey FOREIGN KEY (assessment_afternoon_saved_by) REFERENCES users (id) ON DELETE SET NULL,
@@ -58,3 +64,4 @@ CREATE TABLE public.clinical_rounds_simple (
 CREATE INDEX IF NOT EXISTS idx_clinical_rounds_simple_patient_id ON public.clinical_rounds_simple USING btree (patient_id) TABLESPACE pg_default;
 
 CREATE INDEX IF NOT EXISTS idx_clinical_rounds_simple_round_id ON public.clinical_rounds_simple USING btree (round_id) TABLESPACE pg_default;
+CREATE INDEX IF NOT EXISTS idx_clinical_rounds_simple_is_archived ON public.clinical_rounds_simple USING btree (is_archived) TABLESPACE pg_default;

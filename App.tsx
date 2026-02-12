@@ -315,7 +315,8 @@ const AppContent: React.FC = () => {
                             <HistoryPage 
                                 patient={selectedPatient} 
                                 onBack={() => {
-                                    navigate('/patients');
+                                    // Voltar para a página SBAR do paciente
+                                    navigate('/sbar');
                                 }} 
                                 onNavigate={handleNavigate} 
                                 currentPage="history" 
