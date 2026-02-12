@@ -111,7 +111,7 @@ const ProfileSection: React.FC = () => {
                             <img
                                 className="aspect-square rounded-full h-16 w-16 object-cover group-hover:opacity-75 transition-opacity bg-slate-200 dark:bg-slate-700"
                                 alt={`Foto de perfil de ${fullName}`}
-                                src={profileImage || 'https://via.placeholder.com/64'}
+                                src={profileImage || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDY0IDY0IiBmaWxsPSJub25lIiBzdHJva2U9IiNjY2MiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48Y2lyY2xlIGN4PSIzMiIgY3k9IjMyIiByPSIzMCIgZmlsbD0iI2Y1ZjVmNSIgLz48cGF0aCBkPSJNMzIgMTZhMTIgMTIgMCAxIDAgMCAyNCAxMiAxMiAwIDAgMCAwLTI0eiIgZmlsbD0iI2QwZDBkMCIgc3Ryb2tlPSJub25lIiAvPjxwYXRoIGQ9Ik0xMiA1MmEyMCAyMCAwIDAgMSA0MCAwIiBzdHJva2U9IiM5OTkiIGZpbGw9Im5vbmUiIC8+PC9zdmc+'}
                             />
                             <button 
                                 onClick={handleImageClick}
