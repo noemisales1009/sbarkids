@@ -50,23 +50,26 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             // Aguardar Supabase recuperar a sessão do storage
             await new Promise(resolve => setTimeout(resolve, 500));
             
-            const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+            // Primeiro, verificar se há uma sessão válida
+            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
             
-            console.log('🔐 Auth Check:', { authUserId: authUser?.id, authUserEmail: authUser?.email, authError: authError?.message });
+            console.log('🔐 Session Check:', { sessionExists: !!session, userId: session?.user?.id, sessionError: sessionError?.message });
             
-            if (authError) {
-                // Silenciar erros de refresh token inválido - não descapacita o fluxo de login
-                if (!authError.message.includes('Refresh Token')) {
-                    console.error('❌ Erro ao obter usuário autenticado:', authError);
-                }
+            if (sessionError || !session) {
+                console.log('ℹ️ Nenhuma sessão encontrada ou erro ao recuperar');
                 setUser(null);
                 setCurrentAuthId(null);
                 setLoading(false);
                 return;
             }
             
+            // Se tem sessão, usar o usuário da sessão
+            const authUser = session.user;
+            
+            console.log('🔐 Auth Check:', { authUserId: authUser?.id, authUserEmail: authUser?.email });
+            
             if (!authUser) {
-                console.log('ℹ️ Nenhum usuário autenticado');
+                console.log('ℹ️ Nenhum usuário na sessão');
                 setUser(null);
                 setCurrentAuthId(null);
                 setLoading(false);
