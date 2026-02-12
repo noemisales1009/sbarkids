@@ -33,9 +33,12 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const refetchUser = async (forceRefresh: boolean = false) => {
         const now = Date.now();
         
+        console.log('🔍 refetchUser chamado', { forceRefresh, cached: !forceRefresh && user && (now - lastFetch) < CACHE_TIME });
+        
         // Se forceRefresh está true, sempre recarrega (ignora cache)
         // Caso contrário, verifica se tem cache válido
         if (!forceRefresh && user && (now - lastFetch) < CACHE_TIME) {
+            console.log('📦 Usando dados em cache');
             setLoading(false);
             return;
         }
@@ -49,10 +52,12 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             
             const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
             
+            console.log('🔐 Auth Check:', { authUserId: authUser?.id, authUserEmail: authUser?.email, authError: authError?.message });
+            
             if (authError) {
                 // Silenciar erros de refresh token inválido - não descapacita o fluxo de login
                 if (!authError.message.includes('Refresh Token')) {
-                    console.error('Erro ao obter usuário autenticado:', authError);
+                    console.error('❌ Erro ao obter usuário autenticado:', authError);
                 }
                 setUser(null);
                 setCurrentAuthId(null);
@@ -61,6 +66,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }
             
             if (!authUser) {
+                console.log('ℹ️ Nenhum usuário autenticado');
                 setUser(null);
                 setCurrentAuthId(null);
                 setLoading(false);
@@ -68,11 +74,14 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }
 
             // Tentar buscar usuário na tabela users
+            console.log('🔎 Buscando usuário na tabela users com ID:', authUser.id);
             const { data, error: fetchError } = await supabase
                 .from('users')
                 .select('id, name, email, role, sector, access_level, foto')
                 .eq('id', authUser.id)
                 .single();
+
+            console.log('📊 Resultado da busca:', { data, error: fetchError?.message });
 
             // Se encontrou, usar dados da tabela
             if (data && !fetchError) {
@@ -99,8 +108,6 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setCurrentAuthId(null);
             setError('Acesso não autorizado. Usuário não cadastrado.');
             setLoading(false);
-            
-            setLoading(false);
         } catch (err: any) {
             console.error('Erro ao carregar usuário:', err);
             setError(err.message);
@@ -114,9 +121,12 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         // Escutar mudanças de autenticação em tempo real
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+            console.log('🔄 onAuthStateChange:', { event, userId: session?.user?.id, email: session?.user?.email });
+            
             if (session?.user) {
                 // Se o ID do usuário mudou, invalidar cache e recarregar
                 if (session.user.id !== currentAuthId) {
+                    console.log('📝 Novo usuário detectado. Foi:', currentAuthId, 'Agora:', session.user.id);
                     setCurrentAuthId(session.user.id);
                     setLastFetch(0); // Invalidar cache
                     // Recarregar dados do novo usuário
@@ -124,6 +134,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 }
             } else {
                 // Logout
+                console.log('🚪 Logout detectado');
                 setUser(null);
                 setCurrentAuthId(null);
                 setLastFetch(0);
