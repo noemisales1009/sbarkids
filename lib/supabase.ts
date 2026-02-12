@@ -8,6 +8,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.error('❌ ERRO CRÍTICO: Variáveis de ambiente Supabase não configuradas');
   console.error('   VITE_SUPABASE_URL:', supabaseUrl ? '✅ Definida' : '❌ Faltando');
   console.error('   VITE_SUPABASE_ANON_KEY:', supabaseAnonKey ? '✅ Definida' : '❌ Faltando');
+  console.error('   Certifique-se de que as variáveis estão configuradas nos arquivos .env ou na Vercel');
 }
 
 // Validação básica de formato
@@ -21,10 +22,18 @@ if (supabaseAnonKey && supabaseAnonKey.length < 100) {
 
 export const supabase = createClient(
   supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseAnonKey || 'placeholder-key'
+  supabaseAnonKey || 'placeholder-key',
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true
+    }
+  }
 );
 
 // Log de inicialização
 console.log('🔧 Supabase Client inicializado');
 console.log('   URL:', supabaseUrl?.substring(0, 30) + '...');
 console.log('   Key:', supabaseAnonKey ? '✅ Presente' : '❌ Ausente');
+

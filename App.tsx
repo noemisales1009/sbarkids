@@ -74,23 +74,36 @@ const AppContent: React.FC = () => {
         }
     }, [selectedReport]);
 
-    // Verificar autenticação ao montar o componente (CORRIGIDO - aguarda sessão do Supabase)
+    // Verificar autenticação ao montar o componente (CORRIGIDO - com timeout de segurança)
     useEffect(() => {
         let mounted = true;
         let checkTimeout: NodeJS.Timeout;
+        let timeoutId: NodeJS.Timeout;
 
         const checkAuth = async () => {
             try {
-                // Aguardar um pouco para Supabase recuperar a sessão do storage
-                // (Supabase precisa de tempo para ler do IndexedDB/localStorage)
-                await new Promise(resolve => setTimeout(resolve, 100));
+                // Aguardar Supabase recuperar a sessão do storage
+                await new Promise(resolve => setTimeout(resolve, 500));
                 
                 if (!mounted) return;
 
-                const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+                console.log('🔐 Verificando autenticação...');
+                
+                // Usar promise com timeout de segurança
+                const sessionPromise = supabase.auth.getSession();
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Timeout ao obter sessão')), 3000)
+                );
+                
+                const { data: { session }, error: sessionError } = await Promise.race([
+                    sessionPromise,
+                    timeoutPromise
+                ]) as any;
+                
+                if (!mounted) return;
                 
                 if (sessionError) {
-                    console.error('Erro ao obter sessão:', sessionError);
+                    console.warn('⚠️ Erro ao obter sessão:', sessionError);
                     await supabase.auth.signOut();
                     navigate('/login', { replace: true });
                     setLoadingAuth(false);
@@ -98,7 +111,7 @@ const AppContent: React.FC = () => {
                 }
                 
                 if (session?.user) {
-                    // Usar dados básicos da sessão sem consulta extra (UserContext faz isso)
+                    console.log('✅ Sessão encontrada:', session.user.email);
                     setAuthUser({
                         id: session.user.id,
                         email: session.user.email || '',
@@ -106,24 +119,36 @@ const AppContent: React.FC = () => {
                     });
                     setLoadingAuth(false);
                 } else {
+                    console.log('ℹ️ Nenhuma sessão ativa');
                     navigate('/login', { replace: true });
                     setLoadingAuth(false);
                 }
             } catch (error) {
-                console.error('Erro ao verificar autenticação:', error);
-                navigate('/login', { replace: true });
-                setLoadingAuth(false);
+                console.error('❌ Erro ao verificar autenticação:', error);
+                if (mounted) {
+                    navigate('/login', { replace: true });
+                    setLoadingAuth(false);
+                }
             }
         };
 
         checkAuth();
+
+        // Timeout de segurança: Se não completar em 5 segundos, ir para login
+        timeoutId = setTimeout(() => {
+            if (mounted && loadingAuth) {
+                console.warn('⏱️ Timeout ao verificar autenticação, redirecionando para login');
+                setLoadingAuth(false);
+                navigate('/login', { replace: true });
+            }
+        }, 5000);
 
         // Escutar mudanças de autenticação em tempo real
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
             if (!mounted) return;
 
             if (event === 'SIGNED_IN' && session?.user) {
-                // Usuário fez login
+                console.log('✅ Usuário fez login:', session.user.email);
                 setAuthUser({
                     id: session.user.id,
                     email: session.user.email || '',
@@ -131,7 +156,7 @@ const AppContent: React.FC = () => {
                 });
                 setLoadingAuth(false);
             } else if (event === 'SIGNED_OUT' || !session?.user) {
-                // Usuário fez logout ou sessão expirou
+                console.log('ℹ️ Usuário fez logout');
                 setAuthUser(null);
                 if (location.pathname !== '/login') {
                     navigate('/login', { replace: true });
@@ -143,6 +168,7 @@ const AppContent: React.FC = () => {
         return () => {
             mounted = false;
             clearTimeout(checkTimeout);
+            clearTimeout(timeoutId);
             subscription?.unsubscribe();
         };
     }, [navigate, location.pathname]);

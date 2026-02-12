@@ -44,8 +44,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setLoading(true);
             setError(null);
             
-            // Aguardar um pouco para Supabase recuperar a sessão do storage
-            await new Promise(resolve => setTimeout(resolve, 100));
+            // Aguardar Supabase recuperar a sessão do storage
+            await new Promise(resolve => setTimeout(resolve, 500));
             
             const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
             
