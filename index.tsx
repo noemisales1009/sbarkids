@@ -4,11 +4,12 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './src/index.css';
 
-// Desabilitar console em produção
+// Desabilitar console em produção (mas manter erros críticos visíveis)
 const isDevelopment = import.meta.env.DEV;
 if (!isDevelopment) {
   console.log = () => {};
   console.warn = () => {};
+  // Manter console.error ativo para diagnosticar problemas em produção
 }
 
 window.addEventListener('error', (event) => {

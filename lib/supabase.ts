@@ -5,24 +5,30 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Validação mais detalhada
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('❌ ERRO CRÍTICO: Variáveis de ambiente Supabase não configuradas');
-  console.error('   VITE_SUPABASE_URL:', supabaseUrl ? '✅ Definida' : '❌ Faltando');
-  console.error('   VITE_SUPABASE_ANON_KEY:', supabaseAnonKey ? '✅ Definida' : '❌ Faltando');
-  console.error('   Certifique-se de que as variáveis estão configuradas nos arquivos .env ou na Vercel');
+  const errorMsg = '❌ ERRO CRÍTICO: Variáveis de ambiente Supabase não configuradas\n' +
+    `   VITE_SUPABASE_URL: ${supabaseUrl ? '✅ Definida' : '❌ Faltando'}\n` +
+    `   VITE_SUPABASE_ANON_KEY: ${supabaseAnonKey ? '✅ Definida' : '❌ Faltando'}\n` +
+    `   Certifique-se de que as variáveis estão configuradas nos arquivos .env ou na Vercel/Produção`;
+  console.error(errorMsg);
+  throw new Error(errorMsg);
 }
 
 // Validação básica de formato
-if (supabaseUrl && !supabaseUrl.includes('supabase.co')) {
-  console.warn('⚠️ URL do Supabase pode estar incorreta:', supabaseUrl);
+if (!supabaseUrl.includes('supabase.co')) {
+  const urlError = `⚠️ URL do Supabase pode estar incorreta: ${supabaseUrl}`;
+  console.error(urlError);
+  throw new Error(urlError);
 }
 
-if (supabaseAnonKey && supabaseAnonKey.length < 100) {
-  console.warn('⚠️ Anon Key do Supabase parece muito curta (pode estar incorreta)');
+if (supabaseAnonKey.length < 100) {
+  const keyError = `⚠️ Anon Key do Supabase parece muito curta (pode estar incorreta): ${supabaseAnonKey.substring(0, 20)}...`;
+  console.error(keyError);
+  throw new Error(keyError);
 }
 
 export const supabase = createClient(
-  supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseAnonKey || 'placeholder-key',
+  supabaseUrl,
+  supabaseAnonKey,
   {
     auth: {
       persistSession: true,

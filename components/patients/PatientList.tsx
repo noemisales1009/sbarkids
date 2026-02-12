@@ -24,17 +24,20 @@ const PatientList: React.FC<PatientListProps> = ({ onSelectPatient, onSelectHist
         
         // Se tem cache válido e não é refresh forçado, não recarregar
         if (!forceRefresh && (now - lastFetch) < CACHE_TIME) {
+            console.log('📦 [PatientList] Usando cache (dif:', now - lastFetch, 'ms)');
             return;
         }
 
         try {
+            console.log('🔄 [PatientList] Carregando pacientes...');
             setLoading(true);
             const patientsList = await patientsService.listPatients();
+            console.log('✅ [PatientList] Carregados:', patientsList.length, 'pacientes');
             setPatients(patientsList);
             setLastFetch(now);
             setError(null);
         } catch (err) {
-            console.error('Erro ao carregar pacientes:', err);
+            console.error('❌ [PatientList] Erro ao carregar:', err);
             setError('Erro ao carregar pacientes. Tente novamente.');
             setPatients([]);
         } finally {
