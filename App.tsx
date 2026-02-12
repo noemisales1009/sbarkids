@@ -77,80 +77,50 @@ const AppContent: React.FC = () => {
     // Verificar autenticação ao montar o componente
     useEffect(() => {
         let mounted = true;
-        let timeoutId: NodeJS.Timeout;
+        let checkCompleted = false;
 
-        const checkAuth = async () => {
-            try {
-                console.log('🔐 Iniciando verificação de autenticação...');
-                
-                // Timeout máximo de 2 segundos
-                const controller = new AbortController();
-                timeoutId = setTimeout(() => controller.abort(), 2000);
-                
-                const { data: { session } } = await supabase.auth.getSession();
-                clearTimeout(timeoutId);
-                
-                if (!mounted) return;
-                
-                console.log('✅ Sessão:', session ? session.user.email : 'nenhuma');
-                
-                if (session?.user) {
-                    setAuthUser({
-                        id: session.user.id,
-                        email: session.user.email || '',
-                        name: session.user.user_metadata?.name || 'Usuário'
-                    });
-                } else {
-                    navigate('/login', { replace: true });
-                }
-                
-                setLoadingAuth(false);
-            } catch (error: any) {
-                console.warn('⚠️ Erro ao verificar autenticação:', error?.message);
-                if (mounted) {
-                    navigate('/login', { replace: true });
-                    setLoadingAuth(false);
-                }
-            }
-        };
+        console.log('🔐 Inicializando autenticação...');
 
-        checkAuth();
-
-        // Timeout de segurança: máximo 3 segundos na tela de loading
-        const maxTimeoutId = setTimeout(() => {
-            if (mounted && loadingAuth) {
-                console.warn('⏱️ Tempo máximo atingido, indo para login');
-                setLoadingAuth(false);
-                navigate('/login', { replace: true });
-            }
-        }, 3000);
-
-        // Escutar mudanças de autenticação
+        // Escutar mudanças de autenticação - ÚNICA SOURCE OF TRUTH
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             if (!mounted) return;
 
+            console.log('🔄 Auth event:', event, 'Session:', session?.user?.email);
+
             if (session?.user) {
-                console.log('✅ Login detectado:', session.user.email);
+                console.log('✅ Usuário autenticado:', session.user.email);
                 setAuthUser({
                     id: session.user.id,
                     email: session.user.email || '',
                     name: session.user.user_metadata?.name || 'Usuário'
                 });
                 setLoadingAuth(false);
+                checkCompleted = true;
             } else {
-                console.log('ℹ️ Logout detectado');
+                console.log('ℹ️ sem sessão ativa');
                 setAuthUser(null);
                 setLoadingAuth(false);
+                checkCompleted = true;
                 if (location.pathname !== '/login') {
                     navigate('/login', { replace: true });
                 }
             }
         });
 
+        // Timeout de segurança: se não conseguir verificar em 4 segundos, ir para login
+        const timeoutId = setTimeout(() => {
+            if (mounted && !checkCompleted) {
+                console.warn('⏱️ Timeout na verificação de autenticação');
+                setLoadingAuth(false);
+                if (location.pathname !== '/login') {
+                    navigate('/login', { replace: true });
+                }
+            }
+        }, 4000);
+
         return () => {
             mounted = false;
             clearTimeout(timeoutId);
-            clearTimeout(maxTimeoutId);
             subscription?.unsubscribe();
         };
     }, [navigate, location.pathname]);
