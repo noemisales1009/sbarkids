@@ -74,57 +74,39 @@ const AppContent: React.FC = () => {
         }
     }, [selectedReport]);
 
-    // Verificar autenticação ao montar o componente (CORRIGIDO - com timeout de segurança)
+    // Verificar autenticação ao montar o componente
     useEffect(() => {
         let mounted = true;
-        let checkTimeout: NodeJS.Timeout;
         let timeoutId: NodeJS.Timeout;
 
         const checkAuth = async () => {
             try {
-                // Aguardar Supabase recuperar a sessão do storage
-                await new Promise(resolve => setTimeout(resolve, 500));
+                console.log('🔐 Iniciando verificação de autenticação...');
                 
-                if (!mounted) return;
-
-                console.log('🔐 Verificando autenticação...');
+                // Timeout máximo de 2 segundos
+                const controller = new AbortController();
+                timeoutId = setTimeout(() => controller.abort(), 2000);
                 
-                // Usar promise com timeout de segurança
-                const sessionPromise = supabase.auth.getSession();
-                const timeoutPromise = new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Timeout ao obter sessão')), 3000)
-                );
-                
-                const { data: { session }, error: sessionError } = await Promise.race([
-                    sessionPromise,
-                    timeoutPromise
-                ]) as any;
+                const { data: { session } } = await supabase.auth.getSession();
+                clearTimeout(timeoutId);
                 
                 if (!mounted) return;
                 
-                if (sessionError) {
-                    console.warn('⚠️ Erro ao obter sessão:', sessionError);
-                    await supabase.auth.signOut();
-                    navigate('/login', { replace: true });
-                    setLoadingAuth(false);
-                    return;
-                }
+                console.log('✅ Sessão:', session ? session.user.email : 'nenhuma');
                 
                 if (session?.user) {
-                    console.log('✅ Sessão encontrada:', session.user.email);
                     setAuthUser({
                         id: session.user.id,
                         email: session.user.email || '',
                         name: session.user.user_metadata?.name || 'Usuário'
                     });
-                    setLoadingAuth(false);
                 } else {
-                    console.log('ℹ️ Nenhuma sessão ativa');
                     navigate('/login', { replace: true });
-                    setLoadingAuth(false);
                 }
-            } catch (error) {
-                console.error('❌ Erro ao verificar autenticação:', error);
+                
+                setLoadingAuth(false);
+            } catch (error: any) {
+                console.warn('⚠️ Erro ao verificar autenticação:', error?.message);
                 if (mounted) {
                     navigate('/login', { replace: true });
                     setLoadingAuth(false);
@@ -134,41 +116,41 @@ const AppContent: React.FC = () => {
 
         checkAuth();
 
-        // Timeout de segurança: Se não completar em 5 segundos, ir para login
-        timeoutId = setTimeout(() => {
+        // Timeout de segurança: máximo 3 segundos na tela de loading
+        const maxTimeoutId = setTimeout(() => {
             if (mounted && loadingAuth) {
-                console.warn('⏱️ Timeout ao verificar autenticação, redirecionando para login');
+                console.warn('⏱️ Tempo máximo atingido, indo para login');
                 setLoadingAuth(false);
                 navigate('/login', { replace: true });
             }
-        }, 5000);
+        }, 3000);
 
-        // Escutar mudanças de autenticação em tempo real
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        // Escutar mudanças de autenticação
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             if (!mounted) return;
 
-            if (event === 'SIGNED_IN' && session?.user) {
-                console.log('✅ Usuário fez login:', session.user.email);
+            if (session?.user) {
+                console.log('✅ Login detectado:', session.user.email);
                 setAuthUser({
                     id: session.user.id,
                     email: session.user.email || '',
                     name: session.user.user_metadata?.name || 'Usuário'
                 });
                 setLoadingAuth(false);
-            } else if (event === 'SIGNED_OUT' || !session?.user) {
-                console.log('ℹ️ Usuário fez logout');
+            } else {
+                console.log('ℹ️ Logout detectado');
                 setAuthUser(null);
+                setLoadingAuth(false);
                 if (location.pathname !== '/login') {
                     navigate('/login', { replace: true });
                 }
-                setLoadingAuth(false);
             }
         });
 
         return () => {
             mounted = false;
-            clearTimeout(checkTimeout);
             clearTimeout(timeoutId);
+            clearTimeout(maxTimeoutId);
             subscription?.unsubscribe();
         };
     }, [navigate, location.pathname]);
@@ -301,13 +283,24 @@ const AppContent: React.FC = () => {
 
     // Componente de proteção de rotas
     const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        
         if (loadingAuth) {
             return (
                 <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: '#101C22' }}>
-                    <div className="text-center">
+                    <div className="text-center max-w-md px-4">
                         <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-500 mb-6 mx-auto"></div>
                         <p className="text-gray-300 text-lg font-medium">Verificando autenticação...</p>
                         <p className="text-gray-500 text-sm mt-2">Aguarde um momento</p>
+                        
+                        {/* Debug Info */}
+                        <div className="mt-6 bg-gray-800 rounded p-3 text-left text-xs text-gray-400">
+                            <p className="font-mono mb-2">🔍 Debug:</p>
+                            <p>URL: {supabaseUrl ? '✅' : '❌'}</p>
+                            <p>Key: {supabaseKey ? '✅' : '❌'}</p>
+                            <p className="text-gray-500 text-xs mt-2">Se travado, abra F12 console</p>
+                        </div>
                     </div>
                 </div>
             );
