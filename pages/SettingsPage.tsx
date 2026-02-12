@@ -5,7 +5,6 @@ import SettingsHeader from '../components/settings/SettingsHeader';
 import Accordion from '../components/settings/Accordion';
 import ProfileSection from '../components/settings/ProfileSection';
 import LogoutButton from '../components/settings/LogoutButton';
-import ThemeToggle from '../components/settings/ThemeToggle';
 import BottomNavBar from '../components/patients/BottomNavBar';
 import DesktopLayout from '../components/layout/DesktopLayout';
 import DesktopSettingsHeader from '../components/settings/DesktopSettingsHeader';
@@ -26,10 +25,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, currentPage }) 
             <div className="flex flex-col gap-4">
                 <Accordion title="Perfil" icon="person" defaultOpen>
                     <ProfileSection />
-                </Accordion>
-                
-                <Accordion title="Aparência" icon="palette" defaultOpen>
-                    <ThemeToggle />
                 </Accordion>
             </div>
             <LogoutButton onLogout={() => {

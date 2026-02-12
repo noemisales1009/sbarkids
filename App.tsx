@@ -74,13 +74,23 @@ const AppContent: React.FC = () => {
         }
     }, [selectedReport]);
 
-    // Verificar autenticação ao montar o componente (OTIMIZADO - sem consulta duplicada)
+    // Verificar autenticação ao montar o componente (CORRIGIDO - aguarda sessão do Supabase)
     useEffect(() => {
+        let mounted = true;
+        let checkTimeout: NodeJS.Timeout;
+
         const checkAuth = async () => {
             try {
+                // Aguardar um pouco para Supabase recuperar a sessão do storage
+                // (Supabase precisa de tempo para ler do IndexedDB/localStorage)
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                if (!mounted) return;
+
                 const { data: { session }, error: sessionError } = await supabase.auth.getSession();
                 
                 if (sessionError) {
+                    console.error('Erro ao obter sessão:', sessionError);
                     await supabase.auth.signOut();
                     navigate('/login', { replace: true });
                     setLoadingAuth(false);
@@ -94,39 +104,48 @@ const AppContent: React.FC = () => {
                         email: session.user.email || '',
                         name: session.user.user_metadata?.name || 'Usuário'
                     });
+                    setLoadingAuth(false);
                 } else {
                     navigate('/login', { replace: true });
+                    setLoadingAuth(false);
                 }
             } catch (error) {
+                console.error('Erro ao verificar autenticação:', error);
                 navigate('/login', { replace: true });
-            } finally {
                 setLoadingAuth(false);
             }
         };
 
         checkAuth();
 
-        // Escutar mudanças de autenticação (OTIMIZADO)
+        // Escutar mudanças de autenticação em tempo real
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            if (session?.user) {
-                // Usar dados básicos da sessão (UserContext gerencia os detalhes)
+            if (!mounted) return;
+
+            if (event === 'SIGNED_IN' && session?.user) {
+                // Usuário fez login
                 setAuthUser({
                     id: session.user.id,
                     email: session.user.email || '',
                     name: session.user.user_metadata?.name || 'Usuário'
                 });
-            } else {
+                setLoadingAuth(false);
+            } else if (event === 'SIGNED_OUT' || !session?.user) {
+                // Usuário fez logout ou sessão expirou
                 setAuthUser(null);
                 if (location.pathname !== '/login') {
                     navigate('/login', { replace: true });
                 }
+                setLoadingAuth(false);
             }
         });
 
         return () => {
+            mounted = false;
+            clearTimeout(checkTimeout);
             subscription?.unsubscribe();
         };
-    }, [navigate]);
+    }, [navigate, location.pathname]);
 
     const handleLogin = async (email: string, password: string) => {
         try {

@@ -25,15 +25,17 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [lastFetch, setLastFetch] = useState<number>(0);
+    const [currentAuthId, setCurrentAuthId] = useState<string | null>(null);
     
     // Cache de 5 minutos
     const CACHE_TIME = 300000;
 
-    const refetchUser = async () => {
+    const refetchUser = async (forceRefresh: boolean = false) => {
         const now = Date.now();
         
-        // Se tem cache válido, não recarregar
-        if (user && (now - lastFetch) < CACHE_TIME) {
+        // Se forceRefresh está true, sempre recarrega (ignora cache)
+        // Caso contrário, verifica se tem cache válido
+        if (!forceRefresh && user && (now - lastFetch) < CACHE_TIME) {
             setLoading(false);
             return;
         }
@@ -42,17 +44,25 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setLoading(true);
             setError(null);
             
+            // Aguardar um pouco para Supabase recuperar a sessão do storage
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
             const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
             
             if (authError) {
-                console.error('Erro ao obter usuário autenticado:', authError);
+                // Silenciar erros de refresh token inválido - não descapacita o fluxo de login
+                if (!authError.message.includes('Refresh Token')) {
+                    console.error('Erro ao obter usuário autenticado:', authError);
+                }
                 setUser(null);
+                setCurrentAuthId(null);
                 setLoading(false);
                 return;
             }
             
             if (!authUser) {
                 setUser(null);
+                setCurrentAuthId(null);
                 setLoading(false);
                 return;
             }
@@ -75,6 +85,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     access_level: data.access_level,
                     foto: data.foto
                 });
+                setCurrentAuthId(authUser.id);
                 setLastFetch(Date.now());
                 setLoading(false);
                 return;
@@ -84,6 +95,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             console.warn('⚠️ Usuário não cadastrado na tabela users. Fazendo logout...');
             await supabase.auth.signOut();
             setUser(null);
+            setCurrentAuthId(null);
             setError('Acesso não autorizado. Usuário não cadastrado.');
             setLoading(false);
             
@@ -96,7 +108,30 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     useEffect(() => {
-        refetchUser();
+        // Carregar usuário na primeira vez
+        refetchUser(true);
+
+        // Escutar mudanças de autenticação em tempo real
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+            if (session?.user) {
+                // Se o ID do usuário mudou, invalidar cache e recarregar
+                if (session.user.id !== currentAuthId) {
+                    setCurrentAuthId(session.user.id);
+                    setLastFetch(0); // Invalidar cache
+                    // Recarregar dados do novo usuário
+                    await refetchUser(true);
+                }
+            } else {
+                // Logout
+                setUser(null);
+                setCurrentAuthId(null);
+                setLastFetch(0);
+            }
+        });
+
+        return () => {
+            subscription?.unsubscribe();
+        };
     }, []);
 
     return (
