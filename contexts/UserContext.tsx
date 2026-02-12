@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 
 export interface UserData {
@@ -30,7 +30,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Cache de 5 minutos
     const CACHE_TIME = 300000;
 
-    const refetchUser = async (forceRefresh: boolean = false) => {
+    const refetchUser = useCallback(async (forceRefresh: boolean = false) => {
         const now = Date.now();
         
         console.log('🔍 refetchUser chamado', { forceRefresh, cached: !forceRefresh && user && (now - lastFetch) < CACHE_TIME });
@@ -113,25 +113,29 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setError(err.message);
             setLoading(false);
         }
-    };
+    }, [user, lastFetch]);
 
     useEffect(() => {
+        console.log('🚀 UserContext iniciando - currentAuthId:', currentAuthId);
+        
         // Carregar usuário na primeira vez
         refetchUser(true);
 
         // Escutar mudanças de autenticação em tempo real
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            console.log('🔄 onAuthStateChange:', { event, userId: session?.user?.id, email: session?.user?.email });
+            console.log('🔄 onAuthStateChange:', { event, userId: session?.user?.id, email: session?.user?.email, currentAuthId });
             
             if (session?.user) {
-                // Se o ID do usuário mudou, invalidar cache e recarregar
+                // SEMPRE recarregar dados quando há uma sessão ativa
+                // Comparar de forma segura
                 if (session.user.id !== currentAuthId) {
-                    console.log('📝 Novo usuário detectado. Foi:', currentAuthId, 'Agora:', session.user.id);
+                    console.log('📝 Novo usuário detectado ou primeira autenticação. Foi:', currentAuthId, 'Agora:', session.user.id);
                     setCurrentAuthId(session.user.id);
-                    setLastFetch(0); // Invalidar cache
-                    // Recarregar dados do novo usuário
-                    await refetchUser(true);
+                    setLastFetch(0);
                 }
+                // Sempre chamar refetchUser quando tem sessão
+                console.log('📥 Chamando refetchUser para carregar dados do usuário...');
+                await refetchUser(true);
             } else {
                 // Logout
                 console.log('🚪 Logout detectado');
@@ -142,9 +146,10 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         });
 
         return () => {
+            console.log('🧹 Limpando subscription do UserContext');
             subscription?.unsubscribe();
         };
-    }, []);
+    }, [currentAuthId]); // Adicionar currentAuthId como dependência
 
     return (
         <UserContext.Provider value={{ user, loading, error, refetchUser }}>
