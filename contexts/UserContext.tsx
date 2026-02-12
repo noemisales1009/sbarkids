@@ -76,6 +76,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             // Se encontrou, usar dados da tabela
             if (data && !fetchError) {
+                console.log('✅ Usuário encontrado na tabela users:', data.name);
                 setUser({
                     id: data.id,
                     name: data.name || authUser.email?.split('@')[0] || 'Usuário',
