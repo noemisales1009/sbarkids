@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import PatientCard from './PatientCard';
 import { Patient } from '../../types';
 import { patientsService } from '../../services/patientsService';
@@ -14,6 +14,7 @@ const PatientList: React.FC<PatientListProps> = ({ onSelectPatient, onSelectHist
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [lastFetch, setLastFetch] = useState<number>(0);
+    const hasLoadedRef = useRef(false);
 
     // Cache por 30 segundos
     const CACHE_TIME = 30000;
@@ -22,7 +23,7 @@ const PatientList: React.FC<PatientListProps> = ({ onSelectPatient, onSelectHist
         const now = Date.now();
         
         // Se tem cache válido e não é refresh forçado, não recarregar
-        if (!forceRefresh && patients.length > 0 && (now - lastFetch) < CACHE_TIME) {
+        if (!forceRefresh && (now - lastFetch) < CACHE_TIME) {
             return;
         }
 
@@ -39,10 +40,14 @@ const PatientList: React.FC<PatientListProps> = ({ onSelectPatient, onSelectHist
         } finally {
             setLoading(false);
         }
-    }, [patients.length, lastFetch]);
+    }, [lastFetch]);
 
     useEffect(() => {
-        loadPatients();
+        // Carregar apenas uma vez ao montar o componente
+        if (!hasLoadedRef.current) {
+            hasLoadedRef.current = true;
+            loadPatients();
+        }
     }, []);
 
     // Memoizar filtro para não recalcular sempre
