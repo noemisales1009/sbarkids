@@ -105,34 +105,12 @@ const AppContent: React.FC = () => {
         };
     }, []);
 
-    const handleLogin = async (email: string, password: string) => {
-        try {
-            const { data, error } = await supabase.auth.signInWithPassword({
-                email,
-                password
-            });
-
-            if (error) {
-                alert('Erro ao fazer login: ' + error.message);
-                return;
-            }
-            
-            if (data.user) {
-                // Usar dados básicos da sessão (UserContext gerencia os detalhes completos)
-                setAuthUser({
-                    id: data.user.id,
-                    email: data.user.email || '',
-                    name: data.user.user_metadata?.name || 'Usuário'
-                });
-                
-                // Forçar recarga dos dados ao fazer login
-                setRefreshKey(prev => prev + 1);
-                navigate('/patients', { replace: true });
-            }
-        } catch (error) {
-            alert('Erro ao fazer login: ' + (error as any).message);
+    // Navegar para /patients quando usuário fizer login
+    useEffect(() => {
+        if (authUser && location.pathname === '/login') {
+            navigate('/patients', { replace: true });
         }
-    };
+    }, [authUser, location.pathname, navigate]);
 
     const handleLogout = async () => {
         try {
