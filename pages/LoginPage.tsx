@@ -60,8 +60,8 @@ const LoginPage: React.FC = () => {
 
             if (data.session) {
                 console.log('✅ Login bem-sucedido via Supabase');
+                setLoading(false);
                 // A navegação é feita automaticamente pelo onAuthStateChange do App
-                // Não precisa chamar onLoginSuccess aqui pois causaria duplicação
             }
         } catch (err: any) {
             setError(err.message || 'Erro ao fazer login');
