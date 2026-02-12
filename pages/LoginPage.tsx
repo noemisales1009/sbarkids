@@ -4,11 +4,7 @@ import { EmailField } from '../components/EmailField';
 import { PasswordField } from '../components/PasswordField';
 import { supabase } from '../lib/supabase';
 
-interface LoginPageProps {
-    onLoginSuccess: (email: string, password: string) => void;
-}
-
-const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
+const LoginPage: React.FC = () => {
     const [emailOrId, setEmailOrId] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -63,7 +59,9 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             }
 
             if (data.session) {
-                onLoginSuccess(emailOrId, password);
+                console.log('✅ Login bem-sucedido via Supabase');
+                // A navegação é feita automaticamente pelo onAuthStateChange do App
+                // Não precisa chamar onLoginSuccess aqui pois causaria duplicação
             }
         } catch (err: any) {
             setError(err.message || 'Erro ao fazer login');

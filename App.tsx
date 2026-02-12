@@ -286,7 +286,7 @@ const AppContent: React.FC = () => {
     return (
         <div className="relative flex h-auto min-h-screen w-full flex-col bg-background-light dark:bg-background-dark group/design-root">
             <Routes>
-                <Route path="/login" element={<LoginPage onLoginSuccess={handleLogin} />} />
+                <Route path="/login" element={<LoginPage />} />
                 
                 <Route path="/patients" element={
                     <ProtectedRoute>
