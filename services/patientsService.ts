@@ -13,18 +13,29 @@ export const patientsService = {
  */
 async listPatients(limit: number = 50): Promise<Patient[]> {
   try {
+    console.log('📊 patientsService.listPatients: iniciando query...');
     const { data, error } = await supabase
       .from('patients')
       .select('*')
       .order('bed_number', { ascending: true })
       .limit(limit);
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      logError(error, 'patientsService.listPatients');
-      return [];
+    
+    console.log('📊 patientsService.listPatients: query completada', { dataLength: data?.length, error: error?.message });
+    
+    if (error) {
+      console.error('❌ Erro Supabase:', error.message, error.details);
+      throw error;
     }
-  },
+    
+    const result = data || [];
+    console.log('✅ patientsService.listPatients: retornando', result.length, 'pacientes');
+    return result;
+  } catch (error) {
+    console.error('❌ patientsService.listPatients: exceção capturada:', error);
+    logError(error, 'patientsService.listPatients');
+    throw error; // Propagar o erro para que o componente trate
+  }
+},
 
   /**
    * Obter um paciente por ID

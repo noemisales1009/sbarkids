@@ -31,14 +31,24 @@ const PatientList: React.FC<PatientListProps> = ({ onSelectPatient, onSelectHist
         try {
             console.log('🔄 [PatientList] Carregando pacientes...');
             setLoading(true);
-            const patientsList = await patientsService.listPatients();
+            
+            // Adicionar timeout de 10 segundos para evitar travamento infinito
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Timeout carregando pacientes (10s)')), 10000)
+            );
+            
+            const patientsList = await Promise.race([
+                patientsService.listPatients(),
+                timeoutPromise
+            ]) as any[];
+            
             console.log('✅ [PatientList] Carregados:', patientsList.length, 'pacientes');
             setPatients(patientsList);
             setLastFetch(now);
             setError(null);
         } catch (err) {
             console.error('❌ [PatientList] Erro ao carregar:', err);
-            setError('Erro ao carregar pacientes. Tente novamente.');
+            setError(`Erro ao carregar pacientes: ${err instanceof Error ? err.message : 'Desconhecido'}`);
             setPatients([]);
         } finally {
             setLoading(false);
@@ -51,7 +61,7 @@ const PatientList: React.FC<PatientListProps> = ({ onSelectPatient, onSelectHist
             hasLoadedRef.current = true;
             loadPatients();
         }
-    }, []);
+    }, [loadPatients]);
 
     // Memoizar filtro para não recalcular sempre
     const filteredPatients = useMemo(() => {
