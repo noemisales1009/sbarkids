@@ -30,7 +30,7 @@ const AppContent: React.FC = () => {
     const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
     const [selectedReport, setSelectedReport] = useState<HistoryItemData | null>(null);
     const [authUser, setAuthUser] = useState<AuthUser | null>(null);
-    const [loadingAuth, setLoadingAuth] = useState(true);
+    const [loadingAuth, setLoadingAuth] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
 
     // Restaurar estados do sessionStorage ao recarregar
@@ -77,11 +77,10 @@ const AppContent: React.FC = () => {
     // Verificar autenticação ao montar o componente
     useEffect(() => {
         let mounted = true;
-        let checkCompleted = false;
 
         console.log('🔐 Inicializando autenticação...');
 
-        // Escutar mudanças de autenticação - ÚNICA SOURCE OF TRUTH
+        // Escutar mudanças de autenticação - listener passivo
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             if (!mounted) return;
 
@@ -94,36 +93,17 @@ const AppContent: React.FC = () => {
                     email: session.user.email || '',
                     name: session.user.user_metadata?.name || 'Usuário'
                 });
-                setLoadingAuth(false);
-                checkCompleted = true;
             } else {
                 console.log('ℹ️ sem sessão ativa');
                 setAuthUser(null);
-                setLoadingAuth(false);
-                checkCompleted = true;
-                if (location.pathname !== '/login') {
-                    navigate('/login', { replace: true });
-                }
             }
         });
 
-        // Timeout de segurança: se não conseguir verificar em 4 segundos, ir para login
-        const timeoutId = setTimeout(() => {
-            if (mounted && !checkCompleted) {
-                console.warn('⏱️ Timeout na verificação de autenticação');
-                setLoadingAuth(false);
-                if (location.pathname !== '/login') {
-                    navigate('/login', { replace: true });
-                }
-            }
-        }, 4000);
-
         return () => {
             mounted = false;
-            clearTimeout(timeoutId);
             subscription?.unsubscribe();
         };
-    }, [navigate, location.pathname]);
+    }, []);
 
     const handleLogin = async (email: string, password: string) => {
         try {
@@ -253,29 +233,6 @@ const AppContent: React.FC = () => {
 
     // Componente de proteção de rotas
     const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-        
-        if (loadingAuth) {
-            return (
-                <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: '#101C22' }}>
-                    <div className="text-center max-w-md px-4">
-                        <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-500 mb-6 mx-auto"></div>
-                        <p className="text-gray-300 text-lg font-medium">Verificando autenticação...</p>
-                        <p className="text-gray-500 text-sm mt-2">Aguarde um momento</p>
-                        
-                        {/* Debug Info */}
-                        <div className="mt-6 bg-gray-800 rounded p-3 text-left text-xs text-gray-400">
-                            <p className="font-mono mb-2">🔍 Debug:</p>
-                            <p>URL: {supabaseUrl ? '✅' : '❌'}</p>
-                            <p>Key: {supabaseKey ? '✅' : '❌'}</p>
-                            <p className="text-gray-500 text-xs mt-2">Se travado, abra F12 console</p>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-        
         if (!authUser) {
             return <Navigate to="/login" replace />;
         }
