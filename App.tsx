@@ -93,9 +93,17 @@ const AppContent: React.FC = () => {
                     email: session.user.email || '',
                     name: session.user.user_metadata?.name || 'Usuário'
                 });
+                // Navegar automaticamente ao fazer login
+                if (location.pathname === '/login') {
+                    navigate('/patients', { replace: true });
+                }
             } else {
                 console.log('ℹ️ sem sessão ativa');
                 setAuthUser(null);
+                // Navegar para login se não autenticado
+                if (location.pathname !== '/login') {
+                    navigate('/login', { replace: true });
+                }
             }
         });
 
@@ -103,14 +111,7 @@ const AppContent: React.FC = () => {
             mounted = false;
             subscription?.unsubscribe();
         };
-    }, []);
-
-    // Navegar para /patients quando usuário fizer login
-    useEffect(() => {
-        if (authUser && location.pathname === '/login') {
-            navigate('/patients', { replace: true });
-        }
-    }, [authUser, location.pathname, navigate]);
+    }, [navigate, location.pathname]);
 
     const handleLogout = async () => {
         try {
