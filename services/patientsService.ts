@@ -13,17 +13,20 @@ export const patientsService = {
  */
 async listPatients(limit: number = 50): Promise<Patient[]> {
   try {
-    console.log('📊 patientsService.listPatients: iniciando query...');
+    console.log('📊 patientsService.listPatients: iniciando query...', { limit });
+    const startTime = Date.now();
+    
     const { data, error } = await supabase
       .from('patients')
       .select('*')
       .order('bed_number', { ascending: true })
       .limit(limit);
     
-    console.log('📊 patientsService.listPatients: query completada', { dataLength: data?.length, error: error?.message });
+    const duration = Date.now() - startTime;
+    console.log('📊 patientsService.listPatients: query completada em', duration + 'ms', { dataLength: data?.length, error: error?.message });
     
     if (error) {
-      console.error('❌ Erro Supabase:', error.message, error.details);
+      console.error('❌ Erro Supabase:', error.message, error.details, error.code);
       throw error;
     }
     

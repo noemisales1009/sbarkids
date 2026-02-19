@@ -30,19 +30,23 @@ const PatientList: React.FC<PatientListProps> = ({ onSelectPatient, onSelectHist
 
         try {
             console.log('🔄 [PatientList] Carregando pacientes...');
+            console.log('⏱️ [PatientList] Tempo limite: 30 segundos');
             setLoading(true);
             
-            // Adicionar timeout de 10 segundos para evitar travamento infinito
+            // Adicionar timeout de 30 segundos para evitar travamento infinito
             const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Timeout carregando pacientes (10s)')), 10000)
+                setTimeout(() => reject(new Error('Timeout carregando pacientes (30s) - Verifique a conexão com Supabase ou a tabela patients')), 30000)
             );
             
+            const startTime = Date.now();
             const patientsList = await Promise.race([
                 patientsService.listPatients(),
                 timeoutPromise
             ]) as any[];
             
-            console.log('✅ [PatientList] Carregados:', patientsList.length, 'pacientes');
+            const endTime = Date.now();
+            const duration = endTime - startTime;
+            console.log('✅ [PatientList] Carregados:', patientsList.length, 'pacientes em', duration + 'ms');
             setPatients(patientsList);
             setLastFetch(now);
             setError(null);
