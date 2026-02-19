@@ -24,129 +24,70 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [user, setUser] = useState<UserData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [lastFetch, setLastFetch] = useState<number>(0);
-    const [currentAuthId, setCurrentAuthId] = useState<string | null>(null);
     
-    // Cache de 5 minutos
-    const CACHE_TIME = 300000;
-
     const refetchUser = useCallback(async (forceRefresh: boolean = false) => {
-        const now = Date.now();
-        
-        console.log('🔍 refetchUser chamado', { forceRefresh, cached: !forceRefresh && user && (now - lastFetch) < CACHE_TIME });
-        
-        if (!forceRefresh && user && (now - lastFetch) < CACHE_TIME) {
-            console.log('📦 Usando dados em cache');
-            setLoading(false);
-            return;
-        }
-
         try {
             setLoading(true);
             setError(null);
             
-            // Obter sessão imediatamente sem delay
-            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+            // Obter sessão
+            const { data: { session } } = await supabase.auth.getSession();
             
-            console.log('🔐 Session Check:', { sessionExists: !!session, userId: session?.user?.id });
-            
-            if (sessionError || !session) {
-                console.log('ℹ️ Nenhuma sessão encontrada');
+            if (!session?.user) {
+                console.log('ℹ️ Nenhuma sessão');
                 setUser(null);
-                setCurrentAuthId(null);
                 setLoading(false);
                 return;
             }
             
-            const authUser = session.user;
-            
-            console.log('🔐 Auth User:', { id: authUser?.id, email: authUser?.email });
-            
-            if (!authUser) {
-                console.log('ℹ️ Nenhum usuário na sessão');
-                setUser(null);
-                setCurrentAuthId(null);
-                setLoading(false);
-                return;
-            }
-
-            // Buscar usuário na tabela users
-            console.log('🔎 Buscando usuário na tabela users com ID:', authUser.id);
+            // Buscar usuário na tabela
             const { data, error: fetchError } = await supabase
                 .from('users')
                 .select('id, name, email, role, sector, access_level, foto')
-                .eq('id', authUser.id)
+                .eq('id', session.user.id)
                 .single();
 
-            console.log('📊 Resultado da busca:', { data, error: fetchError?.message });
-
-            // Se encontrou, usar dados da tabela
-            if (data && !fetchError) {
-                console.log('✅ Usuário encontrado na tabela users:', data.name);
+            if (!fetchError && data) {
                 setUser({
                     id: data.id,
-                    name: data.name || authUser.email?.split('@')[0] || 'Usuário',
-                    email: data.email || authUser.email || '',
+                    name: data.name || session.user.email?.split('@')[0] || 'Usuário',
+                    email: data.email || session.user.email || '',
                     role: data.role || 'Médico(a)',
                     sector: data.sector,
                     access_level: data.access_level,
                     foto: data.foto
                 });
-                setCurrentAuthId(authUser.id);
-                setLastFetch(Date.now());
-                setLoading(false);
-                return;
+            } else {
+                // Usuário não encontrado na tabela
+                console.warn('⚠️ Usuário não cadastrado. Fazendo logout...');
+                await supabase.auth.signOut();
+                setUser(null);
+                setError('Acesso não autorizado.');
             }
-
-            // Se NÃO encontrou na tabela users, fazer logout (acesso não autorizado)
-            console.warn('⚠️ Usuário não cadastrado na tabela users. Fazendo logout...');
-            await supabase.auth.signOut();
-            setUser(null);
-            setCurrentAuthId(null);
-            setError('Acesso não autorizado. Usuário não cadastrado.');
-            setLoading(false);
         } catch (err: any) {
             console.error('Erro ao carregar usuário:', err);
             setError(err.message);
+        } finally {
             setLoading(false);
         }
-    }, [user, lastFetch]);
+    }, []);
 
     useEffect(() => {
-        console.log('🚀 UserContext iniciando - currentAuthId:', currentAuthId);
-        
-        // Carregar usuário na primeira vez
+        // Carregar na montagem
         refetchUser(true);
 
-        // Escutar mudanças de autenticação em tempo real
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            console.log('🔄 onAuthStateChange:', { event, userId: session?.user?.id, email: session?.user?.email, currentAuthId });
-            
+        // Ouvir mudanças de auth
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             if (session?.user) {
-                // SEMPRE recarregar dados quando há uma sessão ativa
-                // Comparar de forma segura
-                if (session.user.id !== currentAuthId) {
-                    console.log('📝 Novo usuário detectado ou primeira autenticação. Foi:', currentAuthId, 'Agora:', session.user.id);
-                    setCurrentAuthId(session.user.id);
-                    setLastFetch(0);
-                }
-                // Sempre chamar refetchUser quando tem sessão
-                console.log('📥 Chamando refetchUser para carregar dados do usuário...');
-                await refetchUser(true);
+                refetchUser(true);
             } else {
-                // Logout
-                console.log('🚪 Logout detectado');
                 setUser(null);
-                setCurrentAuthId(null);
-                setLastFetch(0);
+                setLoading(false);
             }
         });
 
-        return () => {
-            console.log('🧹 Limpando subscription do UserContext');
-            subscription?.unsubscribe();
-        };
-    }, [currentAuthId]); // Adicionar currentAuthId como dependência
+        return () => subscription?.unsubscribe();
+    }, [refetchUser]);
 
     return (
         <UserContext.Provider value={{ user, loading, error, refetchUser }}>
