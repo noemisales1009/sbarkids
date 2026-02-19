@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import PatientCard from './PatientCard';
 import { Patient } from '../../types';
-import { patientsService } from '../../services/patientsService';
+import { usePatientsCache } from '../../contexts/PatientsCache';
 
 interface PatientListProps {
     onSelectPatient: (patient: Patient) => void;
@@ -10,37 +10,19 @@ interface PatientListProps {
 }
 
 const PatientList: React.FC<PatientListProps> = ({ onSelectPatient, onSelectHistory, searchTerm = '' }) => {
-    const [patients, setPatients] = useState<Patient[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const { patients, loading, error, loadPatients } = usePatientsCache();
+    const [hasInitialized, setHasInitialized] = useState(false);
 
-    const loadPatients = useCallback(async () => {
-        try {
-            console.log('🔄 [PatientList] Iniciando carregamento...');
-            setLoading(true);
-            setError(null);
-            
-            const startTime = Date.now();
-            const patientsList = await patientsService.listPatients();
-            const duration = Date.now() - startTime;
-            
-            console.log('✅ [PatientList] Carregado em:', duration + 'ms');
-            setPatients(patientsList);
-        } catch (err) {
-            console.error('❌ [PatientList] Erro:', err);
-            setError(`Erro ao carregar pacientes: ${err instanceof Error ? err.message : 'Desconhecido'}`);
-            setPatients([]);
-        } finally {
-            setLoading(false);
+    // Carregar pacientes apenas uma vez ao montar
+    useEffect(() => {
+        if (!hasInitialized) {
+            console.log('🎯 [PatientList] Primeiro carregamento');
+            loadPatients(false); // false = usar cache se disponível
+            setHasInitialized(true);
         }
     }, []);
 
-    useEffect(() => {
-        // Sempre carregar ao montar
-        loadPatients();
-    }, []);
-
-    // Memoizar filtro para não recalcular sempre
+    // Memoizar filtro
     const filteredPatients = useMemo(() => {
         if (!searchTerm) return patients;
         
@@ -53,7 +35,7 @@ const PatientList: React.FC<PatientListProps> = ({ onSelectPatient, onSelectHist
         });
     }, [patients, searchTerm]);
 
-    if (loading) {
+    if (loading && patients.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center text-center py-8 sm:py-12 lg:py-16 px-4 sm:px-6">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
@@ -68,7 +50,7 @@ const PatientList: React.FC<PatientListProps> = ({ onSelectPatient, onSelectHist
                 <span className="material-symbols-outlined text-5xl text-red-500 mb-3">error</span>
                 <h3 className="text-lg sm:text-xl font-semibold text-red-900 dark:text-red-300 mb-2">{error}</h3>
                 <button 
-                    onClick={() => loadPatients()}
+                    onClick={() => loadPatients(true)}
                     className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                 >
                     Recarregar
@@ -87,7 +69,7 @@ const PatientList: React.FC<PatientListProps> = ({ onSelectPatient, onSelectHist
                         ? `Não encontramos resultados para "${searchTerm}".`
                         : "Sua lista de pacientes está vazia. Adicione um novo paciente para começar."}
                 </p>
-                {!loading && patients.length === 0 && (
+                {patients.length === 0 && (
                     <button 
                         onClick={() => loadPatients(true)}
                         className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"

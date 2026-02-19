@@ -15,6 +15,7 @@ import { supabase } from './lib/supabase';
 import { patientsService } from './services/patientsService';
 import { UserProvider } from './contexts/UserContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { PatientsCacheProvider } from './contexts/PatientsCache';
 import { initializeDailyClearanceService } from './services/dailyClearanceService';
 
 interface AuthUser {
@@ -324,9 +325,11 @@ const App: React.FC = () => {
         <ThemeProvider>
             <ViewportProvider>
                 <UserProvider>
-                    <BrowserRouter>
-                        <AppContent />
-                    </BrowserRouter>
+                    <PatientsCacheProvider>
+                        <BrowserRouter>
+                            <AppContent />
+                        </BrowserRouter>
+                    </PatientsCacheProvider>
                 </UserProvider>
             </ViewportProvider>
         </ThemeProvider>
