@@ -67,7 +67,7 @@ const PatientList: React.FC<PatientListProps> = ({ onSelectPatient, onSelectHist
         return () => {
             cachedPatientsRef.current = null;
         };
-    }, [loadPatients]);
+    }, []); // Sem dependências - roda apenas uma vez ao montar
 
     // Memoizar filtro para não recalcular sempre
     const filteredPatients = useMemo(() => {
