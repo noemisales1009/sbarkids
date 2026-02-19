@@ -9,16 +9,17 @@ import { logError } from '../utils/errorHandler';
 
 export const patientsService = {
   /**
- * Listar pacientes com limite
+ * Listar pacientes com limite - OTIMIZADO: apenas colunas essenciais
  */
 async listPatients(limit: number = 50): Promise<Patient[]> {
   try {
     console.log('📊 patientsService.listPatients: iniciando query...', { limit });
     const startTime = Date.now();
     
+    // Selecionar apenas colunas essenciais para melhor performance
     const { data, error } = await supabase
       .from('patients')
-      .select('*')
+      .select('id,name,bed_number,status,diagnosis,mother_name,dob,comorbidade,dt_internacao,peso,destino,created_at,updated_at')
       .order('bed_number', { ascending: true })
       .limit(limit);
     
@@ -31,7 +32,7 @@ async listPatients(limit: number = 50): Promise<Patient[]> {
     }
     
     const result = data || [];
-    console.log('✅ patientsService.listPatients: retornando', result.length, 'pacientes');
+    console.log('✅ patientsService.listPatients: retornando', result.length, 'pacientes em', duration + 'ms');
     return result;
   } catch (error) {
     console.error('❌ patientsService.listPatients: exceção capturada:', error);
