@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import PatientCard from './PatientCard';
 import { Patient } from '../../types';
-import { usePatientsCache } from '../../contexts/PatientsCache';
+import { patientsService } from '../../services/patientsService';
 
 interface PatientListProps {
     onSelectPatient: (patient: Patient) => void;
@@ -10,22 +10,45 @@ interface PatientListProps {
 }
 
 const PatientList: React.FC<PatientListProps> = ({ onSelectPatient, onSelectHistory, searchTerm = '' }) => {
-    const { patients, loading, error, loadPatients } = usePatientsCache();
-    const [hasInitialized, setHasInitialized] = useState(false);
+    const [patients, setPatients] = useState<Patient[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    // Carregar pacientes apenas uma vez ao montar
     useEffect(() => {
-        if (!hasInitialized) {
-            console.log('🎯 [PatientList] Primeiro carregamento');
-            loadPatients(false); // false = usar cache se disponível
-            setHasInitialized(true);
-        }
+        const loadPatients = async () => {
+            try {
+                // Verificar se tem dados em cache no sessionStorage
+                const cached = sessionStorage.getItem('patientsList');
+                if (cached) {
+                    console.log('📦 [PatientList] Usando dados do sessionStorage');
+                    setPatients(JSON.parse(cached));
+                    setLoading(false);
+                    return;
+                }
+
+                // Se não tem cache, carregar do Supabase
+                console.log('🔄 [PatientList] Carregando pacientes do Supabase...');
+                setLoading(true);
+                const data = await patientsService.listPatients();
+                setPatients(data);
+                
+                // Salvar no sessionStorage
+                sessionStorage.setItem('patientsList', JSON.stringify(data));
+                console.log('✅ [PatientList] Pacientes salvos em cache');
+            } catch (err) {
+                console.error('❌ [PatientList] Erro:', err);
+                setError(`Erro ao carregar pacientes: ${err instanceof Error ? err.message : 'Desconhecido'}`);
+                setPatients([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadPatients();
     }, []);
 
-    // Memoizar filtro
     const filteredPatients = useMemo(() => {
         if (!searchTerm) return patients;
-        
         const term = searchTerm.toLowerCase();
         return patients.filter(patient => {
             return (
@@ -50,7 +73,10 @@ const PatientList: React.FC<PatientListProps> = ({ onSelectPatient, onSelectHist
                 <span className="material-symbols-outlined text-5xl text-red-500 mb-3">error</span>
                 <h3 className="text-lg sm:text-xl font-semibold text-red-900 dark:text-red-300 mb-2">{error}</h3>
                 <button 
-                    onClick={() => loadPatients(true)}
+                    onClick={() => {
+                        sessionStorage.removeItem('patientsList');
+                        window.location.reload();
+                    }}
                     className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                 >
                     Recarregar
@@ -69,14 +95,6 @@ const PatientList: React.FC<PatientListProps> = ({ onSelectPatient, onSelectHist
                         ? `Não encontramos resultados para "${searchTerm}".`
                         : "Sua lista de pacientes está vazia. Adicione um novo paciente para começar."}
                 </p>
-                {patients.length === 0 && (
-                    <button 
-                        onClick={() => loadPatients(true)}
-                        className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                    >
-                        Recarregar
-                    </button>
-                )}
             </div>
         );
     }
