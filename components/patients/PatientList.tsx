@@ -28,24 +28,19 @@ const PatientList: React.FC<PatientListProps> = ({ onSelectPatient, onSelectHist
         }
 
         try {
-            console.log('🔄 [PatientList] Carregando pacientes...');
-            console.log('⏱️ [PatientList] Tempo limite: 60 segundos');
+            console.log('🔄 [PatientList] Iniciando carregamento de pacientes...');
             setLoading(true);
             
-            // Adicionar timeout de 60 segundos para evitar travamento infinito
-            const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Timeout carregando pacientes (60s) - Verifique a conexão com Supabase ou a tabela patients')), 60000)
-            );
-            
             const startTime = Date.now();
-            const patientsList = await Promise.race([
-                patientsService.listPatients(),
-                timeoutPromise
-            ]) as any[];
+            console.log('⏱️ [PatientList] Início da query:', startTime);
+            
+            // Sem timeout por enquanto para ver tempo real
+            const patientsList = await patientsService.listPatients();
             
             const endTime = Date.now();
             const duration = endTime - startTime;
-            console.log('✅ [PatientList] Carregados:', patientsList.length, 'pacientes em', duration + 'ms');
+            console.log('✅ [PatientList] Query completada em:', duration + 'ms');
+            console.log('✅ [PatientList] Pacientes recebidos:', patientsList.length);
             
             // Armazenar no cache
             cachedPatientsRef.current = {

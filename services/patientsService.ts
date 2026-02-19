@@ -9,35 +9,34 @@ import { logError } from '../utils/errorHandler';
 
 export const patientsService = {
   /**
- * Listar pacientes com limite - OTIMIZADO: apenas colunas essenciais
+ * Listar pacientes com limite - MINIMALISTA para debug
  */
 async listPatients(limit: number = 50): Promise<Patient[]> {
   try {
-    console.log('📊 patientsService.listPatients: iniciando query...', { limit });
+    console.log('📊 patientsService.listPatients: iniciando...', { limit });
     const startTime = Date.now();
     
-    // Selecionar apenas colunas essenciais para melhor performance
     const { data, error } = await supabase
       .from('patients')
       .select('id,name,bed_number,status,diagnosis,mother_name,dob,comorbidade,dt_internacao,peso,destino,created_at,updated_at')
-      .order('bed_number', { ascending: true })
       .limit(limit);
     
     const duration = Date.now() - startTime;
-    console.log('📊 patientsService.listPatients: query completada em', duration + 'ms', { dataLength: data?.length, error: error?.message });
+    console.log('📊 patientsService.listPatients: query sem order completada em', duration + 'ms');
     
     if (error) {
-      console.error('❌ Erro Supabase:', error.message, error.details, error.code);
+      console.error('❌ Erro Supabase:', error);
       throw error;
     }
     
-    const result = data || [];
+    // Ordenar localmente em vez de na DB
+    const result = (data || []).sort((a, b) => (a.bed_number || 0) - (b.bed_number || 0));
     console.log('✅ patientsService.listPatients: retornando', result.length, 'pacientes em', duration + 'ms');
     return result;
   } catch (error) {
     console.error('❌ patientsService.listPatients: exceção capturada:', error);
     logError(error, 'patientsService.listPatients');
-    throw error; // Propagar o erro para que o componente trate
+    throw error;
   }
 },
 
