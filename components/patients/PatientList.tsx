@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import PatientCard from './PatientCard';
 import { Patient } from '../../types';
 import { patientsService } from '../../services/patientsService';
@@ -13,45 +13,21 @@ const PatientList: React.FC<PatientListProps> = ({ onSelectPatient, onSelectHist
     const [patients, setPatients] = useState<Patient[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const cachedPatientsRef = useRef<{ data: Patient[], timestamp: number } | null>(null);
-    const CACHE_TIME = 30000;
 
-    const loadPatients = useCallback(async (forceRefresh = false) => {
-        const now = Date.now();
-        
-        // Se tem cache válido e não é refresh forçado, usar cache
-        if (!forceRefresh && cachedPatientsRef.current && (now - cachedPatientsRef.current.timestamp) < CACHE_TIME) {
-            console.log('📦 [PatientList] Usando cache (dif:', now - cachedPatientsRef.current.timestamp, 'ms)');
-            setPatients(cachedPatientsRef.current.data);
-            setLoading(false);
-            return;
-        }
-
+    const loadPatients = useCallback(async () => {
         try {
-            console.log('🔄 [PatientList] Iniciando carregamento de pacientes...');
+            console.log('🔄 [PatientList] Iniciando carregamento...');
             setLoading(true);
+            setError(null);
             
             const startTime = Date.now();
-            console.log('⏱️ [PatientList] Início da query:', startTime);
-            
-            // Sem timeout por enquanto para ver tempo real
             const patientsList = await patientsService.listPatients();
+            const duration = Date.now() - startTime;
             
-            const endTime = Date.now();
-            const duration = endTime - startTime;
-            console.log('✅ [PatientList] Query completada em:', duration + 'ms');
-            console.log('✅ [PatientList] Pacientes recebidos:', patientsList.length);
-            
-            // Armazenar no cache
-            cachedPatientsRef.current = {
-                data: patientsList,
-                timestamp: now
-            };
-            
+            console.log('✅ [PatientList] Carregado em:', duration + 'ms');
             setPatients(patientsList);
-            setError(null);
         } catch (err) {
-            console.error('❌ [PatientList] Erro ao carregar:', err);
+            console.error('❌ [PatientList] Erro:', err);
             setError(`Erro ao carregar pacientes: ${err instanceof Error ? err.message : 'Desconhecido'}`);
             setPatients([]);
         } finally {
@@ -60,14 +36,9 @@ const PatientList: React.FC<PatientListProps> = ({ onSelectPatient, onSelectHist
     }, []);
 
     useEffect(() => {
-        // Sempre carregar ao montar o componente (força refresh para evitar problemas com cache)
-        loadPatients(true);
-        
-        // Cleanup: limpar dados quando desmonta para garantir fresh load na próxima vez
-        return () => {
-            cachedPatientsRef.current = null;
-        };
-    }, []); // Sem dependências - roda apenas uma vez ao montar
+        // Sempre carregar ao montar
+        loadPatients();
+    }, []);
 
     // Memoizar filtro para não recalcular sempre
     const filteredPatients = useMemo(() => {
@@ -95,7 +66,13 @@ const PatientList: React.FC<PatientListProps> = ({ onSelectPatient, onSelectHist
         return (
             <div className="flex flex-col items-center justify-center text-center py-8 sm:py-12 lg:py-16 px-4 sm:px-6 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800 mt-4">
                 <span className="material-symbols-outlined text-5xl text-red-500 mb-3">error</span>
-                <h3 className="text-lg sm:text-xl font-semibold text-red-900 dark:text-red-300">{error}</h3>
+                <h3 className="text-lg sm:text-xl font-semibold text-red-900 dark:text-red-300 mb-2">{error}</h3>
+                <button 
+                    onClick={() => loadPatients()}
+                    className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                >
+                    Recarregar
+                </button>
             </div>
         );
     }

@@ -9,32 +9,32 @@ import { logError } from '../utils/errorHandler';
 
 export const patientsService = {
   /**
- * Listar pacientes com limite - MINIMALISTA para debug
+ * Listar pacientes - Simples e direto
  */
 async listPatients(limit: number = 50): Promise<Patient[]> {
   try {
     console.log('📊 patientsService.listPatients: iniciando...', { limit });
     const startTime = Date.now();
     
+    // Query simples e direta
     const { data, error } = await supabase
       .from('patients')
       .select('id,name,bed_number,status,diagnosis,mother_name,dob,comorbidade,dt_internacao,peso,destino,created_at,updated_at')
       .limit(limit);
     
     const duration = Date.now() - startTime;
-    console.log('📊 patientsService.listPatients: query sem order completada em', duration + 'ms');
     
     if (error) {
       console.error('❌ Erro Supabase:', error);
       throw error;
     }
     
-    // Ordenar localmente em vez de na DB
+    // Ordenar localmente
     const result = (data || []).sort((a, b) => (a.bed_number || 0) - (b.bed_number || 0));
     console.log('✅ patientsService.listPatients: retornando', result.length, 'pacientes em', duration + 'ms');
     return result;
   } catch (error) {
-    console.error('❌ patientsService.listPatients: exceção capturada:', error);
+    console.error('❌ patientsService.listPatients: erro:', error);
     logError(error, 'patientsService.listPatients');
     throw error;
   }

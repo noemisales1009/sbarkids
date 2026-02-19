@@ -35,8 +35,6 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         
         console.log('🔍 refetchUser chamado', { forceRefresh, cached: !forceRefresh && user && (now - lastFetch) < CACHE_TIME });
         
-        // Se forceRefresh está true, sempre recarrega (ignora cache)
-        // Caso contrário, verifica se tem cache válido
         if (!forceRefresh && user && (now - lastFetch) < CACHE_TIME) {
             console.log('📦 Usando dados em cache');
             setLoading(false);
@@ -47,26 +45,22 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setLoading(true);
             setError(null);
             
-            // Aguardar Supabase recuperar a sessão do storage
-            await new Promise(resolve => setTimeout(resolve, 500));
-            
-            // Primeiro, verificar se há uma sessão válida
+            // Obter sessão imediatamente sem delay
             const { data: { session }, error: sessionError } = await supabase.auth.getSession();
             
-            console.log('🔐 Session Check:', { sessionExists: !!session, userId: session?.user?.id, sessionError: sessionError?.message });
+            console.log('🔐 Session Check:', { sessionExists: !!session, userId: session?.user?.id });
             
             if (sessionError || !session) {
-                console.log('ℹ️ Nenhuma sessão encontrada ou erro ao recuperar');
+                console.log('ℹ️ Nenhuma sessão encontrada');
                 setUser(null);
                 setCurrentAuthId(null);
                 setLoading(false);
                 return;
             }
             
-            // Se tem sessão, usar o usuário da sessão
             const authUser = session.user;
             
-            console.log('🔐 Auth Check:', { authUserId: authUser?.id, authUserEmail: authUser?.email });
+            console.log('🔐 Auth User:', { id: authUser?.id, email: authUser?.email });
             
             if (!authUser) {
                 console.log('ℹ️ Nenhum usuário na sessão');
@@ -76,7 +70,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 return;
             }
 
-            // Tentar buscar usuário na tabela users
+            // Buscar usuário na tabela users
             console.log('🔎 Buscando usuário na tabela users com ID:', authUser.id);
             const { data, error: fetchError } = await supabase
                 .from('users')
