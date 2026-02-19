@@ -13,18 +13,17 @@ const PatientList: React.FC<PatientListProps> = ({ onSelectPatient, onSelectHist
     const [patients, setPatients] = useState<Patient[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [lastFetch, setLastFetch] = useState<number>(0);
-    const hasLoadedRef = useRef(false);
-
-    // Cache por 30 segundos
+    const cachedPatientsRef = useRef<{ data: Patient[], timestamp: number } | null>(null);
     const CACHE_TIME = 30000;
 
     const loadPatients = useCallback(async (forceRefresh = false) => {
         const now = Date.now();
         
-        // Se tem cache válido e não é refresh forçado, não recarregar
-        if (!forceRefresh && (now - lastFetch) < CACHE_TIME) {
-            console.log('📦 [PatientList] Usando cache (dif:', now - lastFetch, 'ms)');
+        // Se tem cache válido e não é refresh forçado, usar cache
+        if (!forceRefresh && cachedPatientsRef.current && (now - cachedPatientsRef.current.timestamp) < CACHE_TIME) {
+            console.log('📦 [PatientList] Usando cache (dif:', now - cachedPatientsRef.current.timestamp, 'ms)');
+            setPatients(cachedPatientsRef.current.data);
+            setLoading(false);
             return;
         }
 
@@ -47,8 +46,14 @@ const PatientList: React.FC<PatientListProps> = ({ onSelectPatient, onSelectHist
             const endTime = Date.now();
             const duration = endTime - startTime;
             console.log('✅ [PatientList] Carregados:', patientsList.length, 'pacientes em', duration + 'ms');
+            
+            // Armazenar no cache
+            cachedPatientsRef.current = {
+                data: patientsList,
+                timestamp: now
+            };
+            
             setPatients(patientsList);
-            setLastFetch(now);
             setError(null);
         } catch (err) {
             console.error('❌ [PatientList] Erro ao carregar:', err);
@@ -57,14 +62,16 @@ const PatientList: React.FC<PatientListProps> = ({ onSelectPatient, onSelectHist
         } finally {
             setLoading(false);
         }
-    }, [lastFetch]);
+    }, []);
 
     useEffect(() => {
-        // Carregar apenas uma vez ao montar o componente
-        if (!hasLoadedRef.current) {
-            hasLoadedRef.current = true;
-            loadPatients();
-        }
+        // Sempre carregar ao montar o componente (força refresh para evitar problemas com cache)
+        loadPatients(true);
+        
+        // Cleanup: limpar dados quando desmonta para garantir fresh load na próxima vez
+        return () => {
+            cachedPatientsRef.current = null;
+        };
     }, [loadPatients]);
 
     // Memoizar filtro para não recalcular sempre
