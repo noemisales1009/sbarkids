@@ -88,7 +88,7 @@ const PatientInfoHeader: React.FC<PatientInfoHeaderProps> = ({ patient, onBack }
                     {/* Dias de Internação */}
                     <div className="bg-blue-800/60 backdrop-blur-sm rounded-lg px-3 py-2 border border-blue-400/30 shadow-md">
                         <p className="text-xs font-semibold uppercase mb-1" style={{ color: '#14A4EC' }}>Dias Int.</p>
-                        <p className="text-sm font-bold" style={{ color: '#14A4EC' }}>{daysAdmitted} <span className="text-xs font-normal">dias</span></p>
+                        <p className="text-sm font-bold" style={{ color: '#14A4EC' }}>{daysAdmitted} <span className="text-xs font-normal">{daysAdmitted === 1 ? 'dia' : 'dias'}</span></p>
                     </div>
 
                     {/* Data de Nascimento */}

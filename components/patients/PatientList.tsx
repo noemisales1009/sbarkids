@@ -17,28 +17,41 @@ const PatientList: React.FC<PatientListProps> = ({ onSelectPatient, onSelectHist
     useEffect(() => {
         const loadPatients = async () => {
             try {
-                // Verificar se tem dados em cache no sessionStorage
-                const cached = sessionStorage.getItem('patientsList');
-                if (cached) {
-                    console.log('📦 [PatientList] Usando dados do sessionStorage');
-                    setPatients(JSON.parse(cached));
+                // Verificar se tem dados em cache no sessionStorage (válido por 5 minutos)
+                const cacheKey = 'patientsList';
+                const cacheTimestampKey = 'patientsListTimestamp';
+                const cached = sessionStorage.getItem(cacheKey);
+                const timestamp = sessionStorage.getItem(cacheTimestampKey);
+                const now = Date.now();
+                const cacheExpiry = 5 * 60 * 1000; // 5 minutos
+
+                if (cached && timestamp && (now - parseInt(timestamp)) < cacheExpiry) {
+                    console.log('📦 [PatientList] Usando dados do sessionStorage (cache válido)');
+                    const parsedData = JSON.parse(cached);
+                    // Filtro extra: garantir que não há pacientes arquivados
+                    const filtered = parsedData.filter((p: any) => !p.archived_at);
+                    setPatients(filtered);
                     setLoading(false);
                     return;
                 }
 
-                // Se não tem cache, carregar do Supabase
-                console.log('🔄 [PatientList] Carregando pacientes do Supabase...');
+                // Cache expirou ou não existe, carregar do Supabase
+                console.log('🔄 [PatientList] Carregando pacientes do Supabase (cache expirado ou inexistente)...');
                 setLoading(true);
                 const data = await patientsService.listPatients();
                 setPatients(data);
                 
-                // Salvar no sessionStorage
-                sessionStorage.setItem('patientsList', JSON.stringify(data));
-                console.log('✅ [PatientList] Pacientes salvos em cache');
+                // Salvar no sessionStorage com timestamp
+                sessionStorage.setItem(cacheKey, JSON.stringify(data));
+                sessionStorage.setItem(cacheTimestampKey, now.toString());
+                console.log('✅ [PatientList] Pacientes salvos em cache com timestamp');
             } catch (err) {
                 console.error('❌ [PatientList] Erro:', err);
                 setError(`Erro ao carregar pacientes: ${err instanceof Error ? err.message : 'Desconhecido'}`);
                 setPatients([]);
+                // Limpar cache em caso de erro
+                sessionStorage.removeItem('patientsList');
+                sessionStorage.removeItem('patientsListTimestamp');
             } finally {
                 setLoading(false);
             }
@@ -48,9 +61,12 @@ const PatientList: React.FC<PatientListProps> = ({ onSelectPatient, onSelectHist
     }, []);
 
     const filteredPatients = useMemo(() => {
-        if (!searchTerm) return patients;
+        // Primeiro, filtrar pacientes arquivados
+        const activePatients = patients.filter(patient => !patient.archived_at);
+        
+        if (!searchTerm) return activePatients;
         const term = searchTerm.toLowerCase();
-        return patients.filter(patient => {
+        return activePatients.filter(patient => {
             return (
                 patient.name.toLowerCase().includes(term) || 
                 patient.bed_number.toString().includes(term)

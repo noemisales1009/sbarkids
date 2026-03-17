@@ -692,7 +692,8 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
                                         today.setHours(0, 0, 0, 0);
                                         const diffTime = today.getTime() - admissionDate.getTime();
                                         const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-                                        return `${diffDays >= 0 ? diffDays : 0} dias`;
+                                        const days = diffDays >= 0 ? diffDays : 0;
+                                        return `${days} ${days === 1 ? 'dia' : 'dias'}`;
                                     })()}
                                 </p>
                             </div>

@@ -146,7 +146,7 @@ const DiagnosticoSelector = ({ pacienteId, onSave, onSaveMessage }: DiagnosticoS
                 <p className="text-sm font-bold text-blue-400 mb-2">Principais: {principais.length}</p>
                 <ul className="list-disc list-inside space-y-1 ml-2">
                   {principais.map(diag => (
-                    <li key={diag.opcao_id} className="text-sm text-gray-300">
+                    <li key={diag.opcao_id} className={`text-sm text-gray-300 ${diag.status === 'resolvido' ? 'line-through text-gray-500' : ''}`}>
                       <span>{diag.label || `Diagnóstico #${diag.opcao_id}`}</span>
                       {inputValues[diag.opcao_id] && (
                         <div className="text-xs text-gray-400 italic ml-5 mt-1">
@@ -164,7 +164,7 @@ const DiagnosticoSelector = ({ pacienteId, onSave, onSaveMessage }: DiagnosticoS
                 <p className="text-sm font-bold text-green-400 mb-2">Secundários: {secundarios.length}</p>
                 <ul className="list-disc list-inside space-y-1 ml-2">
                   {secundarios.map(diag => (
-                    <li key={diag.opcao_id} className="text-sm text-gray-300">
+                    <li key={diag.opcao_id} className={`text-sm text-gray-300 ${diag.status === 'resolvido' ? 'line-through text-gray-500' : ''}`}>
                       <span>{diag.label || `Diagnóstico #${diag.opcao_id}`}</span>
                       {inputValues[diag.opcao_id] && (
                         <div className="text-xs text-gray-400 italic ml-5 mt-1">

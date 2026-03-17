@@ -82,12 +82,13 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onNavigate, currentPage, onSe
 
             console.log(`📊 ${roundsData.length} relatórios encontrados`);
 
-            // Buscar dados dos pacientes
+            // Buscar dados dos pacientes (apenas não-arquivados)
             const patientIds = [...new Set(roundsData.map(r => r.patient_id))];
             const { data: patientsData } = await supabase
                 .from('patients')
                 .select('*')
-                .in('id', patientIds);
+                .in('id', patientIds)
+                .is('archived_at', null);
 
             const patientMap = new Map(patientsData?.map(p => [p.id, p]) || []);
 

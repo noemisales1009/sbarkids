@@ -137,7 +137,22 @@ SELECT
     AND justificativa IS NOT NULL
     AND justificativa <> ''::text THEN 'fora_do_prazo_com_justificativa'::text
     ELSE 'no_prazo'::text
-  END AS live_status
+  END AS live_status,
+  CASE
+    WHEN status = 'concluido'::text THEN (
+      updated_at AT TIME ZONE 'America/Sao_Paulo'::text
+    )
+    ELSE NULL::timestamp without time zone
+  END AS hora_conclusao_br,
+  CASE
+    WHEN status = 'concluido'::text THEN to_char(
+      (
+        updated_at AT TIME ZONE 'America/Sao_Paulo'::text
+      ),
+      'HH24:MI'::text
+    )
+    ELSE NULL::text
+  END AS hora_conclusao_hhmm
 FROM base;
 
 -- View com turno adicionado às tarefas

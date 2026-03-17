@@ -61,9 +61,9 @@ const DiagnosticsEditor: React.FC<DiagnosticsEditorProps> = ({ patientId }) => {
             {diagnostics.principais.map((diagnostic) => (
               <div
                 key={diagnostic.id}
-                className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg"
+                className={`p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg ${diagnostic.status === 'resolvido' ? 'opacity-60' : ''}`}
               >
-                <p className="text-sm text-gray-900 dark:text-white font-medium">
+                <p className={`text-sm font-medium ${diagnostic.status === 'resolvido' ? 'line-through text-gray-600 dark:text-gray-500' : 'text-gray-900 dark:text-white'}`}>
                   {diagnostic.opcao_label}
                   {diagnostic.texto_digitado && (
                     <span className="ml-2 text-blue-600 dark:text-blue-400 italic">
@@ -95,9 +95,9 @@ const DiagnosticsEditor: React.FC<DiagnosticsEditorProps> = ({ patientId }) => {
             {diagnostics.secundarios.map((diagnostic) => (
               <div
                 key={diagnostic.id}
-                className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg"
+                className={`p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg ${diagnostic.status === 'resolvido' ? 'opacity-60' : ''}`}
               >
-                <p className="text-sm text-gray-900 dark:text-white font-medium">
+                <p className={`text-sm font-medium ${diagnostic.status === 'resolvido' ? 'line-through text-gray-600 dark:text-gray-500' : 'text-gray-900 dark:text-white'}`}>
                   {diagnostic.opcao_label}
                   {diagnostic.texto_digitado && (
                     <span className="ml-2 text-green-600 dark:text-green-400 italic">

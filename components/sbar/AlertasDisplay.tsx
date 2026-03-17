@@ -13,6 +13,7 @@ import React, { useState, useEffect } from 'react';
 import { alertasService, Alerta } from '../../services/alertasService';
 import { shiftFilterService } from '../../services/shiftFilterService';
 import { clinicalRoundsSimpleService, ClinicalRoundsSimple } from '../../services/clinicalRoundsSimpleService';
+import { useUser } from '../../contexts/UserContext';
 
 interface AlertasDisplayProps {
   patientId: string;
@@ -21,6 +22,8 @@ interface AlertasDisplayProps {
 }
 
 const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, roundId, alertas: propsAlertas }) => {
+  const { user } = useUser();
+  
   const [alertas, setAlertas] = useState<Alerta[]>(propsAlertas || []);
   const [assessment, setAssessment] = useState<ClinicalRoundsSimple | null>(null);
   const [alertasPorTurno, setAlertasPorTurno] = useState<{
@@ -36,6 +39,11 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, roundId, ale
     alertaId: '',
     texto: ''
   });
+  const [arquivamentoModal, setArquivamentoModal] = useState<{ visible: boolean; alertaId: string; motivo: string }>({
+    visible: false,
+    alertaId: '',
+    motivo: ''
+  });
 
   useEffect(() => {
     // Carregar assessment se roundId foi passado
@@ -46,18 +54,26 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, roundId, ale
     // Se foram passadas alertas como props, usa elas
     if (propsAlertas && propsAlertas.length > 0) {
       console.log('📍 AlertasDisplay recebeu alertas como props:', propsAlertas);
-      setAlertas(propsAlertas);
+      
+      // Filtrar apenas alertas visíveis (ativos + concluídos há menos de 24h)
+      const alertasVisiveis = propsAlertas.filter(a => alertasService.isAlertaVisible(a));
+      setAlertas(alertasVisiveis);
+      
+      // Separar apenas alertas ATIVOS para os turnos (excluir concluídos)
+      const alertasAtivos = alertasVisiveis.filter(
+        a => a.status !== 'concluido' && a.live_status !== 'resolvido / arquivado'
+      );
       
       // Verificar se os alertas têm o campo shift_criacao
-      const temShift = propsAlertas.some((a: any) => a.shift_criacao);
+      const temShift = alertasAtivos.some((a: any) => a.shift_criacao);
       setUsarTurnos(temShift);
       
       if (temShift) {
-        // Agrupar por turno
+        // Agrupar por turno (apenas ativos)
         const agrupados = {
-          morning: propsAlertas.filter(a => (a as any).shift_criacao === 'morning'),
-          afternoon: propsAlertas.filter(a => (a as any).shift_criacao === 'afternoon'),
-          night: propsAlertas.filter(a => (a as any).shift_criacao === 'night')
+          morning: alertasAtivos.filter(a => (a as any).shift_criacao === 'morning'),
+          afternoon: alertasAtivos.filter(a => (a as any).shift_criacao === 'afternoon'),
+          night: alertasAtivos.filter(a => (a as any).shift_criacao === 'night')
         };
         setAlertasPorTurno(agrupados);
       }
@@ -70,22 +86,46 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, roundId, ale
     loadAlertas();
   }, [patientId, roundId, propsAlertas]);
 
+  // Atualizar timer a cada 60 segundos para alertas concluídos
+  useEffect(() => {
+    const timerInterval = setInterval(() => {
+      // Forçar re-render dos alertas para atualizar o timer
+      setAlertas(prev => 
+        prev.map(a => ({...a}))
+      );
+      
+      setAlertasPorTurno(prev => ({
+        morning: prev.morning.map(a => ({...a})),
+        afternoon: prev.afternoon.map(a => ({...a})),
+        night: prev.night.map(a => ({...a}))
+      }));
+    }, 60000); // Atualizar a cada 1 minuto
+
+    return () => clearInterval(timerInterval);
+  }, []);
+
   const loadAlertas = async () => {
     try {
       setLoading(true);
-      const data = await alertasService.getAlertas(patientId);
+      // Usar getVisiveis em vez de getAlertas para filtrar alertas visíveis
+      const data = await alertasService.getVisiveis(patientId);
       setAlertas(data);
       
+      // Separar apenas alertas ATIVOS para os turnos (excluir concluídos)
+      const alertasAtivos = data.filter(
+        a => a.status !== 'concluido' && a.live_status !== 'resolvido / arquivado'
+      );
+      
       // Verificar se os alertas têm o campo shift_criacao
-      const temShift = data.some((a: any) => a.shift_criacao);
+      const temShift = alertasAtivos.some((a: any) => a.shift_criacao);
       setUsarTurnos(temShift);
       
       if (temShift) {
-        // Agrupar por turno
+        // Agrupar por turno (apenas ativos)
         const agrupados = {
-          morning: data.filter(a => (a as any).shift_criacao === 'morning'),
-          afternoon: data.filter(a => (a as any).shift_criacao === 'afternoon'),
-          night: data.filter(a => (a as any).shift_criacao === 'night')
+          morning: alertasAtivos.filter(a => (a as any).shift_criacao === 'morning'),
+          afternoon: alertasAtivos.filter(a => (a as any).shift_criacao === 'afternoon'),
+          night: alertasAtivos.filter(a => (a as any).shift_criacao === 'night')
         };
         setAlertasPorTurno(agrupados);
       }
@@ -113,7 +153,12 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, roundId, ale
 
   const handleSalvarJustificativa = async () => {
     if (!justificativaModal.texto.trim()) {
-      alert('Por favor, digite uma justificativa');
+      alert('Por favor, informe uma justificativa');
+      return;
+    }
+
+    if (!user) {
+      alert('Usuário não identificado. Faça login novamente.');
       return;
     }
 
@@ -128,19 +173,25 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, roundId, ale
       const sucesso = await alertasService.updateJustificativa(
         justificativaModal.alertaId,
         justificativaModal.texto,
-        alerta.fonte || 'alertas_paciente'
+        alerta.fonte || 'alertas_paciente',
+        user.id  // Passar ID do usuário
       );
       
       if (sucesso) {
-        // Atualizar estado local
+        // Atualizar estado local com todos os campos
+        const agora = new Date().toISOString();
         setAlertas(alertas.map(a => 
           a.id_alerta === justificativaModal.alertaId 
-            ? { ...a, justificativa: justificativaModal.texto }
+            ? { 
+                ...a, 
+                justificativa: justificativaModal.texto,
+                justificativa_by: user.id  // Pode ser não-exista essa propriedade, mas colocamos
+              }
             : a
         ));
         
         setJustificativaModal({ visible: false, alertaId: '', texto: '' });
-        alert('Justificativa salva com sucesso!');
+        alert('✓ Justificativa salva com sucesso!');
       } else {
         alert('Erro ao salvar justificativa');
       }
@@ -151,7 +202,12 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, roundId, ale
   };
 
   const handleConcluir = async (alertaId: string) => {
-    if (!window.confirm('Deseja marcar este alerta como concluído?')) {
+    if (!window.confirm('Deseja concluir este alerta? (Ficará visível por 24 horas)')) {
+      return;
+    }
+
+    if (!user) {
+      alert('Usuário não identificado. Faça login novamente.');
       return;
     }
 
@@ -165,53 +221,75 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, roundId, ale
 
       const sucesso = await alertasService.marcarComoConcluido(
         alertaId,
-        alerta.fonte || 'alertas_paciente'
+        alerta.fonte || 'alertas_paciente',
+        user.id  // Passar ID do usuário logado
       );
       
       if (sucesso) {
-        setAlertas(alertas.map(a => 
-          a.id_alerta === alertaId 
-            ? { ...a, live_status: 'concluido', status: 'concluido' }
-            : a
-        ));
-        
-        alert('Alerta marcado como concluído!');
+        // Recarregar os alertas do servidor para ter dados sincronizados
+        await loadAlertas();
+        alert('✓ Alerta concluído! Ficará visível por 24 horas.');
       } else {
-        alert('Erro ao concluir alerta');
+        alert('Erro ao marcar alerta como concluído');
       }
     } catch (error) {
       console.error('Erro ao concluir alerta:', error);
-      alert('Erro ao concluir alerta');
+      alert('Erro ao marcar alerta como concluído');
     }
   };
 
-  const handleDeletar = async (alertaId: string) => {
-    if (!window.confirm('Deseja deletar este alerta?')) {
+  const handleArquivar = (alertaId: string) => {
+    setArquivamentoModal({
+      visible: true,
+      alertaId,
+      motivo: ''
+    });
+  };
+
+  const handleConfirmarArquivamento = async () => {
+    if (!arquivamentoModal.motivo.trim()) {
+      alert('Por favor, informe o motivo do arquivamento');
+      return;
+    }
+
+    if (!user) {
+      alert('Usuário não identificado. Faça login novamente.');
       return;
     }
 
     try {
-      // Encontrar o alerta para pegar a fonte
-      const alerta = alertas.find(a => a.id_alerta === alertaId);
+      const alerta = alertas.find(a => a.id_alerta === arquivamentoModal.alertaId);
       if (!alerta) {
         alert('Alerta não encontrado');
         return;
       }
 
-      const sucesso = await alertasService.deleteAlerta(
-        alertaId,
-        alerta.fonte || 'alertas_paciente'
+      const sucesso = await alertasService.arquivarAlerta(
+        arquivamentoModal.alertaId,
+        arquivamentoModal.motivo,
+        alerta.fonte || 'alertas_paciente',
+        user.id  // Passar ID do usuário logado
       );
       
       if (sucesso) {
-        setAlertas(alertas.filter(a => a.id_alerta !== alertaId));
-        alert('Alerta deletado com sucesso!');
+        // Remover da lista principal
+        setAlertas(alertas.filter(a => a.id_alerta !== arquivamentoModal.alertaId));
+        
+        // Remover também da lista por turno se estiver sendo usada
+        setAlertasPorTurno(prev => ({
+          morning: prev.morning.filter(a => a.id_alerta !== arquivamentoModal.alertaId),
+          afternoon: prev.afternoon.filter(a => a.id_alerta !== arquivamentoModal.alertaId),
+          night: prev.night.filter(a => a.id_alerta !== arquivamentoModal.alertaId)
+        }));
+        
+        setArquivamentoModal({ visible: false, alertaId: '', motivo: '' });
+        alert('✓ Alerta arquivado com sucesso!');
       } else {
-        alert('Erro ao deletar alerta');
+        alert('Erro ao arquivar alerta');
       }
     } catch (error) {
-      console.error('Erro ao deletar alerta:', error);
-      alert('Erro ao deletar alerta');
+      console.error('Erro ao arquivar alerta:', error);
+      alert('Erro ao arquivar alerta');
     }
   };
 
@@ -288,8 +366,102 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, roundId, ale
             <div className="text-center py-6 text-gray-500 dark:text-gray-400">
               ✓ Nenhum alerta registrado
             </div>
-          ) : usarTurnos ? (
-            // Exibição por turno
+          ) : (
+            <>
+              {/* SEÇÃO: ALERTAS CONCLUÍDOS */}
+              {(() => {
+                const alertasConcluidos = alertas.filter(
+                  a => a.status === 'concluido' || a.live_status === 'resolvido / arquivado'
+                );
+                
+                if (alertasConcluidos.length === 0) return null;
+
+                return (
+                  <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-sm font-bold text-green-900 dark:text-green-300 flex items-center gap-2">
+                        ✓ Alertas Concluídos
+                        <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-green-500 text-white text-xs font-semibold">
+                          {alertasConcluidos.length}
+                        </span>
+                      </h4>
+                    </div>
+                    <div className="space-y-2">
+                      {alertasConcluidos.map((alerta) => (
+                        <div
+                          key={alerta.id_alerta}
+                          className="p-3 bg-white dark:bg-gray-800 rounded border border-green-200 dark:border-green-800 flex items-start justify-between"
+                        >
+                          <div className="flex-1">
+                            <p className="font-semibold text-gray-900 dark:text-white text-sm">
+                              {alerta.alertaclinico}
+                            </p>
+                            <div className="mt-1 space-y-0.5 text-xs">
+                              <div className="text-gray-600 dark:text-gray-400">
+                                👤 <strong>{alerta.responsavel}</strong>
+                              </div>
+                              <div className="text-gray-600 dark:text-gray-400">
+                                ⏱ {alerta.prazo_formatado || 'Sem prazo'}
+                              </div>
+                              {alerta.concluded_by_name && (
+                                <div className="text-gray-500 dark:text-gray-500 text-xs">
+                                  ✓ Concluído por: <strong>{alerta.concluded_by_name || 'Não informado'}</strong>
+                                </div>
+                              )}
+                              {alerta.hora_criacao_formatado && (
+                                <div className="text-gray-500 dark:text-gray-500">
+                                  📅 {alerta.hora_criacao_formatado}
+                                </div>
+                              )}
+                              {/* Timer de visibilidade */}
+                              {alerta.status === 'concluido' || alerta.live_status === 'resolvido / arquivado' ? (
+                                <div className="mt-1 inline-block px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded text-xs font-semibold">
+                                  ⏰ {alertasService.getTempoRestanteVisibilidade(alerta) || 'Calculando...'}
+                                </div>
+                              ) : null}
+                            </div>
+                            {alerta.justificativa && (
+                              <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/30 rounded text-xs border-l-2 border-blue-400">
+                                <p className="text-blue-900 dark:text-blue-300">
+                                  <strong>Justificativa:</strong> {alerta.justificativa}
+                                </p>
+                              </div>
+                            )}
+                            {alerta.conclusao_info && (
+                              <div className="mt-1 text-xs text-green-700 dark:text-green-400">
+                                {alerta.conclusao_info}
+                              </div>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => handleArquivar(alerta.id_alerta)}
+                            className="ml-2 px-2 py-1 text-sm bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-700 dark:text-red-400 rounded font-medium transition-colors"
+                            title="Remover alerta"
+                          >
+                            🗑
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* SEÇÃO: ALERTAS ATIVOS */}
+              {(() => {
+                const alertasAtivos = alertas.filter(
+                  a => a.status !== 'concluido' && a.live_status !== 'resolvido / arquivado'
+                );
+                
+                if (alertasAtivos.length === 0) {
+                  return (
+                    <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
+                      Nenhum alerta ativo
+                    </div>
+                  );
+                }
+
+                return usarTurnos ? (
             <div className="space-y-4">
               {/* Turno Manhã */}
               <div>
@@ -366,7 +538,7 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, roundId, ale
                               </div>
                             </div>
                           </div>
-                          <div className="shrink-0">
+                          <div className="shrink-0 flex flex-col items-end gap-2">
                             <span
                               className={`inline-block px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${getStatusBadgeColor(
                                 alerta.live_status
@@ -397,10 +569,10 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, roundId, ale
                             ✓ Concluir
                           </button>
                           <button
-                            onClick={() => handleDeletar(alerta.id_alerta)}
-                            className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-md font-medium transition-colors flex items-center gap-2"
+                            onClick={() => handleArquivar(alerta.id_alerta)}
+                            className="px-4 py-2 text-sm bg-orange-600 hover:bg-orange-700 text-white rounded-md font-medium transition-colors flex items-center gap-2"
                           >
-                            🗑 Deletar
+                            📦 Arquivar
                           </button>
                         </div>
                         <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
@@ -495,6 +667,11 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, roundId, ale
                             >
                               {getStatusLabel(alerta.live_status)}
                             </span>
+                            {(alerta.status === 'concluido' || alerta.status === 'Concluído' || alerta.live_status === 'concluido') ? (
+                              <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-2 py-1 rounded whitespace-nowrap mt-1">
+                                ⏰ {alertasService.getTempoRestanteVisibilidade(alerta) || 'Calcular...'}
+                              </span>
+                            ) : null}
                           </div>
                         </div>
                         {alerta.justificativa && (
@@ -518,10 +695,10 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, roundId, ale
                             ✓ Concluir
                           </button>
                           <button
-                            onClick={() => handleDeletar(alerta.id_alerta)}
-                            className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-md font-medium transition-colors flex items-center gap-2"
+                            onClick={() => handleArquivar(alerta.id_alerta)}
+                            className="px-4 py-2 text-sm bg-orange-600 hover:bg-orange-700 text-white rounded-md font-medium transition-colors flex items-center gap-2"
                           >
-                            🗑 Deletar
+                            📦 Arquivar
                           </button>
                         </div>
                         <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
@@ -639,10 +816,10 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, roundId, ale
                             ✓ Concluir
                           </button>
                           <button
-                            onClick={() => handleDeletar(alerta.id_alerta)}
-                            className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-md font-medium transition-colors flex items-center gap-2"
+                            onClick={() => handleArquivar(alerta.id_alerta)}
+                            className="px-4 py-2 text-sm bg-orange-600 hover:bg-orange-700 text-white rounded-md font-medium transition-colors flex items-center gap-2"
                           >
-                            🗑 Deletar
+                            📦 Arquivar
                           </button>
                         </div>
                         <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
@@ -746,10 +923,10 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, roundId, ale
                     ✓ Concluir
                   </button>
                   <button
-                    onClick={() => handleDeletar(alerta.id_alerta)}
-                    className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-md font-medium transition-colors flex items-center gap-2"
+                    onClick={() => handleArquivar(alerta.id_alerta)}
+                    className="px-4 py-2 text-sm bg-orange-600 hover:bg-orange-700 text-white rounded-md font-medium transition-colors flex items-center gap-2"
                   >
-                    🗑 Deletar
+                    📦 Arquivar
                   </button>
                 </div>
 
@@ -759,6 +936,11 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, roundId, ale
                 </div>
               </div>
             ))
+          );
+              })()}
+
+              {/* Modals and other UI elements */}
+            </>
           )}
         </div>
       )}
@@ -788,6 +970,56 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, roundId, ale
                 className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition-colors"
               >
                 Salvar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Arquivamento */}
+      {arquivamentoModal.visible && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 rounded-lg p-6 max-w-md w-full border border-gray-700 shadow-lg">
+            <h3 className="text-lg font-bold text-white mb-4">⚠️ Arquivar Alerta</h3>
+
+            {/* Alerta apresentado */}
+            <div className="mb-4 p-3 bg-gray-800 rounded border border-gray-700">
+              <p className="text-sm text-gray-300 font-mono">{alertas.find(a => a.id_alerta === arquivamentoModal.alertaId)?.alertaclinico}</p>
+            </div>
+
+            {/* Informação importante */}
+            <div className="mb-4 p-3 bg-blue-900/30 border border-blue-700 rounded">
+              <p className="text-xs text-blue-100">
+                <strong>ℹ️ Informação:</strong> O alerta será arquivado e não aparecerá mais na lista ativa, mas ficará registrado no histórico do paciente com o motivo do arquivamento.
+              </p>
+            </div>
+
+            {/* Campo de motivo */}
+            <div className="mb-4">
+              <label className="block text-sm font-semibold text-gray-300 mb-2">
+                Motivo do Arquivamento: <span className="text-red-400">*</span>
+              </label>
+              <textarea
+                value={arquivamentoModal.motivo}
+                onChange={(e) => setArquivamentoModal({ ...arquivamentoModal, motivo: e.target.value })}
+                placeholder="Explique por que está arquivando este alerta..."
+                className="w-full h-24 bg-gray-800 border border-gray-700 rounded-md text-white px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+              />
+            </div>
+
+            {/* Botões de ação */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setArquivamentoModal({ visible: false, alertaId: '', motivo: '' })}
+                className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-md font-medium transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirmarArquivamento}
+                className="flex-1 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-md font-medium transition-colors"
+              >
+                Arquivar
               </button>
             </div>
           </div>

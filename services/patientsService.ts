@@ -16,10 +16,11 @@ async listPatients(limit: number = 50): Promise<Patient[]> {
     console.log('📊 patientsService.listPatients: iniciando...', { limit });
     const startTime = Date.now();
     
-    // Query simples e direta
+    // Query simples e direta - Filtrar APENAS pacientes não arquivados
     const { data, error } = await supabase
       .from('patients')
-      .select('id,name,bed_number,status,diagnosis,mother_name,dob,comorbidade,dt_internacao,peso,destino,created_at,updated_at')
+      .select('*')
+      .filter('archived_at', 'is', null)
       .limit(limit);
     
     const duration = Date.now() - startTime;
@@ -49,12 +50,102 @@ async listPatients(limit: number = 50): Promise<Patient[]> {
         .from('patients')
         .select('*')
         .eq('id', id)
+        .filter('archived_at', 'is', null)
         .single();
 
       if (error) throw error;
       return data || null;
     } catch (error) {
       logError(error, 'patientsService.getPatient');
+      return null;
+    }
+  },
+
+  /**
+   * Listar pacientes arquivados
+   */
+  async getArchivedPatients(limit: number = 100): Promise<Patient[]> {
+    try {
+      console.log('📦 patientsService.getArchivedPatients: iniciando...', { limit });
+      
+      const { data, error } = await supabase
+        .from('patients')
+        .select('*')
+        .not('archived_at', 'is', null)
+        .order('archived_at', { ascending: false })
+        .limit(limit);
+      
+      if (error) throw error;
+      
+      console.log('✅ patientsService.getArchivedPatients: retornando', (data || []).length, 'pacientes arquivados');
+      return data || [];
+    } catch (error) {
+      console.error('❌ patientsService.getArchivedPatients: erro:', error);
+      logError(error, 'patientsService.getArchivedPatients');
+      throw error;
+    }
+  },
+
+  /**
+   * Arquivar paciente
+   */
+  async archivePatient(id: string, motivo: string): Promise<Patient | null> {
+    try {
+      console.log('📦 Arquivando paciente:', { id, motivo });
+      
+      const { data, error } = await supabase
+        .from('patients')
+        .update({
+          archived_at: new Date().toISOString(),
+          motivo_arquivamento: motivo
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      // Limpar cache completamente
+      sessionStorage.removeItem('patientsList');
+      sessionStorage.removeItem('patientsListTimestamp');
+      
+      console.log('✅ Paciente arquivado com sucesso');
+      return data || null;
+    } catch (error) {
+      console.error('❌ Erro ao arquivar paciente:', error);
+      logError(error, 'patientsService.archivePatient');
+      return null;
+    }
+  },
+
+  /**
+   * Restaurar paciente arquivado
+   */
+  async restorePatient(id: string): Promise<Patient | null> {
+    try {
+      console.log('📦 Restaurando paciente:', { id });
+      
+      const { data, error } = await supabase
+        .from('patients')
+        .update({
+          archived_at: null,
+          motivo_arquivamento: null
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      // Limpar cache completamente
+      sessionStorage.removeItem('patientsList');
+      sessionStorage.removeItem('patientsListTimestamp');
+      
+      console.log('✅ Paciente restaurado com sucesso');
+      return data || null;
+    } catch (error) {
+      console.error('❌ Erro ao restaurar paciente:', error);
+      logError(error, 'patientsService.restorePatient');
       return null;
     }
   },
@@ -127,6 +218,7 @@ async listPatients(limit: number = 50): Promise<Patient[]> {
       const { data, error } = await supabase
         .from('patients')
         .select('*')
+        .filter('archived_at', 'is', null)
         .or(`nomepaciente_norm.ilike.%${normalizedTerm}%,bed_number.eq.${parseInt(searchTerm) || -1}`)
         .order('name', { ascending: true });
 
@@ -147,6 +239,7 @@ async listPatients(limit: number = 50): Promise<Patient[]> {
         .from('patients')
         .select('*')
         .eq('status', status)
+        .filter('archived_at', 'is', null)
         .order('name', { ascending: true });
 
       if (error) throw error;
@@ -166,6 +259,7 @@ async listPatients(limit: number = 50): Promise<Patient[]> {
         .from('patients')
         .select('*')
         .eq('bed_number', bedNumber)
+        .filter('archived_at', 'is', null)
         .single();
 
       if (error) throw error;

@@ -36,10 +36,12 @@ export const PatientsCacheProvider: React.FC<{ children: ReactNode }> = ({ child
             
             const startTime = Date.now();
             const data = await patientsService.listPatients();
+            // Filtrar pacientes arquivados
+            const activePatients = data.filter(patient => !patient.archived_at);
             const duration = Date.now() - startTime;
             
             console.log('✅ [PatientsCache] Carregado em:', duration + 'ms');
-            setPatients(data);
+            setPatients(activePatients);
             setLastFetch(now);
         } catch (err) {
             console.error('❌ [PatientsCache] Erro:', err);
