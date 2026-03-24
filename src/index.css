@@ -1,7 +1,21 @@
 @import "tailwindcss";
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-primary: #3b82f6;
+  --color-primary-dark: #2563eb;
+  --color-background-light: #f8fafc;
+  --color-background-dark: #0f172a;
+  --color-card-light: #ffffff;
+  --color-card-dark: #1e293b;
+  --color-urgent: #ef4444;
+  --color-attention: #f59e0b;
+  --color-normal: #10b981;
+  --color-info: #3b82f6;
+  --font-display: "Inter", sans-serif;
+  --spacing-17: 68px;
+}
 
 @layer base {
   :root {
@@ -26,6 +40,33 @@
   html.dark body {
     color: #f1f5f9;
   }
+
+  input, select, textarea {
+    background-color: #ffffff !important;
+    color: #1e293b;
+  }
+
+  html.dark input, html.dark select, html.dark textarea {
+    background-color: #1e293b !important;
+    color: #f1f5f9;
+  }
+
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px #ffffff inset !important;
+    -webkit-text-fill-color: #1e293b !important;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+
+  html.dark input:-webkit-autofill,
+  html.dark input:-webkit-autofill:hover,
+  html.dark input:-webkit-autofill:focus,
+  html.dark input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px #1e293b inset !important;
+    -webkit-text-fill-color: #f1f5f9 !important;
+  }
 }
 
 @media print {
@@ -33,18 +74,16 @@
     margin: 1cm;
     size: A4 landscape;
   }
-  
-  /* Remover cabeçalhos e rodapés automáticos do navegador */
+
   @page {
     margin-top: 0;
   }
-  
-  /* Ocultar elementos desnecessários na impressão */
-  header, 
+
+  header,
   nav,
   aside,
-  footer:not(.print\\:block),
-  .print\\:hidden,
+  footer:not(.print\:block),
+  .print\:hidden,
   [class*="BottomNavBar"],
   [class*="FloatingActionButton"],
   [class*="MainSidebar"],
@@ -55,43 +94,40 @@
     display: none !important;
     visibility: hidden !important;
   }
-  
-  /* Remover qualquer conteúdo gerado por CSS */
+
   *::before,
   *::after {
     content: none !important;
     display: none !important;
   }
-  
-  /* Garantir fundo branco e texto preto na impressão */
+
   * {
     color-adjust: exact !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
-  
+
   body, html, #root, main, div[class*="flex"] {
     background: white !important;
     background-color: white !important;
     margin: 0 !important;
     padding: 0 !important;
   }
-  
-  /* Forçar cores de impressão */
+
   .bg-gray-900,
   .bg-gray-800,
-  .dark\\:bg-gray-800,
+  .dark\:bg-gray-800,
   .bg-background-dark,
-  .dark\\:bg-background-dark {
+  .dark\:bg-background-dark {
     background: white !important;
     background-color: white !important;
   }
-  
+
   .text-white,
   .text-gray-300,
   .text-gray-400,
   .text-blue-400,
-  .dark\\:text-white {
+  .dark\:text-white {
     color: black !important;
   }
 }

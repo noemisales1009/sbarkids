@@ -8,6 +8,7 @@ import LogoutButton from '../components/settings/LogoutButton';
 import BottomNavBar from '../components/patients/BottomNavBar';
 import DesktopLayout from '../components/layout/DesktopLayout';
 import DesktopSettingsHeader from '../components/settings/DesktopSettingsHeader';
+import ThemeToggle from '../components/settings/ThemeToggle';
 
 
 interface SettingsPageProps {
@@ -25,6 +26,9 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, currentPage }) 
             <div className="flex flex-col gap-4">
                 <Accordion title="Perfil" icon="person" defaultOpen>
                     <ProfileSection />
+                </Accordion>
+                <Accordion title="Aparência" icon="palette">
+                    <ThemeToggle />
                 </Accordion>
             </div>
             <LogoutButton onLogout={() => {

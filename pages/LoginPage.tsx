@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { EmailField } from '../components/EmailField';
 import { PasswordField } from '../components/PasswordField';
 import { supabase } from '../lib/supabase';
+import { useTheme } from '../contexts/ThemeContext';
 
 const LoginPage: React.FC = () => {
     const [emailOrId, setEmailOrId] = useState('');
@@ -10,16 +11,17 @@ const LoginPage: React.FC = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const { theme } = useTheme();
+    const isDark = theme === 'dark';
 
-    // Debug: verificar se variáveis de ambiente estão carregadas
     React.useEffect(() => {
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
         const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-        
+
         console.log('🔍 Debug Supabase Config:');
         console.log('- URL configurada:', supabaseUrl ? '✅' : '❌');
         console.log('- Key configurada:', supabaseKey ? '✅' : '❌');
-        
+
         if (!supabaseUrl || !supabaseKey) {
             setError('Erro de configuração: Variáveis de ambiente não carregadas. Recarregue a página (F5).');
         }
@@ -31,10 +33,10 @@ const LoginPage: React.FC = () => {
             setError('Por favor, preencha email e senha');
             return;
         }
-        
+
         setError('');
         setLoading(true);
-        
+
         try {
             const { data, error: signInError } = await supabase.auth.signInWithPassword({
                 email: emailOrId,
@@ -42,9 +44,8 @@ const LoginPage: React.FC = () => {
             });
 
             if (signInError) {
-                // Traduzir mensagens de erro comuns
                 let errorMessage = signInError.message;
-                
+
                 if (errorMessage.includes('Invalid login credentials')) {
                     errorMessage = 'Email ou senha incorretos';
                 } else if (errorMessage.includes('Invalid API key') || errorMessage.includes('API key')) {
@@ -52,7 +53,7 @@ const LoginPage: React.FC = () => {
                 } else if (errorMessage.includes('Email not confirmed')) {
                     errorMessage = 'Email não confirmado. Verifique sua caixa de entrada.';
                 }
-                
+
                 setError(errorMessage);
                 setLoading(false);
                 return;
@@ -61,7 +62,6 @@ const LoginPage: React.FC = () => {
             if (data.session) {
                 console.log('✅ Login bem-sucedido via Supabase');
                 setLoading(false);
-                // A navegação é feita automaticamente pelo onAuthStateChange do App
             }
         } catch (err: any) {
             setError(err.message || 'Erro ao fazer login');
@@ -76,20 +76,27 @@ const LoginPage: React.FC = () => {
     };
 
     return (
-        <div className="flex min-h-screen w-full flex-col items-center justify-center p-4 bg-gray-100 dark:bg-gray-900">
+        <div
+            className="flex min-h-screen w-full flex-col items-center justify-center p-4"
+            style={{ backgroundColor: isDark ? '#0f172a' : '#ffffff' }}
+        >
             <div className="flex w-full max-w-sm flex-col items-center gap-6">
-                {/* Logo Section */}
+                {/* Logo */}
                 <div className="flex flex-col items-center gap-3 pb-4">
-                    <div className="relative flex h-20 w-20 items-center justify-center rounded-2xl bg-blue-100 dark:bg-blue-900/30">
-                        <span className="material-symbols-outlined text-5xl text-blue-600 dark:text-blue-400">
+                    <div
+                        className="relative flex h-20 w-20 items-center justify-center rounded-2xl"
+                        style={{ backgroundColor: isDark ? 'rgba(37, 99, 235, 0.2)' : '#eff6ff' }}
+                    >
+                        <span className="material-symbols-outlined text-5xl" style={{ color: isDark ? '#60a5fa' : '#2563eb' }}>
                             waving_hand
                         </span>
                     </div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">SBAR KIDS</h1>
+                    <h1 className="text-2xl font-bold" style={{ color: isDark ? '#ffffff' : '#0f172a' }}>SBAR KIDS</h1>
                 </div>
 
-                {/* Headline */}
-                <h2 className="text-gray-900 dark:text-white tracking-tight text-[32px] font-bold leading-tight text-center">Acesse sua conta</h2>
+                <h2 className="tracking-tight text-[32px] font-bold leading-tight text-center" style={{ color: isDark ? '#ffffff' : '#0f172a' }}>
+                    Acesse sua conta
+                </h2>
 
                 {/* Form */}
                 <div className="flex w-full flex-col items-stretch gap-4" onKeyPress={handleKeyPress}>
@@ -105,15 +112,23 @@ const LoginPage: React.FC = () => {
                     />
                 </div>
 
-                {/* Action Buttons */}
+                {/* Button */}
                 <div className="flex w-full flex-col items-stretch gap-4 pt-4">
                     {error && (
-                        <div className="p-3 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-100 rounded-lg text-sm">
+                        <div
+                            className="p-3 rounded-lg text-sm"
+                            style={{
+                                backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : '#fef2f2',
+                                color: isDark ? '#fca5a5' : '#dc2626',
+                                border: `1px solid ${isDark ? '#7f1d1d' : '#fecaca'}`,
+                            }}
+                        >
                             {error}
                         </div>
                     )}
-                    <button 
-                        className="flex h-14 w-full items-center justify-center rounded-lg px-6 text-base font-bold text-white shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-background-dark disabled:opacity-60 disabled:cursor-not-allowed bg-blue-600 hover:bg-blue-700"
+                    <button
+                        className="flex h-14 w-full items-center justify-center rounded-lg px-6 text-base font-bold text-white shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                        style={{ backgroundColor: '#2563eb' }}
                         onClick={handleLogin}
                         disabled={loading || !emailOrId || !password}
                     >
@@ -129,9 +144,9 @@ const LoginPage: React.FC = () => {
                     </button>
                 </div>
 
-                {/* Restricted Access Notice */}
-                <div className="mt-8 pt-6 border-t border-slate-700 text-center">
-                    <p className="text-slate-400 dark:text-slate-500 text-xs font-normal leading-normal">
+                {/* Footer */}
+                <div className="mt-8 pt-6 text-center" style={{ borderTop: `1px solid ${isDark ? '#334155' : '#cbd5e1'}` }}>
+                    <p className="text-xs font-normal leading-normal" style={{ color: isDark ? '#64748b' : '#94a3b8' }}>
                         Acesso restrito a profissionais autorizados
                     </p>
                 </div>
