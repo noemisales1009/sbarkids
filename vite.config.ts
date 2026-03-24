@@ -24,7 +24,11 @@ export default defineConfig(({ mode }) => {
               'supabase-vendor': ['@supabase/supabase-js'],
             }
           }
-        }
+        },
+        minify: 'esbuild',
+      },
+      esbuild: {
+        drop: mode === 'production' ? ['console', 'debugger'] : [],
       },
       // Configuração para SPA - importante para React Router funcionar corretamente
       preview: {

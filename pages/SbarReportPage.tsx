@@ -55,46 +55,18 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
     const [currentUserName, setCurrentUserName] = useState<string>('Dr. Usuário');
     const [alertas, setAlertas] = useState<Alerta[]>([]);
 
-    // Buscar nome do usuário autenticado
+    // Buscar nome do usuário autenticado (sem localStorage por LGPD)
     useEffect(() => {
         const loadCurrentUser = async () => {
-            console.log('🔍 Carregando dados do usuário autenticado...');
             try {
-                // 1. Tenta userService.getCurrentUser() que chama o auth
                 const userData = await userService.getCurrentUser();
-                console.log('✅ userService.getCurrentUser() retornou:', userData);
-                
                 if (userData?.name) {
-                    console.log(`✅ Nome encontrado: "${userData.name}"`);
                     setCurrentUserName(userData.name);
-                    localStorage.setItem('currentUserName', userData.name);
-                    return;
-                }
-                
-                console.log('❌ Usuário sem name definido, tentando fallbacks...');
-                
-                // 2. Fallback: localStorage
-                const savedName = localStorage.getItem('currentUserName');
-                if (savedName && savedName !== 'Médico') {
-                    console.log(`✅ Recuperado do localStorage: "${savedName}"`);
-                    setCurrentUserName(savedName);
-                    return;
-                }
-                
-                // 3. Fallback final: usar padrão
-                console.log('❌ Nenhum nome encontrado, usando padrão');
-                setCurrentUserName('Dr. Usuário');
-            } catch (error) {
-                console.error('❌ ERRO ao carregar usuário:', error);
-                // Tenta localStorage mesmo depois de erro
-                const savedName = localStorage.getItem('currentUserName');
-                if (savedName && savedName !== 'Médico') {
-                    console.log(`📦 Usando fallback localStorage: "${savedName}"`);
-                    setCurrentUserName(savedName);
                 } else {
-                    console.log('📦 Usando fallback padrão');
                     setCurrentUserName('Dr. Usuário');
                 }
+            } catch (error) {
+                setCurrentUserName('Dr. Usuário');
             }
         };
         loadCurrentUser();

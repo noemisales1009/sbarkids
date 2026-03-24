@@ -167,7 +167,7 @@ export const TestSupabasePage: React.FC = () => {
       <div className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-300">
         <h3 className="font-semibold text-blue-900 mb-2">ℹ️ Informações da Configuração</h3>
         <ul className="text-sm text-blue-800 space-y-1 font-mono">
-          <li>✓ VITE_SUPABASE_URL: https://ouybwkjapejgpuuujwgy.supabase.co...</li>
+          <li>✓ VITE_SUPABASE_URL: {import.meta.env.VITE_SUPABASE_URL?.slice(0, 30)}...</li>
           <li>✓ VITE_SUPABASE_ANON_KEY: Configurada</li>
           <li>✓ Tabela: patients</li>
           <li>✓ Total de pacientes: {patients.length}</li>

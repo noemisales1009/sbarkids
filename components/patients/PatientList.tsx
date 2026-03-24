@@ -17,41 +17,12 @@ const PatientList: React.FC<PatientListProps> = ({ onSelectPatient, onSelectHist
     useEffect(() => {
         const loadPatients = async () => {
             try {
-                // Verificar se tem dados em cache no sessionStorage (válido por 5 minutos)
-                const cacheKey = 'patientsList';
-                const cacheTimestampKey = 'patientsListTimestamp';
-                const cached = sessionStorage.getItem(cacheKey);
-                const timestamp = sessionStorage.getItem(cacheTimestampKey);
-                const now = Date.now();
-                const cacheExpiry = 5 * 60 * 1000; // 5 minutos
-
-                if (cached && timestamp && (now - parseInt(timestamp)) < cacheExpiry) {
-                    console.log('📦 [PatientList] Usando dados do sessionStorage (cache válido)');
-                    const parsedData = JSON.parse(cached);
-                    // Filtro extra: garantir que não há pacientes arquivados
-                    const filtered = parsedData.filter((p: any) => !p.archived_at);
-                    setPatients(filtered);
-                    setLoading(false);
-                    return;
-                }
-
-                // Cache expirou ou não existe, carregar do Supabase
-                console.log('🔄 [PatientList] Carregando pacientes do Supabase (cache expirado ou inexistente)...');
                 setLoading(true);
                 const data = await patientsService.listPatients();
                 setPatients(data);
-                
-                // Salvar no sessionStorage com timestamp
-                sessionStorage.setItem(cacheKey, JSON.stringify(data));
-                sessionStorage.setItem(cacheTimestampKey, now.toString());
-                console.log('✅ [PatientList] Pacientes salvos em cache com timestamp');
             } catch (err) {
-                console.error('❌ [PatientList] Erro:', err);
                 setError(`Erro ao carregar pacientes: ${err instanceof Error ? err.message : 'Desconhecido'}`);
                 setPatients([]);
-                // Limpar cache em caso de erro
-                sessionStorage.removeItem('patientsList');
-                sessionStorage.removeItem('patientsListTimestamp');
             } finally {
                 setLoading(false);
             }

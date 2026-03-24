@@ -30,9 +30,10 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setLoading(true);
             setError(null);
             
-            // Obter sessão
-            const { data: { session } } = await supabase.auth.getSession();
-            
+            // Obter sessão (safe destructuring)
+            const { data: sessionData } = await supabase.auth.getSession();
+            const session = sessionData?.session;
+
             if (!session?.user) {
                 console.log('ℹ️ Nenhuma sessão');
                 setUser(null);

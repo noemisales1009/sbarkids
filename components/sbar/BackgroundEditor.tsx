@@ -280,16 +280,16 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
                   <div 
                     key={med.id} 
                     className={`p-3 border rounded-lg ${
-                      temFim 
-                        ? 'bg-yellow-900/20 border-yellow-700' 
-                        : 'bg-blue-900/20 border-blue-800'
+                      temFim
+                        ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-700'
+                        : 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-800'
                     }`}
                   >
-                    <p className="text-sm font-semibold text-white">{med.nome_medicacao}</p>
-                    <p className="text-xs text-gray-300 mt-1">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">{med.nome_medicacao}</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
                       {med.dosagem_valor} {med.unidade_medida}
                     </p>
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       Início: {
                         med.data_inicio.includes('-')
                           ? new Date(med.data_inicio + 'T00:00:00').toLocaleDateString('pt-BR')
@@ -297,16 +297,16 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
                       }
                     </p>
                     {temFim ? (
-                      <p className="text-xs text-yellow-400 mt-1 font-semibold">
+                      <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1 font-semibold">
                         Fim: {new Date(med.data_fim).toLocaleDateString('pt-BR')}
                       </p>
                     ) : (
-                      <p className="text-xs text-green-400 mt-1 font-semibold">
+                      <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-semibold">
                         ✓ {calculateDaysOfUsage(med.data_inicio)} dia{calculateDaysOfUsage(med.data_inicio) !== 1 ? 's' : ''} de uso
                       </p>
                     )}
                     {med.observacao && (
-                      <p className="text-xs text-gray-300 mt-2 italic">{med.observacao}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-300 mt-2 italic">{med.observacao}</p>
                     )}
                   </div>
                 );
@@ -537,13 +537,13 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
                   </div>
 
                   {/* RESULTADO DO CÁLCULO */}
-                  <div className="bg-purple-900/30 border border-purple-700 rounded-lg p-3">
+                  <div className="bg-purple-50 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-700 rounded-lg p-3">
                     <div className="text-center">
-                      <p className="text-xs text-purple-400 mb-2">Resultado</p>
-                      <p className="text-lg font-bold text-white">
+                      <p className="text-xs text-purple-600 dark:text-purple-400 mb-2">Resultado</p>
+                      <p className="text-lg font-bold text-purple-900 dark:text-white">
                         {balance.resultado > 0 ? '+' : ''}{(balance.resultado * 100).toFixed(2)}%
                       </p>
-                      <p className="text-xs text-purple-300 mt-1">
+                      <p className="text-xs text-purple-500 dark:text-purple-300 mt-1">
                         {balance.resultado > 0 ? 'Ganho' : balance.resultado < 0 ? 'Perda' : 'Equilibrado'}
                       </p>
                     </div>
@@ -598,13 +598,13 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
                   </div>
 
                   {/* RESULTADO DO CÁLCULO */}
-                  <div className="bg-cyan-900/30 border border-cyan-700 rounded-lg p-3">
+                  <div className="bg-cyan-50 dark:bg-cyan-900/30 border border-cyan-200 dark:border-cyan-700 rounded-lg p-3">
                     <div className="text-center">
-                      <p className="text-xs text-cyan-400 mb-2">Resultado</p>
-                      <p className="text-lg font-bold text-white">
+                      <p className="text-xs text-cyan-600 dark:text-cyan-400 mb-2">Resultado</p>
+                      <p className="text-lg font-bold text-cyan-900 dark:text-white">
                         {diur.resultado.toFixed(2)}
                       </p>
-                      <p className="text-xs text-cyan-300 mt-1">mL/kg/h</p>
+                      <p className="text-xs text-cyan-500 dark:text-cyan-300 mt-1">mL/kg/h</p>
                     </div>
                   </div>
                 </div>

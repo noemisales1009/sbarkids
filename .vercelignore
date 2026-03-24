@@ -1,0 +1,12 @@
+.git
+.gitignore
+README.md
+DOCUMENTACAO.md
+*.md
+node_modules
+.env.local
+.env.*.local
+dist
+.cache
+coverage
+.DS_Store

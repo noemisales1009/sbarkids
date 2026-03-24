@@ -33,22 +33,7 @@ const AppContent: React.FC = () => {
     const [loadingAuth, setLoadingAuth] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
 
-    // Restaurar estados do sessionStorage ao recarregar
-    useEffect(() => {
-        try {
-            const savedPatient = sessionStorage.getItem('selectedPatient');
-            const savedReport = sessionStorage.getItem('selectedReport');
-            
-            if (savedPatient) {
-                setSelectedPatient(JSON.parse(savedPatient));
-            }
-            if (savedReport) {
-                setSelectedReport(JSON.parse(savedReport));
-            }
-        } catch (error) {
-            console.error('Erro ao restaurar estado:', error);
-        }
-    }, []);
+    // Estado mantido apenas em memória (sem sessionStorage) por segurança LGPD
 
     // Inicializar serviço de limpeza diária (00:05 São Paulo)
     useEffect(() => {
@@ -57,22 +42,7 @@ const AppContent: React.FC = () => {
         return cleanup;
     }, []);
 
-    // Salvar estados no sessionStorage quando mudarem
-    useEffect(() => {
-        if (selectedPatient) {
-            sessionStorage.setItem('selectedPatient', JSON.stringify(selectedPatient));
-        } else {
-            sessionStorage.removeItem('selectedPatient');
-        }
-    }, [selectedPatient]);
-
-    useEffect(() => {
-        if (selectedReport) {
-            sessionStorage.setItem('selectedReport', JSON.stringify(selectedReport));
-        } else {
-            sessionStorage.removeItem('selectedReport');
-        }
-    }, [selectedReport]);
+    // Dados de pacientes mantidos apenas em memória (LGPD compliance)
 
     // Verificar autenticação ao montar o componente
     useEffect(() => {
@@ -306,12 +276,14 @@ const AppContent: React.FC = () => {
                     </ProtectedRoute>
                 } />
                 
-                <Route path="/test" element={
-                    <ProtectedRoute>
-                        <TestSupabasePage />
-                    </ProtectedRoute>
-                } />
-                
+                {import.meta.env.DEV && (
+                    <Route path="/test" element={
+                        <ProtectedRoute>
+                            <TestSupabasePage />
+                        </ProtectedRoute>
+                    } />
+                )}
+
                 <Route path="*" element={<Navigate to="/patients" replace />} />
             </Routes>
         </div>

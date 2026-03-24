@@ -36,15 +36,29 @@ const ProfileSection: React.FC = () => {
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                if (typeof reader.result === 'string') {
-                    setProfileImage(reader.result);
-                }
-            };
-            reader.readAsDataURL(file);
+        if (!file) return;
+
+        // Validação de tipo
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+            setError('Formato não suportado. Use JPG, PNG ou WebP.');
+            return;
         }
+
+        // Validação de tamanho (máx 2MB)
+        const maxSize = 2 * 1024 * 1024;
+        if (file.size > maxSize) {
+            setError('Imagem muito grande. Tamanho máximo: 2MB.');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            if (typeof reader.result === 'string') {
+                setProfileImage(reader.result);
+            }
+        };
+        reader.readAsDataURL(file);
     };
 
     const handleSaveChanges = async () => {
@@ -125,7 +139,7 @@ const ProfileSection: React.FC = () => {
                                 ref={fileInputRef}
                                 onChange={handleFileChange}
                                 className="hidden"
-                                accept="image/*"
+                                accept="image/jpeg,image/png,image/webp"
                             />
                         </div>
                         <div className="flex-1">
