@@ -581,6 +581,33 @@ export const alertasService = {
   },
 
   /**
+   * Busca alertas concluídos visíveis (dentro da janela de 24h) da view alertas_paciente_visibilidade_24h
+   */
+  async getConcluidos24h(patientId: string): Promise<any[]> {
+    try {
+      console.log(`📍 alertasService.getConcluidos24h("${patientId}") - buscando da view visibilidade_24h...`);
+
+      const { data, error } = await supabase
+        .from('alertas_paciente_visibilidade_24h')
+        .select('*')
+        .eq('patient_id', patientId)
+        .order('concluded_at', { ascending: false });
+
+      if (error) {
+        console.warn('⚠️ Erro ao buscar alertas_paciente_visibilidade_24h:', error);
+        return [];
+      }
+
+      console.log(`✅ ${data?.length || 0} alertas concluídos visíveis encontrados`);
+      return data || [];
+    } catch (error) {
+      console.error('❌ ERRO em getConcluidos24h:', error);
+      logError(error, 'alertasService.getConcluidos24h');
+      return [];
+    }
+  },
+
+  /**
    * Busca alertas arquivados de um paciente (para histórico)
    */
   async getArquivados(patientId: string): Promise<Alerta[]> {

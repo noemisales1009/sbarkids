@@ -81,12 +81,13 @@ export interface HistoryItemData {
 // NAVEGAÇÃO
 // ============================================================================
 
-export type CurrentPage = 
-    | 'login' 
-    | 'patients' 
-    | 'sbar' 
-    | 'history' 
-    | 'settings' 
-    | 'reports' 
+export type CurrentPage =
+    | 'login'
+    | 'patients'
+    | 'sbar'
+    | 'history'
+    | 'settings'
+    | 'reports'
     | 'reportDetail'
+    | 'ponto'
     | 'test';

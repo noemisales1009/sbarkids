@@ -9,6 +9,7 @@ import SbarReadonlySection from '../components/sbar/SbarReadonlySection';
 import ComorbidadesSection from '../components/sbar/ComorbidadesSection';
 import BackgroundEditor from '../components/sbar/BackgroundEditor';
 import AlertasDisplay from '../components/sbar/AlertasDisplay';
+import CompletedAlertsSection from '../components/sbar/CompletedAlertsSection';
 import BottomNavBar from '../components/patients/BottomNavBar';
 import AssessmentSimple from '../components/sbar/AssessmentSimple';
 import { DiagnosticoSelector } from '../components/sbar/index';
@@ -776,6 +777,11 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
                     {/* Alertas do Paciente */}
                     <div className="bg-gray-900 p-4 rounded-lg border border-gray-800">
                         <AlertasDisplay patientId={patient.id} roundId={currentRoundId || undefined} alertas={alertas} />
+                    </div>
+
+                    {/* Alertas Concluidos (visiveis por 24h) */}
+                    <div className="bg-gray-900 p-4 rounded-lg border border-gray-800">
+                        <CompletedAlertsSection patientId={patient.id} />
                     </div>
 
                     {/* Mensagem de status */}

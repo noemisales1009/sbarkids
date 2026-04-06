@@ -61,7 +61,7 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, roundId, ale
       
       // Separar apenas alertas ATIVOS para os turnos (excluir concluídos)
       const alertasAtivos = alertasVisiveis.filter(
-        a => a.status !== 'concluido' && a.live_status !== 'resolvido / arquivado'
+        a => !a.concluded_at && a.status !== 'concluido' && a.status !== 'resolvido' && a.live_status !== 'resolvido / arquivado' && a.live_status !== 'concluido'
       );
       
       // Verificar se os alertas têm o campo shift_criacao
@@ -113,7 +113,7 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, roundId, ale
       
       // Separar apenas alertas ATIVOS para os turnos (excluir concluídos)
       const alertasAtivos = data.filter(
-        a => a.status !== 'concluido' && a.live_status !== 'resolvido / arquivado'
+        a => !a.concluded_at && a.status !== 'concluido' && a.status !== 'resolvido' && a.live_status !== 'resolvido / arquivado' && a.live_status !== 'concluido'
       );
       
       // Verificar se os alertas têm o campo shift_criacao
@@ -349,11 +349,20 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, roundId, ale
             <h3 className="text-lg font-bold">Alertas do Paciente</h3>
           </div>
           <div className="flex items-center gap-2">
-            {alertas.length > 0 && (
-              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-500 text-white font-bold text-sm">
-                {alertas.length}
-              </span>
-            )}
+            {(() => {
+              const countAtivos = alertas.filter(
+                a => {
+                  const s = (a.status || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                  const ls = (a.live_status || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                  return !a.concluded_at && s !== 'concluido' && s !== 'resolvido' && !ls.includes('resolvido') && !ls.includes('concluido') && !ls.includes('arquivado');
+                }
+              ).length;
+              return countAtivos > 0 ? (
+                <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-500 text-white font-bold text-sm">
+                  {countAtivos}
+                </span>
+              ) : null;
+            })()}
             <span className={`text-2xl transition-transform ${expanded ? 'rotate-90' : ''}`}>›</span>
           </div>
         </div>
@@ -362,105 +371,24 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, roundId, ale
       {/* Lista de alertas (expande/colapsa) */}
       {expanded && (
         <div className="space-y-3">
-          {alertas.length === 0 ? (
-            <div className="text-center py-6 text-gray-500 dark:text-gray-400">
-              ✓ Nenhum alerta registrado
-            </div>
-          ) : (
+          {(() => {
+            const isAtivo = (a: any) => {
+              const s = (a.status || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+              const ls = (a.live_status || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+              return !a.concluded_at && s !== 'concluido' && s !== 'resolvido' && !ls.includes('resolvido') && !ls.includes('concluido') && !ls.includes('arquivado');
+            };
+            const alertasAtivos = alertas.filter(isAtivo);
+
+            if (alertasAtivos.length === 0) return (
+              <div className="text-center py-6 text-gray-500 dark:text-gray-400">
+                ✓ Nenhum alerta ativo
+              </div>
+            );
+
+            return (
             <>
-              {/* SEÇÃO: ALERTAS CONCLUÍDOS */}
+              {/* SEÇÃO: ALERTAS ATIVOS (concluídos agora ficam no CompletedAlertsSection) */}
               {(() => {
-                const alertasConcluidos = alertas.filter(
-                  a => a.status === 'concluido' || a.live_status === 'resolvido / arquivado'
-                );
-                
-                if (alertasConcluidos.length === 0) return null;
-
-                return (
-                  <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="text-sm font-bold text-green-900 dark:text-green-300 flex items-center gap-2">
-                        ✓ Alertas Concluídos
-                        <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-green-500 text-white text-xs font-semibold">
-                          {alertasConcluidos.length}
-                        </span>
-                      </h4>
-                    </div>
-                    <div className="space-y-2">
-                      {alertasConcluidos.map((alerta) => (
-                        <div
-                          key={alerta.id_alerta}
-                          className="p-3 bg-white dark:bg-gray-800 rounded border border-green-200 dark:border-green-800 flex items-start justify-between"
-                        >
-                          <div className="flex-1">
-                            <p className="font-semibold text-gray-900 dark:text-white text-sm">
-                              {alerta.alertaclinico}
-                            </p>
-                            <div className="mt-1 space-y-0.5 text-xs">
-                              <div className="text-gray-600 dark:text-gray-400">
-                                👤 <strong>{alerta.responsavel}</strong>
-                              </div>
-                              <div className="text-gray-600 dark:text-gray-400">
-                                ⏱ {alerta.prazo_formatado || 'Sem prazo'}
-                              </div>
-                              {alerta.concluded_by_name && (
-                                <div className="text-gray-500 dark:text-gray-500 text-xs">
-                                  ✓ Concluído por: <strong>{alerta.concluded_by_name || 'Não informado'}</strong>
-                                </div>
-                              )}
-                              {alerta.hora_criacao_formatado && (
-                                <div className="text-gray-500 dark:text-gray-500">
-                                  📅 {alerta.hora_criacao_formatado}
-                                </div>
-                              )}
-                              {/* Timer de visibilidade */}
-                              {alerta.status === 'concluido' || alerta.live_status === 'resolvido / arquivado' ? (
-                                <div className="mt-1 inline-block px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded text-xs font-semibold">
-                                  ⏰ {alertasService.getTempoRestanteVisibilidade(alerta) || 'Calculando...'}
-                                </div>
-                              ) : null}
-                            </div>
-                            {alerta.justificativa && (
-                              <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/30 rounded text-xs border-l-2 border-blue-400">
-                                <p className="text-blue-900 dark:text-blue-300">
-                                  <strong>Justificativa:</strong> {alerta.justificativa}
-                                </p>
-                              </div>
-                            )}
-                            {alerta.conclusao_info && (
-                              <div className="mt-1 text-xs text-green-700 dark:text-green-400">
-                                {alerta.conclusao_info}
-                              </div>
-                            )}
-                          </div>
-                          <button
-                            onClick={() => handleArquivar(alerta.id_alerta)}
-                            className="ml-2 px-2 py-1 text-sm bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-700 dark:text-red-400 rounded font-medium transition-colors"
-                            title="Remover alerta"
-                          >
-                            🗑
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* SEÇÃO: ALERTAS ATIVOS */}
-              {(() => {
-                const alertasAtivos = alertas.filter(
-                  a => a.status !== 'concluido' && a.live_status !== 'resolvido / arquivado'
-                );
-                
-                if (alertasAtivos.length === 0) {
-                  return (
-                    <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
-                      Nenhum alerta ativo
-                    </div>
-                  );
-                }
-
                 return usarTurnos ? (
             <div className="space-y-4">
               {/* Turno Manhã */}
@@ -941,7 +869,8 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, roundId, ale
 
               {/* Modals and other UI elements */}
             </>
-          )}
+            );
+          })()}
         </div>
       )}
 
