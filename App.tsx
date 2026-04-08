@@ -16,6 +16,9 @@ import { patientsService } from './services/patientsService';
 import { UserProvider, useUser } from './contexts/UserContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { initializeDailyClearanceService } from './services/dailyClearanceService';
+import { useInactivityTimeout } from './hooks/useInactivityTimeout';
+import InactivityWarningModal from './components/InactivityWarningModal';
+import { auditService } from './services/auditService';
 
 interface AuthUser {
     id: string;
@@ -27,11 +30,30 @@ interface AuthUser {
 const AppContent: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { refetchUser } = useUser();
+    const { user, refetchUser } = useUser();
     const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
     const [selectedReport, setSelectedReport] = useState<HistoryItemData | null>(null);
     const [authUser, setAuthUser] = useState<AuthUser | null>(null);
     const [refreshKey, setRefreshKey] = useState(0);
+
+    // Timeout de inatividade - 15 min com aviso 2 min antes
+    const handleInactivityTimeout = React.useCallback(async () => {
+        if (user) {
+            await auditService.logLogout(user.id, user.name);
+        }
+        await supabase.auth.signOut();
+        setAuthUser(null);
+        setSelectedPatient(null);
+        setSelectedReport(null);
+        sessionStorage.clear();
+        navigate('/login', { replace: true });
+    }, [user, navigate]);
+
+    const { showWarning, remainingSeconds, extendSession } = useInactivityTimeout({
+        timeoutMinutes: 15,
+        warningMinutes: 2,
+        onTimeout: handleInactivityTimeout,
+    });
 
     // Estado mantido apenas em memória (sem sessionStorage) por segurança LGPD
 
@@ -65,6 +87,10 @@ const AppContent: React.FC = () => {
                 });
                 // Atualizar dados do usuário no contexto
                 refetchUser();
+                // Registrar login na auditoria
+                if (event === 'SIGNED_IN') {
+                    auditService.logLogin(session.user.id, session.user.email || 'Usuário');
+                }
                 // Navegar automaticamente ao fazer login
                 if (location.pathname === '/login') {
                     navigate('/patients', { replace: true });
@@ -87,6 +113,9 @@ const AppContent: React.FC = () => {
 
     const handleLogout = async () => {
         try {
+            if (user) {
+                await auditService.logLogout(user.id, user.name);
+            }
             await supabase.auth.signOut();
             setAuthUser(null);
             setSelectedPatient(null);
@@ -163,11 +192,25 @@ const AppContent: React.FC = () => {
         }
         
         setSelectedPatient(patient);
+        // Registrar acesso na auditoria
+        if (user) {
+            auditService.logAcessoFicha(user.id, user.name, patient.id, patient.name);
+        }
         handleNavigate('sbar');
     };
-    
+
     const handleSelectPatientForHistory = (patient: Patient) => {
         setSelectedPatient(patient);
+        // Registrar acesso ao histórico na auditoria
+        if (user) {
+            auditService.log({
+                user_id: user.id,
+                user_name: user.name,
+                action: 'visualizou_historico',
+                patient_id: patient.id,
+                patient_name: patient.name,
+            });
+        }
         handleNavigate('history');
     };
     
@@ -194,6 +237,14 @@ const AppContent: React.FC = () => {
 
     return (
         <div className="relative flex h-auto min-h-screen w-full flex-col bg-background-light dark:bg-background-dark group/design-root">
+            {/* Modal de aviso de inatividade */}
+            {showWarning && authUser && (
+                <InactivityWarningModal
+                    remainingSeconds={remainingSeconds}
+                    onExtend={extendSession}
+                    onLogout={handleLogout}
+                />
+            )}
             <Routes>
                 <Route path="/login" element={<LoginPage />} />
                 
