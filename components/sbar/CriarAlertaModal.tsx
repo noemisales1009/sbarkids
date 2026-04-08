@@ -124,7 +124,7 @@ const CriarAlertaModal: React.FC<CriarAlertaModalProps> = ({
               value={alerta}
               onChange={(e) => setAlerta(e.target.value)}
               placeholder="Digite o alerta identificado..."
-              className="w-full px-3 py-2.5 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              className="w-full px-3 py-2.5 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white text-sm focus:outline-none focus:border-red-500"
               autoFocus
             />
           </div>
@@ -137,7 +137,7 @@ const CriarAlertaModal: React.FC<CriarAlertaModalProps> = ({
             <select
               value={responsavel}
               onChange={(e) => setResponsavel(e.target.value)}
-              className="w-full px-3 py-2.5 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent appearance-none"
+              className="w-full px-3 py-2.5 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white text-sm focus:outline-none focus:border-red-500 appearance-none"
             >
               <option value="">Selecione...</option>
               {RESPONSAVEIS.map((r) => (
@@ -154,7 +154,7 @@ const CriarAlertaModal: React.FC<CriarAlertaModalProps> = ({
             <select
               value={horaSelecionada}
               onChange={(e) => setHoraSelecionada(e.target.value)}
-              className="w-full px-3 py-2.5 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent appearance-none"
+              className="w-full px-3 py-2.5 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white text-sm focus:outline-none focus:border-red-500 appearance-none"
             >
               <option value="">Selecione...</option>
               {HORAS.map((h) => (
