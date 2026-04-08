@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import PatientCard from './PatientCard';
 import { Patient } from '../../types';
 import { patientsService } from '../../services/patientsService';
+import { PatientListSkeleton } from '../SkeletonLoader';
 
 interface PatientListProps {
     onSelectPatient: (patient: Patient) => void;
@@ -47,9 +48,8 @@ const PatientList: React.FC<PatientListProps> = ({ onSelectPatient, onSelectHist
 
     if (loading && patients.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center text-center py-8 sm:py-12 lg:py-16 px-4 sm:px-6">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
-                <p className="text-slate-600 dark:text-slate-400">Carregando pacientes...</p>
+            <div className="px-4 sm:px-6 py-4">
+                <PatientListSkeleton count={4} />
             </div>
         );
     }
