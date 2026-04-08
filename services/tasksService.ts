@@ -46,7 +46,7 @@ export const tasksService = {
         .from('tasks_view_horario_br')
         .select('*')
         .eq('patient_id', patientId)
-        .order('ordem_prioridade', { ascending: true });
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error(`❌ Erro ao buscar alertas para ${patientId}:`, error);
@@ -76,7 +76,7 @@ export const tasksService = {
         .eq('patient_id', patientId)
         .neq('status', 'concluido')
         .neq('status', 'Concluído')
-        .order('ordem_prioridade', { ascending: true });
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error(`❌ Erro ao buscar alertas ativos para ${patientId}:`, error);

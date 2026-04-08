@@ -51,7 +51,7 @@ export const alertasService = {
         .select('*')
         .eq('patient_id', patientId)
         .is('archived_at', null)  // Excluir alertas arquivados
-        .order('ordem_prioridade', { ascending: true });
+        .order('created_at', { ascending: false });
 
       if (tasksError) {
         console.warn('⚠️ Erro ao buscar tasks_view_horario_br:', tasksError);
