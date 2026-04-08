@@ -91,4 +91,5 @@ export type CurrentPage =
     | 'reports'
     | 'reportDetail'
     | 'ponto'
+    | 'calculadora'
     | 'test';

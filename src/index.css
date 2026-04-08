@@ -271,3 +271,16 @@
 .animate-slide-in {
   animation: slide-in 0.3s ease-out;
 }
+
+/* NPT Calculator - offscreen report rendering for PDF generation */
+.report-container-offscreen {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+}
+
+@media print {
+  .hide-on-print {
+    display: none !important;
+  }
+}
