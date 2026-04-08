@@ -10,6 +10,7 @@ import ComorbidadesSection from '../components/sbar/ComorbidadesSection';
 import BackgroundEditor from '../components/sbar/BackgroundEditor';
 import AlertasDisplay from '../components/sbar/AlertasDisplay';
 import CompletedAlertsSection from '../components/sbar/CompletedAlertsSection';
+import CriarAlertaModal from '../components/sbar/CriarAlertaModal';
 import BottomNavBar from '../components/patients/BottomNavBar';
 import AssessmentSimple from '../components/sbar/AssessmentSimple';
 import { DiagnosticoSelector } from '../components/sbar/index';
@@ -55,6 +56,7 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
     const [selectedShift, setSelectedShift] = useState<'morning' | 'afternoon' | 'night'>('morning');
     const [currentUserName, setCurrentUserName] = useState<string>('Dr. Usuário');
     const [alertas, setAlertas] = useState<Alerta[]>([]);
+    const [showCriarAlerta, setShowCriarAlerta] = useState(false);
 
     // Buscar nome do usuário autenticado (sem localStorage por LGPD)
     useEffect(() => {
@@ -73,16 +75,17 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
         loadCurrentUser();
     }, []);
 
+    const loadAlertas = async () => {
+        try {
+            const alertasData = await alertasService.getAlertas(patient.id);
+            setAlertas(alertasData);
+        } catch {
+            setAlertas([]);
+        }
+    };
+
     // Carregar alertas quando a página carrega
     useEffect(() => {
-        const loadAlertas = async () => {
-            try {
-                const alertasData = await alertasService.getAlertas(patient.id);
-                setAlertas(alertasData);
-            } catch (error) {
-                setAlertas([]);
-            }
-        };
         loadAlertas();
     }, [patient.id]);
 
@@ -724,6 +727,24 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
                         currentUserName={currentUserName}
                         onSaved={(message) => setSaveMessage({ type: message.includes('✅') ? 'success' : 'error', text: message })}
                     />
+
+                    {/* Botão Criar Alerta */}
+                    <button
+                        onClick={() => setShowCriarAlerta(true)}
+                        className="w-full px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+                    >
+                        ⚠️ Criar Alerta
+                    </button>
+
+                    {/* Modal Criar Alerta */}
+                    {showCriarAlerta && (
+                        <CriarAlertaModal
+                            patientId={patient.id}
+                            patientName={patient.name}
+                            onClose={() => setShowCriarAlerta(false)}
+                            onAlertaCriado={loadAlertas}
+                        />
+                    )}
 
                     {/* Alertas do Paciente */}
                     <div className="bg-gray-900 p-4 rounded-lg border border-gray-800">
