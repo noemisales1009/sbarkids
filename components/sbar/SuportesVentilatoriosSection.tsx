@@ -17,7 +17,6 @@ const SuportesVentilatoriosSection: React.FC<SuportesVentilatoriosSectionProps> 
         const suportes = await patientService.getSuportesVentilatorios(patientId);
         setSuportesSelecionados(suportes);
       } catch (error) {
-        console.error('Erro ao carregar suportes:', error);
       } finally {
         setLoading(false);
       }

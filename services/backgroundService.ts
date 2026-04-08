@@ -136,7 +136,6 @@ export const backgroundService = {
 
   async updateMedicacao(id: number, updates: Partial<Medicacao>): Promise<Medicacao | null> {
     try {
-      console.log('🔄 UPDATE Medicação ID:', id, 'Dados:', updates);
       
       const { data, error } = await supabase
         .from('medicacoes_pacientes')
@@ -146,14 +145,11 @@ export const backgroundService = {
         .single();
 
       if (error) {
-        console.error('❌ Erro Supabase update:', error);
         throw error;
       }
       
-      console.log('✅ Medicação atualizada com sucesso:', data);
       return data as Medicacao;
     } catch (error) {
-      console.error('❌ Erro ao atualizar medicação:', error);
       logError(error, 'backgroundService.updateMedicacao');
       return null;
     }
@@ -162,7 +158,6 @@ export const backgroundService = {
   // ========== DISPOSITIVOS ==========
   async getDispositivos(patientId: string): Promise<Dispositivo[]> {
     try {
-      console.log('Buscando dispositivos para paciente:', patientId);
       const { data, error } = await supabase
         .from('dispositivos_pacientes')
         .select('*')
@@ -171,10 +166,8 @@ export const backgroundService = {
         .order('data_insercao', { ascending: false });
 
       if (error) {
-        console.error('Erro ao buscar dispositivos:', error);
         throw error;
       }
-      console.log('Dispositivos encontrados:', data);
       return (data as Dispositivo[]) || [];
     } catch (error) {
       logError(error, 'backgroundService.getDispositivos');
@@ -184,7 +177,6 @@ export const backgroundService = {
 
   async saveDispositivo(dispositivo: Omit<Dispositivo, 'id' | 'created_at'>): Promise<Dispositivo | null> {
     try {
-      console.log('Salvando dispositivo:', dispositivo);
       const { data, error } = await supabase
         .from('dispositivos_pacientes')
         .insert(dispositivo)
@@ -192,18 +184,10 @@ export const backgroundService = {
         .single();
 
       if (error) {
-        console.error('Erro detalhado ao salvar dispositivo:', {
-          message: error.message,
-          code: error.code,
-          details: error.details,
-          hint: error.hint
-        });
         throw error;
       }
-      console.log('Dispositivo salvo com sucesso:', data);
       return data as Dispositivo;
     } catch (error) {
-      console.error('Exceção ao salvar dispositivo:', error);
       logError(error, 'backgroundService.saveDispositivo');
       return null;
     }
@@ -211,7 +195,6 @@ export const backgroundService = {
 
   async updateDispositivo(id: number, updates: Partial<Dispositivo>): Promise<Dispositivo | null> {
     try {
-      console.log('🔄 UPDATE Dispositivo ID:', id, 'Dados:', updates);
       
       const { data, error } = await supabase
         .from('dispositivos_pacientes')
@@ -221,14 +204,11 @@ export const backgroundService = {
         .single();
 
       if (error) {
-        console.error('❌ Erro Supabase update:', error);
         throw error;
       }
       
-      console.log('✅ Dispositivo atualizado com sucesso:', data);
       return data as Dispositivo;
     } catch (error) {
-      console.error('❌ Erro ao atualizar dispositivo:', error);
       logError(error, 'backgroundService.updateDispositivo');
       return null;
     }
@@ -270,7 +250,6 @@ export const backgroundService = {
 
   async updateCultura(id: number, updates: Partial<Cultura>): Promise<Cultura | null> {
     try {
-      console.log('🔄 UPDATE Cultura ID:', id, 'Dados:', updates);
       
       const { data, error } = await supabase
         .from('culturas_pacientes')
@@ -280,14 +259,11 @@ export const backgroundService = {
         .single();
 
       if (error) {
-        console.error('❌ Erro Supabase update:', error);
         throw error;
       }
       
-      console.log('✅ Cultura atualizada com sucesso:', data);
       return data as Cultura;
     } catch (error) {
-      console.error('❌ Erro ao atualizar cultura:', error);
       logError(error, 'backgroundService.updateCultura');
       return null;
     }
@@ -329,7 +305,6 @@ export const backgroundService = {
 
   async updateProcedimento(id: number, updates: Partial<Procedimento>): Promise<Procedimento | null> {
     try {
-      console.log('🔄 UPDATE Procedimento ID:', id, 'Dados:', updates);
       
       const { data, error } = await supabase
         .from('procedimentos_pacientes')
@@ -339,14 +314,11 @@ export const backgroundService = {
         .single();
 
       if (error) {
-        console.error('❌ Erro Supabase update:', error);
         throw error;
       }
       
-      console.log('✅ Procedimento atualizado com sucesso:', data);
       return data as Procedimento;
     } catch (error) {
-      console.error('❌ Erro ao atualizar procedimento:', error);
       logError(error, 'backgroundService.updateProcedimento');
       return null;
     }
@@ -372,7 +344,6 @@ export const backgroundService = {
 
   async saveExame(exame: Omit<Exame, 'id' | 'created_at'>): Promise<Exame | null> {
     try {
-      console.log('🗄️ [backgroundService.saveExame] Inserindo:', exame);
       
       const { data, error } = await supabase
         .from('exames_pacientes')
@@ -381,14 +352,11 @@ export const backgroundService = {
         .single();
 
       if (error) {
-        console.error('❌ [backgroundService.saveExame] Erro do Supabase:', error);
         throw error;
       }
       
-      console.log('✅ [backgroundService.saveExame] Sucesso:', data);
       return data as Exame;
     } catch (error) {
-      console.error('❌ [backgroundService.saveExame] Erro capturado:', error);
       logError(error, 'backgroundService.saveExame');
       return null;
     }
@@ -396,7 +364,6 @@ export const backgroundService = {
 
   async updateExame(id: number, updates: Partial<Exame>): Promise<Exame | null> {
     try {
-      console.log('🔄 UPDATE Exame ID:', id, 'Dados:', updates);
       
       const { data, error } = await supabase
         .from('exames_pacientes')
@@ -406,14 +373,11 @@ export const backgroundService = {
         .single();
 
       if (error) {
-        console.error('❌ Erro Supabase update:', error);
         throw error;
       }
       
-      console.log('✅ Exame atualizado com sucesso:', data);
       return data as Exame;
     } catch (error) {
-      console.error('❌ Erro ao atualizar exame:', error);
       logError(error, 'backgroundService.updateExame');
       return null;
     }
@@ -427,12 +391,10 @@ export const backgroundService = {
         .eq('id', id);
 
       if (error) {
-        console.error('❌ Erro ao deletar exame:', error);
         throw error;
       }
       return true;
     } catch (error) {
-      console.error('❌ Erro ao deletar exame:', error);
       logError(error, 'backgroundService.deleteExame');
       return false;
     }
@@ -474,7 +436,6 @@ export const backgroundService = {
 
   async updateDieta(id: string, updates: Partial<Dieta>): Promise<Dieta | null> {
     try {
-      console.log('🔄 UPDATE Dieta ID:', id, 'Dados:', updates);
       
       const { data, error } = await supabase
         .from('dietas_pacientes')
@@ -484,14 +445,11 @@ export const backgroundService = {
         .single();
 
       if (error) {
-        console.error('❌ Erro Supabase update:', error);
         throw error;
       }
       
-      console.log('✅ Dieta atualizada com sucesso:', data);
       return data as Dieta;
     } catch (error) {
-      console.error('❌ Erro ao atualizar dieta:', error);
       logError(error, 'backgroundService.updateDieta');
       return null;
     }

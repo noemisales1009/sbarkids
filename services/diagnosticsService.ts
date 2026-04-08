@@ -40,14 +40,11 @@ export const diagnosticsService = {
       const diagnostics = (data as DiagnosticHistory[]) || [];
       
       // DEBUG: Ver o que está vindo do Supabase
-      console.log('🔍 Diagnósticos do Supabase:', JSON.stringify(diagnostics, null, 2));
 
       // Separar por pergunta_id: 1 = principais, 2 = secundários
       const principais = diagnostics.filter(d => Number(d.pergunta_id) === 1);
       const secundarios = diagnostics.filter(d => Number(d.pergunta_id) === 2);
       
-      console.log('📊 Principais:', principais.length);
-      console.log('📊 Secundários:', secundarios.length);
 
       return {
         principais,

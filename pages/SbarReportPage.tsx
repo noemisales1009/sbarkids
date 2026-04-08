@@ -76,13 +76,10 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
     // Carregar alertas quando a página carrega
     useEffect(() => {
         const loadAlertas = async () => {
-            console.log('📍 Carregando alertas do paciente:', patient.id);
             try {
                 const alertasData = await alertasService.getAlertas(patient.id);
-                console.log('✅ Alertas carregados:', alertasData);
                 setAlertas(alertasData);
             } catch (error) {
-                console.error('❌ Erro ao carregar alertas:', error);
                 setAlertas([]);
             }
         };
@@ -95,11 +92,8 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
 
         const saveStatus = async () => {
             try {
-                console.log('💾 Salvando status do paciente:', status);
                 await patientsService.updatePatient(patient.id, { status });
-                console.log('✅ Status salvo com sucesso:', status);
             } catch (error) {
-                console.error('❌ Erro ao salvar status:', error);
             }
         };
 
@@ -112,17 +106,13 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
     // Carregar status do paciente quando a página carrega
     useEffect(() => {
         const loadPatientStatus = async () => {
-            console.log('📍 Carregando status do paciente:', patient.id);
             try {
                 // Buscar o paciente completo do Supabase para pegar o status
                 const patientData = await patientsService.getPatient(patient.id);
-                console.log('✅ Dados do paciente carregados:', patientData);
                 if (patientData?.status) {
-                    console.log('✅ Status do paciente carregado:', patientData.status);
                     setStatus(patientData.status as 'estavel' | 'instavel' | 'em_risco');
                 }
             } catch (error) {
-                console.error('❌ Erro ao carregar status do paciente:', error);
             }
         };
         loadPatientStatus();
@@ -134,19 +124,15 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
         if (currentRoundId) return; // Já existe um round
 
         const loadOrCreateRound = async () => {
-            console.log('🔍 Procurando ou criando round do dia para paciente:', patient.id);
             try {
                 // Busca ou cria automaticamente o round do dia atual (horário de São Paulo)
                 const todayRound = await clinicalRoundsService.getOrCreateTodayRound(patient.id, CURRENT_USER_ID);
                 
                 if (todayRound) {
-                    console.log('✅ Round do dia:', todayRound.id, '(criado em:', todayRound.created_at, ')');
                     setCurrentRoundId(todayRound.id);
                 } else {
-                    console.error('❌ Não foi possível obter/criar round do dia');
                 }
             } catch (error) {
-                console.error('❌ Erro ao carregar/criar round do dia:', error);
             }
         };
 
@@ -157,17 +143,14 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
     const ensureRoundExists = async (): Promise<string | null> => {
         if (currentRoundId) return currentRoundId;
         
-        console.log('🔍 Criando round do dia para paciente:', patient.id);
         try {
             const todayRound = await clinicalRoundsService.getOrCreateTodayRound(patient.id, CURRENT_USER_ID);
             if (todayRound) {
-                console.log('✅ Round criado:', todayRound.id);
                 setCurrentRoundId(todayRound.id);
                 return todayRound.id;
             }
             return null;
         } catch (error) {
-            console.error('❌ Erro ao criar round:', error);
             return null;
         }
     };
@@ -178,59 +161,46 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
 
         const loadSavedData = async () => {
             try {
-                console.log('Carregando dados salvos do round:', currentRoundId);
                 
                 // Carregar o round completo para pegar o status
                 const round = await clinicalRoundsService.getRoundById(currentRoundId);
-                console.log('Round carregado:', round);
                 if (round?.status) {
-                    console.log('Status carregado:', round.status);
                     setStatus(round.status);
                 }
                 
                 // Carregar Assessment
                 const assessment = await assessmentService.getAssessmentByRound(currentRoundId);
-                console.log('Assessment carregado:', assessment);
                 if (assessment) {
                     setAssessmentStatus(assessment);
                     // Preencher os turnos com dados salvos
                     if (assessment.morning_data) {
-                        console.log('Preenchendo Assessment Morning:', assessment.morning_data);
                         setAssessmentMorning(assessment.morning_data as any);
                     }
                     if (assessment.afternoon_data) {
-                        console.log('Preenchendo Assessment Afternoon:', assessment.afternoon_data);
                         setAssessmentAfternoon(assessment.afternoon_data as any);
                     }
                     if (assessment.night_data) {
-                        console.log('Preenchendo Assessment Night:', assessment.night_data);
                         setAssessmentNight(assessment.night_data as any);
                     }
                 }
 
                 // Carregar Recommendation
                 const recommendation = await recommendationService.getRecommendationByRound(currentRoundId);
-                console.log('Recommendation carregado:', recommendation);
                 if (recommendation) {
                     setRecommendationStatus(recommendation);
                     // Preencher os turnos com dados salvos
                     if (recommendation.morning_data) {
-                        console.log('Preenchendo Recommendation Morning:', recommendation.morning_data);
                         setRecommendationMorning(recommendation.morning_data as any);
                     }
                     if (recommendation.afternoon_data) {
-                        console.log('Preenchendo Recommendation Afternoon:', recommendation.afternoon_data);
                         setRecommendationAfternoon(recommendation.afternoon_data as any);
                     }
                     if (recommendation.night_data) {
-                        console.log('Preenchendo Recommendation Night:', recommendation.night_data);
                         setRecommendationNight(recommendation.night_data as any);
                     }
                 }
 
-                console.log('Dados carregados com sucesso');
             } catch (error) {
-                console.error('Erro ao carregar dados salvos:', error);
             }
         };
 
@@ -389,7 +359,6 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
                 });
             }
         } catch (error) {
-            console.error('Erro ao salvar round:', error);
             setSaveMessage({
                 type: 'error',
                 text: 'Erro ao salvar o round'
@@ -441,7 +410,6 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
                 });
             }
         } catch (error) {
-            console.error('Erro ao salvar avaliação:', error);
             setSaveMessage({
                 type: 'error',
                 text: 'Erro ao salvar a avaliação'
@@ -491,7 +459,6 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
                 });
             }
         } catch (error) {
-            console.error('Erro ao salvar recomendação:', error);
             setSaveMessage({
                 type: 'error',
                 text: 'Erro ao salvar a recomendação'
@@ -501,9 +468,6 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
 
     // Função para salvar AMBAS as seções (Assessment e Recomendação) para um turno específico
     const handleSaveAssessmentAndRecommendation = async () => {
-        console.log('=== INICIANDO SALVAMENTO SBAR ===');
-        console.log('Round ID:', currentRoundId);
-        console.log('Turno selecionado:', selectedShift);
         
         if (!currentRoundId) {
             setSaveMessage({
@@ -529,8 +493,6 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
                 ? recommendationAfternoon 
                 : recommendationNight;
 
-            console.log('Dados de Assessment a salvar:', assessmentData);
-            console.log('Dados de Recommendation a salvar:', recommendationData);
 
             // Salva Assessment
             const assessmentSuccess = await assessmentService.saveShiftAssessment(
@@ -541,7 +503,6 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
                 CURRENT_USER_ID,
                 currentUserName
             );
-            console.log('Assessment salvo com sucesso?', assessmentSuccess);
 
             // Salva Recommendation
             const recommendationSuccess = await recommendationService.saveShiftRecommendation(
@@ -562,11 +523,9 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
 
                 // Salvar o status se foi alterado
                 if (status) {
-                    console.log('Salvando status:', status);
                     await clinicalRoundsService.updateRound(currentRoundId, { status });
                     // Também salva na tabela patients para refletir o status
                     await patientService.updatePatientStatus(patient.id, status);
-                    console.log('✅ Status atualizado na tabela patients');
                 }
 
                 // Registrar no histórico de auditoria
@@ -608,7 +567,6 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
                 });
             }
         } catch (error) {
-            console.error('Erro ao salvar avaliação e recomendação:', error);
             setSaveMessage({
                 type: 'error',
                 text: 'Erro ao salvar avaliação e recomendação'
@@ -725,36 +683,29 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
                                 const principais = diagnosticos.filter(d => d.tipo === 'principal');
                                 const secundarios = diagnosticos.filter(d => d.tipo === 'secundario');
 
-                                console.log('Iniciando salvamento de:', { principais, secundarios });
 
                                 try {
                                     // Salvar principais (pergunta_id = 1)
                                     if (principais.length > 0) {
-                                        console.log('Salvando principais:', principais);
                                         const successPrincipais = await diagnosticosSelecionadosService.saveDiagnosticos(
                                             patient.id,
                                             1, // DIAGNOSTICO_PRINCIPAIS_ID
                                             principais
                                         );
-                                        console.log('Resultado principais:', successPrincipais);
                                         if (!successPrincipais) throw new Error('Erro ao salvar diagnósticos principais');
                                     }
 
                                     // Salvar secundários (pergunta_id = 2)
                                     if (secundarios.length > 0) {
-                                        console.log('Salvando secundários:', secundarios);
                                         const successSecundarios = await diagnosticosSelecionadosService.saveDiagnosticos(
                                             patient.id,
                                             2, // DIAGNOSTICO_SECUNDARIOS_ID
                                             secundarios
                                         );
-                                        console.log('Resultado secundários:', successSecundarios);
                                         if (!successSecundarios) throw new Error('Erro ao salvar diagnósticos secundários');
                                     }
 
-                                    console.log('✅ Diagnósticos salvos com sucesso!');
                                 } catch (error) {
-                                    console.error('Erro ao salvar:', error);
                                     throw error;
                                 }
                             }}

@@ -256,11 +256,6 @@ export const clinicalRoundsService = {
       const todayEnd = new Date(nowSaoPaulo);
       todayEnd.setHours(23, 59, 59, 999);
 
-      console.log('[ClinicalRounds] Buscando round de hoje:', {
-        start: todayStart.toISOString(),
-        end: todayEnd.toISOString()
-      });
-
       // Busca round criado hoje
       const { data: rounds, error: searchError } = await supabase
         .from('clinical_rounds')
@@ -277,12 +272,10 @@ export const clinicalRoundsService = {
 
       // Se encontrou um round de hoje, retorna ele
       if (rounds && rounds.length > 0) {
-        console.log('[ClinicalRounds] Round de hoje encontrado:', rounds[0].id);
         return rounds[0] as ClinicalRound;
       }
 
       // Se não encontrou, cria um novo round para hoje
-      console.log('[ClinicalRounds] Criando novo round para hoje');
       const newRound = await this.createRound({
         patient_id: patientId,
         created_by: userId || null

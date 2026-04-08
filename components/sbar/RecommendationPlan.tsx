@@ -53,7 +53,6 @@ const RecommendationHistoryPanel: React.FC<RecommendationHistoryPanelProps> = ({
         const logs = await auditLogService.getAuditLogByShift(roundId, shift);
         setAuditLogs(logs);
       } catch (error) {
-        console.error('Erro ao carregar histórico:', error);
       } finally {
         setLoading(false);
       }
@@ -129,9 +128,7 @@ const RecommendationPlan: React.FC<RecommendationPlanProps> = ({
   useEffect(() => {
     const loadExames = async () => {
       if (!patientId) return;
-      console.log('🔄 Carregando exames do paciente:', patientId);
       const data = await backgroundService.getExames(patientId);
-      console.log('📋 Exames carregados:', data);
       setExames(data);
     };
     loadExames();
@@ -190,7 +187,6 @@ const RecommendationPlan: React.FC<RecommendationPlanProps> = ({
       }
     } catch (error) {
       onSaved?.('❌ Erro ao salvar recomendação');
-      console.error(error);
     } finally {
       setSaving(false);
     }
@@ -198,47 +194,34 @@ const RecommendationPlan: React.FC<RecommendationPlanProps> = ({
 
   const handleSaveExame = async (exameData: { nome_exame: string; data_exame: string; observacao?: string | null }) => {
     if (!patientId) {
-      console.error('❌ PatientId não encontrado');
       return;
     }
     
     try {
-      console.log('💾 Salvando exame:', exameData);
-      console.log('👤 PatientId:', patientId);
       
       if (exameModal.exame) {
-        console.log('✏️ Atualizando exame existente:', exameModal.exame.id);
         const result = await backgroundService.updateExame(exameModal.exame.id, exameData);
-        console.log('✅ Exame atualizado:', result);
       } else {
-        console.log('➕ Criando novo exame');
         const dataToSave = {
           ...exameData,
           observacao: exameData.observacao ?? null,
           paciente_id: patientId,
           is_archived: false
         };
-        console.log('📦 Dados para salvar:', dataToSave);
         const result = await backgroundService.saveExame(dataToSave);
-        console.log('✅ Exame salvo:', result);
         
         if (!result) {
-          console.error('❌ backgroundService.saveExame retornou null');
           alert('Erro ao salvar exame. Verifique o console.');
           return;
         }
       }
       
       // Recarrega a lista
-      console.log('🔄 Recarregando lista de exames...');
       const updatedExames = await backgroundService.getExames(patientId);
-      console.log('📋 Exames carregados:', updatedExames);
       setExames(updatedExames);
       setRefreshKey(prev => prev + 1); // Força atualização
       setExameModal({ open: false });
-      console.log('✅ Modal fechado');
     } catch (error) {
-      console.error('❌ Erro ao salvar exame:', error);
       alert('Erro ao salvar exame: ' + (error as any).message);
     }
   };

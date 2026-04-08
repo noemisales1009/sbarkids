@@ -33,15 +33,12 @@ const HistoryList: React.FC<HistoryListProps> = ({ onSelectReport, patientId, se
                 return;
             }
 
-            console.log('📚 Carregando histórico do paciente:', patientId);
             setLoading(true);
             try {
                 const historyData = await historyService.getPatientRoundsHistory(patientId);
-                console.log('📚 Histórico carregado:', historyData);
                 setRounds(historyData);
                 setLastFetch(now);
             } catch (error) {
-                console.error('❌ Erro ao carregar histórico:', error);
                 setRounds([]);
             } finally {
                 setLoading(false);

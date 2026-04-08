@@ -13,7 +13,6 @@ const LogoutButton: React.FC<LogoutButtonProps> = ({ onLogout }) => {
         try {
             onLogout();
         } catch (error) {
-            console.error('Erro ao fazer logout:', error);
             setLoading(false);
         }
     };

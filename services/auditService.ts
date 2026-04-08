@@ -50,7 +50,6 @@ export const auditService = {
 
       if (error) {
         // Não quebrar o app se a auditoria falhar
-        console.warn('Auditoria: erro ao registrar log:', error.message);
       }
     } catch {
       // Silenciar - auditoria não deve impedir o uso do app

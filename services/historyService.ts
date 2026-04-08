@@ -32,7 +32,6 @@ export const historyService = {
    */
   async getPatientRoundsHistory(patientId: string): Promise<HistoryRound[]> {
     try {
-      console.log('📚 Buscando histórico de rounds do paciente:', patientId);
       
       // 1. Buscar o status atual do paciente
       const { data: patientData } = await supabase
@@ -51,17 +50,14 @@ export const historyService = {
         .order('created_at', { ascending: false });
 
       if (roundsError) {
-        console.error('❌ Erro ao buscar rounds:', roundsError);
         logError(roundsError, 'historyService.getPatientRoundsHistory.rounds');
         return [];
       }
 
       if (!rounds || rounds.length === 0) {
-        console.log('📚 Nenhum round encontrado em clinical_rounds_simple');
         return [];
       }
 
-      console.log(`📚 ${rounds.length} rounds encontrados em clinical_rounds_simple`);
 
       // 3. Converter os registros de clinical_rounds_simple em HistoryRound
       const historyRounds: HistoryRound[] = rounds.map(round => ({
@@ -86,10 +82,8 @@ export const historyService = {
         }
       }));
 
-      console.log(`📚 ${historyRounds.length} rounds processados`);
       return historyRounds;
     } catch (error) {
-      console.error('❌ Exception em getPatientRoundsHistory:', error);
       logError(error, 'historyService.getPatientRoundsHistory');
       return [];
     }

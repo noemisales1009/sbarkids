@@ -31,7 +31,6 @@ export const useSupabaseRealtimeList = <T,>(table: string) => {
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar dados';
         setError(errorMessage);
-        console.error(`Erro ao buscar ${table}:`, err);
       } finally {
         setLoading(false);
       }
@@ -94,7 +93,6 @@ export const useSupabaseItem = <T,>(table: string, id: string | null) => {
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar item';
         setError(errorMessage);
-        console.error(`Erro ao buscar ${table}/${id}:`, err);
       } finally {
         setLoading(false);
       }

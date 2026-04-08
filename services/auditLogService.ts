@@ -28,7 +28,6 @@ export const auditLogService = {
     savedByName: string
   ): Promise<AuditLogEntry | null> {
     try {
-      console.log(`[auditLogService] Registrando salvamento de ${dataType}`);
       const { data: entry, error } = await supabase
         .from('round_audit_log')
         .insert([
@@ -47,7 +46,6 @@ export const auditLogService = {
         .single();
 
       if (error) {
-        console.error(`[auditLogService] Erro ao registrar:`, error);
         logError(error, 'auditLogService.logSave');
         return null;
       }

@@ -60,7 +60,6 @@ const RecommendationSimple: React.FC<RecommendationSimpleProps> = ({
           });
         }
       } catch (error) {
-        console.error('Erro ao carregar dados:', error);
       } finally {
         setLoading(false);
       }
@@ -98,7 +97,6 @@ const RecommendationSimple: React.FC<RecommendationSimpleProps> = ({
         onSaved?.('❌ Erro ao salvar recomendação');
       }
     } catch (error) {
-      console.error('Erro ao salvar:', error);
       onSaved?.('❌ Erro ao salvar recomendação');
     } finally {
       setSaving(false);

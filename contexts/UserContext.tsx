@@ -35,7 +35,6 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const session = sessionData?.session;
 
             if (!session?.user) {
-                console.log('ℹ️ Nenhuma sessão');
                 setUser(null);
                 setLoading(false);
                 return;
@@ -60,13 +59,11 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 });
             } else {
                 // Usuário não encontrado na tabela
-                console.warn('⚠️ Usuário não cadastrado. Fazendo logout...');
                 await supabase.auth.signOut();
                 setUser(null);
                 setError('Acesso não autorizado.');
             }
         } catch (err: any) {
-            console.error('Erro ao carregar usuário:', err);
             setError(err.message);
         } finally {
             setLoading(false);

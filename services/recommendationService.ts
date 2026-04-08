@@ -66,7 +66,6 @@ export const recommendationService = {
         [`${shiftPrefix}_saved_at`]: new Date().toISOString()
       };
 
-      console.log(`[RecommendationService] Salvando ${shift}:`, updateData);
 
       // Primeiro, tenta buscar o registro existente
       const { data: existingData, error: selectError } = await supabase
@@ -75,12 +74,10 @@ export const recommendationService = {
         .eq('round_id', roundId)
         .single();
 
-      console.log(`[RecommendationService] Registro existente:`, existingData, selectError);
 
       let error;
       if (existingData) {
         // Se existe, faz update
-        console.log(`[RecommendationService] Atualizando registro existente`);
         const { error: updateError } = await supabase
           .from('recommendation_shifts')
           .update(updateData)
@@ -88,7 +85,6 @@ export const recommendationService = {
         error = updateError;
       } else {
         // Se não existe, faz insert
-        console.log(`[RecommendationService] Inserindo novo registro`);
         const { error: insertError } = await supabase
           .from('recommendation_shifts')
           .insert([updateData]);
@@ -112,30 +108,24 @@ export const recommendationService = {
    */
   async getRecommendationByRound(roundId: string): Promise<ClinicalRoundRecommendation | null> {
     try {
-      console.log(`[RecommendationService] Buscando recomendação para round:`, roundId);
       const { data: recommendations, error } = await supabase
         .from('recommendation_shifts')
         .select('*')
         .eq('round_id', roundId);
 
-      console.log(`[RecommendationService] Resultado da busca:`, recommendations, error);
 
       if (error) {
-        console.error(`[RecommendationService] Erro na busca:`, error);
         logError(error, 'recommendationService.getRecommendationByRound');
         return null;
       }
 
       if (!recommendations || recommendations.length === 0) {
-        console.log(`[RecommendationService] Nenhum registro encontrado`);
         return null;
       }
 
       const rec = recommendations[0];
-      console.log(`[RecommendationService] Recomendação carregada com sucesso:`, rec);
       return rec as ClinicalRoundRecommendation;
     } catch (error) {
-      console.error(`[RecommendationService] Exception ao buscar:`, error);
       logError(error, 'recommendationService.getRecommendationByRound');
       return null;
     }

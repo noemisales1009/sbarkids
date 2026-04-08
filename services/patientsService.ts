@@ -13,7 +13,6 @@ export const patientsService = {
  */
 async listPatients(limit: number = 50): Promise<Patient[]> {
   try {
-    console.log('📊 patientsService.listPatients: iniciando...', { limit });
     const startTime = Date.now();
     
     // Query simples e direta - Filtrar APENAS pacientes não arquivados
@@ -26,16 +25,13 @@ async listPatients(limit: number = 50): Promise<Patient[]> {
     const duration = Date.now() - startTime;
     
     if (error) {
-      console.error('❌ Erro Supabase:', error);
       throw error;
     }
     
     // Ordenar localmente
     const result = (data || []).sort((a, b) => (a.bed_number || 0) - (b.bed_number || 0));
-    console.log('✅ patientsService.listPatients: retornando', result.length, 'pacientes em', duration + 'ms');
     return result;
   } catch (error) {
-    console.error('❌ patientsService.listPatients: erro:', error);
     logError(error, 'patientsService.listPatients');
     throw error;
   }
@@ -66,7 +62,6 @@ async listPatients(limit: number = 50): Promise<Patient[]> {
    */
   async getArchivedPatients(limit: number = 100): Promise<Patient[]> {
     try {
-      console.log('📦 patientsService.getArchivedPatients: iniciando...', { limit });
       
       const { data, error } = await supabase
         .from('patients')
@@ -77,10 +72,8 @@ async listPatients(limit: number = 50): Promise<Patient[]> {
       
       if (error) throw error;
       
-      console.log('✅ patientsService.getArchivedPatients: retornando', (data || []).length, 'pacientes arquivados');
       return data || [];
     } catch (error) {
-      console.error('❌ patientsService.getArchivedPatients: erro:', error);
       logError(error, 'patientsService.getArchivedPatients');
       throw error;
     }
@@ -91,7 +84,6 @@ async listPatients(limit: number = 50): Promise<Patient[]> {
    */
   async archivePatient(id: string, motivo: string): Promise<Patient | null> {
     try {
-      console.log('📦 Arquivando paciente:', { id, motivo });
       
       const { data, error } = await supabase
         .from('patients')
@@ -109,10 +101,8 @@ async listPatients(limit: number = 50): Promise<Patient[]> {
       sessionStorage.removeItem('patientsList');
       sessionStorage.removeItem('patientsListTimestamp');
       
-      console.log('✅ Paciente arquivado com sucesso');
       return data || null;
     } catch (error) {
-      console.error('❌ Erro ao arquivar paciente:', error);
       logError(error, 'patientsService.archivePatient');
       return null;
     }
@@ -123,7 +113,6 @@ async listPatients(limit: number = 50): Promise<Patient[]> {
    */
   async restorePatient(id: string): Promise<Patient | null> {
     try {
-      console.log('📦 Restaurando paciente:', { id });
       
       const { data, error } = await supabase
         .from('patients')
@@ -141,10 +130,8 @@ async listPatients(limit: number = 50): Promise<Patient[]> {
       sessionStorage.removeItem('patientsList');
       sessionStorage.removeItem('patientsListTimestamp');
       
-      console.log('✅ Paciente restaurado com sucesso');
       return data || null;
     } catch (error) {
-      console.error('❌ Erro ao restaurar paciente:', error);
       logError(error, 'patientsService.restorePatient');
       return null;
     }
@@ -275,22 +262,18 @@ async listPatients(limit: number = 50): Promise<Patient[]> {
    */
   async updatePatientStatus(patientId: string, status: 'estavel' | 'instavel' | 'em_risco'): Promise<boolean> {
     try {
-      console.log(`📝 Atualizando status do paciente ${patientId} para: ${status}`);
       const { error } = await supabase
         .from('patients')
         .update({ status })
         .eq('id', patientId);
 
       if (error) {
-        console.error(`❌ Erro ao atualizar status:`, error);
         logError(error, 'patientsService.updatePatientStatus');
         return false;
       }
 
-      console.log(`✅ Status atualizado com sucesso`);
       return true;
     } catch (error) {
-      console.error('❌ ERRO em updatePatientStatus:', error);
       logError(error, 'patientsService.updatePatientStatus');
       return false;
     }

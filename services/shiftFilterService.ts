@@ -44,7 +44,6 @@ export const shiftFilterService = {
     shift: ShiftType
   ): Promise<any[]> {
     try {
-      console.log(`🔍 Filtrando alertas for patient=${patientId}, shift=${shift}`);
 
       const { data, error } = await supabase
         .from('alertas_paciente_view_completa')
@@ -54,15 +53,12 @@ export const shiftFilterService = {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('❌ Erro ao filtrar alertas por turno:', error);
         logError(error, 'shiftFilterService.getAlertasByShift');
         return [];
       }
 
-      console.log(`✅ ${data?.length || 0} alertas encontrados para ${shift}`);
       return data || [];
     } catch (error) {
-      console.error('❌ Exception em getAlertasByShift:', error);
       logError(error, 'shiftFilterService.getAlertasByShift');
       return [];
     }
@@ -76,7 +72,6 @@ export const shiftFilterService = {
     shift: ShiftType
   ): Promise<any[]> {
     try {
-      console.log(`🔍 Filtrando tarefas for patient=${patientId}, shift=${shift}`);
 
       const { data, error } = await supabase
         .from('tasks_view_horario_br')
@@ -86,15 +81,12 @@ export const shiftFilterService = {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('❌ Erro ao filtrar tarefas por turno:', error);
         logError(error, 'shiftFilterService.getTasksByShift');
         return [];
       }
 
-      console.log(`✅ ${data?.length || 0} tarefas encontradas para ${shift}`);
       return data || [];
     } catch (error) {
-      console.error('❌ Exception em getTasksByShift:', error);
       logError(error, 'shiftFilterService.getTasksByShift');
       return [];
     }
@@ -117,7 +109,6 @@ export const shiftFilterService = {
         night
       };
     } catch (error) {
-      console.error('❌ Exception em getAlertasGroupedByShift:', error);
       logError(error, 'shiftFilterService.getAlertasGroupedByShift');
       return {
         morning: [],
@@ -144,7 +135,6 @@ export const shiftFilterService = {
         night
       };
     } catch (error) {
-      console.error('❌ Exception em getTasksGroupedByShift:', error);
       logError(error, 'shiftFilterService.getTasksGroupedByShift');
       return {
         morning: [],

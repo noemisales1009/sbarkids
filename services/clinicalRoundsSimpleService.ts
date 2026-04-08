@@ -51,7 +51,6 @@ export const clinicalRoundsSimpleService = {
     userName: string
   ): Promise<boolean> {
     try {
-      console.log(`📌 [ClinicalRoundsSimple] Salvando Assessment ${shift}...`);
 
       const updateData = {
         patient_id: patientId,
@@ -79,10 +78,8 @@ export const clinicalRoundsSimpleService = {
       if (selectError && selectError.code !== 'PGRST116') {
         // Verificar se é erro 406 (tabela não acessível)
         if (selectError.message?.includes('406') || selectError.code === '406') {
-          console.warn('⚠️ Tabela clinical_rounds_simple não acessível. Verifique RLS e permissões.');
           return false;
         }
-        console.warn('⚠️ Erro ao buscar registro:', selectError);
       }
 
       let result;
@@ -106,25 +103,20 @@ export const clinicalRoundsSimpleService = {
       if (result) {
         // Silenciar erros 406
         if (result.message?.includes('406') || result.code === '406') {
-          console.warn('⚠️ Tabela clinical_rounds_simple não acessível (erro 406).');
           return false;
         }
         
-        console.error(`❌ Erro ao salvar Assessment ${shift}:`, result);
         logError(result, `clinicalRoundsSimpleService.saveAssessment.${shift}`);
         return false;
       }
 
-      console.log(`✅ Assessment ${shift} salvo com sucesso`);
       return true;
     } catch (error: any) {
       // Silenciar erros 406
       if (error?.message?.includes('406') || error?.status === 406) {
-        console.warn('⚠️ [ClinicalRoundsSimple] Tabela não acessível (erro 406). Operação ignorada.');
         return false;
       }
       
-      console.error('❌ Exception em saveAssessment:', error);
       logError(error, 'clinicalRoundsSimpleService.saveAssessment');
       return false;
     }
@@ -141,7 +133,6 @@ export const clinicalRoundsSimpleService = {
     userName: string
   ): Promise<boolean> {
     try {
-      console.log(`📌 [ClinicalRoundsSimple] Salvando Recommendation ${shift}...`);
 
       const updateData = {
         patient_id: patientId,
@@ -169,10 +160,8 @@ export const clinicalRoundsSimpleService = {
       if (selectError && selectError.code !== 'PGRST116') {
         // Verificar se é erro 406 (tabela não acessível)
         if (selectError.message?.includes('406') || selectError.code === '406') {
-          console.warn('⚠️ Tabela clinical_rounds_simple não acessível. Verifique RLS e permissões.');
           return false;
         }
-        console.warn('⚠️ Erro ao buscar registro:', selectError);
       }
 
       let result;
@@ -196,25 +185,20 @@ export const clinicalRoundsSimpleService = {
       if (result) {
         // Silenciar erros 406
         if (result.message?.includes('406') || result.code === '406') {
-          console.warn('⚠️ Tabela clinical_rounds_simple não acessível (erro 406).');
           return false;
         }
         
-        console.error(`❌ Erro ao salvar Recommendation ${shift}:`, result);
         logError(result, `clinicalRoundsSimpleService.saveRecommendation.${shift}`);
         return false;
       }
 
-      console.log(`✅ Recommendation ${shift} salvo com sucesso`);
       return true;
     } catch (error: any) {
       // Silenciar erros 406
       if (error?.message?.includes('406') || error?.status === 406) {
-        console.warn('⚠️ [ClinicalRoundsSimple] Tabela não acessível (erro 406). Operação ignorada.');
         return false;
       }
       
-      console.error('❌ Exception em saveRecommendation:', error);
       logError(error, 'clinicalRoundsSimpleService.saveRecommendation');
       return false;
     }
@@ -225,7 +209,6 @@ export const clinicalRoundsSimpleService = {
    */
   async getByRound(patientId: string, roundId?: string): Promise<ClinicalRoundsSimple | null> {
     try {
-      console.log(`📌 [ClinicalRoundsSimple] Carregando dados para patient=${patientId}, round=${roundId}`);
 
       let query = supabase
         .from('clinical_rounds_simple')
@@ -243,31 +226,25 @@ export const clinicalRoundsSimpleService = {
 
       if (error) {
         if (error.code === 'PGRST116') {
-          console.log('ℹ️ Nenhum registro encontrado (esperado na primeira vez)');
           return null;
         }
         
         // Erro 406 geralmente indica problema com RLS ou tabela não existe
         if (error.message?.includes('406') || error.code === '406') {
-          console.warn('⚠️ Tabela clinical_rounds_simple não acessível. Verifique se ela existe e se as políticas RLS estão configuradas.');
           return null;
         }
         
-        console.error('❌ Erro ao carregar dados:', error);
         logError(error, 'clinicalRoundsSimpleService.getByRound');
         return null;
       }
 
-      console.log('✅ Dados carregados com sucesso');
       return data as ClinicalRoundsSimple;
     } catch (error: any) {
       // Silenciar erros 406 para evitar poluição no console
       if (error?.message?.includes('406') || error?.status === 406) {
-        console.warn('⚠️ [ClinicalRoundsSimple] Tabela não acessível (erro 406). Ignorando...');
         return null;
       }
       
-      console.error('❌ Exception em getByRound:', error);
       logError(error, 'clinicalRoundsSimpleService.getByRound');
       return null;
     }
@@ -294,7 +271,6 @@ export const clinicalRoundsSimpleService = {
         savedAt: data[`assessment_${shift}_saved_at`] as string | null
       };
     } catch (error) {
-      console.error('❌ Exception em getAssessmentShift:', error);
       return { content: null, savedBy: null, savedAt: null };
     }
   },
@@ -320,7 +296,6 @@ export const clinicalRoundsSimpleService = {
         savedAt: data[`recommendation_${shift}_saved_at`] as string | null
       };
     } catch (error) {
-      console.error('❌ Exception em getRecommendationShift:', error);
       return { content: null, savedBy: null, savedAt: null };
     }
   },
@@ -330,7 +305,6 @@ export const clinicalRoundsSimpleService = {
    */
   async deleteShift(patientId: string, roundId: string | undefined, shift: 'morning' | 'afternoon' | 'night'): Promise<boolean> {
     try {
-      console.log(`📌 [ClinicalRoundsSimple] Deletando dados do turno ${shift}...`);
 
       const updateData = {
         [`assessment_${shift}`]: null,
@@ -356,15 +330,12 @@ export const clinicalRoundsSimpleService = {
       const { error } = await query;
 
       if (error) {
-        console.error(`❌ Erro ao deletar turno ${shift}:`, error);
         logError(error, `clinicalRoundsSimpleService.deleteShift.${shift}`);
         return false;
       }
 
-      console.log(`✅ Turno ${shift} deletado com sucesso`);
       return true;
     } catch (error) {
-      console.error('❌ Exception em deleteShift:', error);
       logError(error, 'clinicalRoundsSimpleService.deleteShift');
       return false;
     }
@@ -378,7 +349,6 @@ export const clinicalRoundsSimpleService = {
     roundId?: string
   ): Promise<boolean> {
     try {
-      console.log(`📦 [ClinicalRoundsSimple] Arquivando round...`);
 
       let query = supabase
         .from('clinical_rounds_simple')
@@ -397,15 +367,12 @@ export const clinicalRoundsSimpleService = {
       const { error } = await query;
 
       if (error) {
-        console.error('❌ Erro ao arquivar round:', error);
         logError(error, 'clinicalRoundsSimpleService.archiveRound');
         return false;
       }
 
-      console.log('✅ Round arquivado com sucesso');
       return true;
     } catch (error) {
-      console.error('❌ Exception em archiveRound:', error);
       logError(error, 'clinicalRoundsSimpleService.archiveRound');
       return false;
     }
@@ -416,7 +383,6 @@ export const clinicalRoundsSimpleService = {
    */
   async getArchivedByRound(patientId: string, roundId?: string): Promise<ClinicalRoundsSimple | null> {
     try {
-      console.log(`📂 [ClinicalRoundsSimple] Carregando dados arquivados...`);
 
       let query = supabase
         .from('clinical_rounds_simple')
@@ -434,18 +400,14 @@ export const clinicalRoundsSimpleService = {
 
       if (error) {
         if (error.code === 'PGRST116') {
-          console.log('ℹ️ Nenhum registro arquivado encontrado');
           return null;
         }
-        console.error('❌ Erro ao carregar dados arquivados:', error);
         logError(error, 'clinicalRoundsSimpleService.getArchivedByRound');
         return null;
       }
 
-      console.log('✅ Dados arquivados carregados com sucesso');
       return data as ClinicalRoundsSimple;
     } catch (error) {
-      console.error('❌ Exception em getArchivedByRound:', error);
       logError(error, 'clinicalRoundsSimpleService.getArchivedByRound');
       return null;
     }
@@ -470,7 +432,6 @@ export const clinicalRoundsSimpleService = {
 
       return data || [];
     } catch (error) {
-      console.error('❌ Erro ao buscar todos os assessments:', error);
       logError(error, 'clinicalRoundsSimpleService.getAll');
       return [];
     }  }

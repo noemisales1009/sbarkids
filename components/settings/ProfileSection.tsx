@@ -97,7 +97,6 @@ const ProfileSection: React.FC = () => {
                 setSaveSuccess(false);
             }, 2500);
         } catch (err: any) {
-            console.error('Erro ao salvar:', err);
             setError('Erro ao salvar alterações');
             setIsSaving(false);
         }

@@ -35,14 +35,12 @@ export const diagnosticoPerguntasService = {
         .order('id', { ascending: true });
 
       if (error) {
-        console.error('Erro ao carregar perguntas:', error);
         logError(error, 'diagnosticoPerguntasService.getPerguntas');
         return [];
       }
 
       return (data || []) as PerguntaDiagnostico[];
     } catch (error) {
-      console.error('Exception em getPerguntas:', error);
       logError(error, 'diagnosticoPerguntasService.getPerguntas');
       return [];
     }
@@ -61,14 +59,12 @@ export const diagnosticoPerguntasService = {
         .order('ordem', { ascending: true });
 
       if (error) {
-        console.error('Erro ao carregar opções:', error);
         logError(error, 'diagnosticoPerguntasService.getOpcoes');
         return [];
       }
 
       return (data || []) as OpcaoDiagnostico[];
     } catch (error) {
-      console.error('Exception em getOpcoes:', error);
       logError(error, 'diagnosticoPerguntasService.getOpcoes');
       return [];
     }
@@ -86,14 +82,12 @@ export const diagnosticoPerguntasService = {
         .single();
 
       if (error) {
-        console.error('Erro ao criar opção:', error);
         logError(error, 'diagnosticoPerguntasService.createOpcao');
         return null;
       }
 
       return result as OpcaoDiagnostico;
     } catch (error) {
-      console.error('Exception em createOpcao:', error);
       logError(error, 'diagnosticoPerguntasService.createOpcao');
       return null;
     }
@@ -110,14 +104,12 @@ export const diagnosticoPerguntasService = {
         .eq('id', id);
 
       if (error) {
-        console.error('Erro ao atualizar opção:', error);
         logError(error, 'diagnosticoPerguntasService.updateOpcao');
         return false;
       }
 
       return true;
     } catch (error) {
-      console.error('Exception em updateOpcao:', error);
       logError(error, 'diagnosticoPerguntasService.updateOpcao');
       return false;
     }
@@ -134,14 +126,12 @@ export const diagnosticoPerguntasService = {
         .eq('id', id);
 
       if (error) {
-        console.error('Erro ao deletar opção:', error);
         logError(error, 'diagnosticoPerguntasService.deleteOpcao');
         return false;
       }
 
       return true;
     } catch (error) {
-      console.error('Exception em deleteOpcao:', error);
       logError(error, 'diagnosticoPerguntasService.deleteOpcao');
       return false;
     }

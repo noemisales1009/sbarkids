@@ -24,13 +24,11 @@ export const PatientsCacheProvider: React.FC<{ children: ReactNode }> = ({ child
         
         // Se tem dados em cache e não é refresh forçado, usa cache
         if (!forceRefresh && patients.length > 0 && (now - lastFetch) < CACHE_TIME) {
-            console.log('📦 [PatientsCache] Usando cache (idade:', now - lastFetch, 'ms)');
             setLoading(false);
             return;
         }
 
         try {
-            console.log('🔄 [PatientsCache] Carregando pacientes...');
             setLoading(true);
             setError(null);
             
@@ -40,11 +38,9 @@ export const PatientsCacheProvider: React.FC<{ children: ReactNode }> = ({ child
             const activePatients = data.filter(patient => !patient.archived_at);
             const duration = Date.now() - startTime;
             
-            console.log('✅ [PatientsCache] Carregado em:', duration + 'ms');
             setPatients(activePatients);
             setLastFetch(now);
         } catch (err) {
-            console.error('❌ [PatientsCache] Erro:', err);
             setError(`Erro ao carregar pacientes: ${err instanceof Error ? err.message : 'Desconhecido'}`);
             setPatients([]);
         } finally {

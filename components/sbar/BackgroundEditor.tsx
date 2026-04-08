@@ -66,7 +66,6 @@ const calculateDaysOfUsage = (dataInicio: string | null | undefined): number => 
     
     // Se ainda for inválida, retorna 0
     if (isNaN(startDate.getTime())) {
-      console.warn('Data inválida:', dataInicio);
       return 0;
     }
     
@@ -82,7 +81,6 @@ const calculateDaysOfUsage = (dataInicio: string | null | undefined): number => 
     
     return Math.max(daysDifference, 0);
   } catch (error) {
-    console.error('Erro ao calcular dias:', error);
     return 0;
   }
 };
@@ -173,7 +171,6 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
   const loadData = async () => {
     try {
       setLoading(true);
-      console.log('📦 Carregando dados do background para paciente:', patientId);
       
       const [meds, devs, cults, procs, exs, diets, bhidricos, diur] = await Promise.all([
         backgroundService.getMedicacoes(patientId),
@@ -186,14 +183,6 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
         diureseService.getDiurese(patientId)
       ]);
 
-      console.log('💊 Medicações carregadas:', meds.length);
-      console.log('🔧 Dispositivos carregados:', devs.length);
-      console.log('🧬 Culturas carregadas:', cults.length);
-      console.log('⚕️ Procedimentos carregados:', procs.length);
-      console.log('🔬 Exames carregados:', exs.length);
-      console.log('🍽️ Dietas carregadas:', diets.length);
-      console.log('💧 Balanço Hídrico carregado:', bhidricos.length);
-      console.log('💧 Diurese carregada:', diur.length);
 
       setMedicacoes(meds);
       setDispositivos(devs);
@@ -204,7 +193,6 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
       setBalanceHidrico(bhidricos);
       setDiurese(diur);
     } catch (error) {
-      console.error('❌ Erro ao carregar background:', error);
     } finally {
       setLoading(false);
     }
@@ -662,7 +650,6 @@ const MedicacaoModal: React.FC<MedicacaoModalProps> = ({ data, patientId, onClos
 
     try {
       setSaving(true);
-      console.log('💊 Salvando medicação:', form);
       
       // Preparar dados para envio - garantir que datas estejam em YYYY-MM-DD
       const medicacaoData: Omit<Medicacao, 'id' | 'created_at'> = {
@@ -673,18 +660,14 @@ const MedicacaoModal: React.FC<MedicacaoModalProps> = ({ data, patientId, onClos
         data_fim: form.data_fim && form.data_fim.trim() ? convertDateFormat(form.data_fim) : null
       } as any;
       
-      console.log('📤 Enviando dados:', medicacaoData);
       
       if (data?.id) {
         const result = await backgroundService.updateMedicacao(data.id, medicacaoData as any);
-        console.log('✅ Medicação atualizada:', result);
       } else {
         const result = await backgroundService.saveMedicacao(medicacaoData);
-        console.log('✅ Medicação salva:', result);
       }
       onSave();
     } catch (error) {
-      console.error('❌ Erro ao salvar medicação:', error);
       alert('Erro ao salvar medicação. Tente novamente.');
     } finally {
       setSaving(false);
@@ -850,7 +833,6 @@ const DispositivoModal: React.FC<DispositivoModalProps> = ({ data, patientId, on
       }
 
       setSaving(true);
-      console.log('🔧 Salvando dispositivo:', form);
       
       // Preparar dados para envio - converter strings vazias para null e datas para YYYY-MM-DD
       const dataToSend = {
@@ -863,20 +845,16 @@ const DispositivoModal: React.FC<DispositivoModalProps> = ({ data, patientId, on
         is_archived: false
       };
       
-      console.log('📤 Dados para enviar:', dataToSend);
       
       if (data?.id) {
         const result = await backgroundService.updateDispositivo(data.id, dataToSend as Dispositivo);
-        console.log('✅ Dispositivo atualizado:', result);
       } else {
         const result = await backgroundService.saveDispositivo(
           dataToSend as Omit<Dispositivo, 'id' | 'created_at'>
         );
-        console.log('✅ Dispositivo salvo:', result);
       }
       onSave();
     } catch (error) {
-      console.error('❌ Erro ao salvar dispositivo:', error);
       alert('Erro ao salvar dispositivo. Tente novamente.');
     } finally {
       setSaving(false);
@@ -1030,7 +1008,6 @@ const CulturaModal: React.FC<CulturaModalProps> = ({ data, patientId, onClose, o
 
     try {
       setSaving(true);
-      console.log('🧬 Salvando cultura:', form);
       
       const culturaData: Omit<Cultura, 'id' | 'created_at'> = {
         ...form,
@@ -1041,14 +1018,11 @@ const CulturaModal: React.FC<CulturaModalProps> = ({ data, patientId, onClose, o
 
       if (data?.id) {
         const result = await backgroundService.updateCultura(data.id, culturaData as any);
-        console.log('✅ Cultura atualizada:', result);
       } else {
         const result = await backgroundService.saveCultura(culturaData);
-        console.log('✅ Cultura salva:', result);
       }
       onSave();
     } catch (error) {
-      console.error('❌ Erro ao salvar cultura:', error);
       alert('Erro ao salvar cultura. Tente novamente.');
     } finally {
       setSaving(false);
@@ -1179,7 +1153,6 @@ const ProcedimentoModal: React.FC<ProcedimentoModalProps> = ({ data, patientId, 
 
     try {
       setSaving(true);
-      console.log('⚕️ Salvando procedimento:', form);
       
       const procedimentoData = {
         ...form,
@@ -1190,14 +1163,11 @@ const ProcedimentoModal: React.FC<ProcedimentoModalProps> = ({ data, patientId, 
 
       if (data?.id) {
         const result = await backgroundService.updateProcedimento(data.id, procedimentoData as any);
-        console.log('✅ Procedimento atualizado:', result);
       } else {
         const result = await backgroundService.saveProcedimento(procedimentoData);
-        console.log('✅ Procedimento salvo:', result);
       }
       onSave();
     } catch (error) {
-      console.error('❌ Erro ao salvar procedimento:', error);
       alert('Erro ao salvar procedimento. Tente novamente.');
     } finally {
       setSaving(false);
@@ -1308,7 +1278,6 @@ const ExameModal: React.FC<ExameModalProps> = ({ data, patientId, onClose, onSav
 
     try {
       setSaving(true);
-      console.log('🔬 Salvando exame:', form);
       
       const exameData = {
         ...form,
@@ -1319,14 +1288,11 @@ const ExameModal: React.FC<ExameModalProps> = ({ data, patientId, onClose, onSav
 
       if (data?.id) {
         const result = await backgroundService.updateExame(data.id, exameData as any);
-        console.log('✅ Exame atualizado:', result);
       } else {
         const result = await backgroundService.saveExame(exameData);
-        console.log('✅ Exame salvo:', result);
       }
       onSave();
     } catch (error) {
-      console.error('❌ Erro ao salvar exame:', error);
       alert('Erro ao salvar exame. Tente novamente.');
     } finally {
       setSaving(false);
@@ -1416,7 +1382,6 @@ const DietaModal: React.FC<DietaModalProps> = ({ data, patientId, onClose, onSav
 
     try {
       setSaving(true);
-      console.log('🍽️ Salvando dieta:', form);
       
       const dietaData = {
         ...form,
@@ -1428,14 +1393,11 @@ const DietaModal: React.FC<DietaModalProps> = ({ data, patientId, onClose, onSav
 
       if (data?.id) {
         const result = await backgroundService.updateDieta(data.id, dietaData as any);
-        console.log('✅ Dieta atualizada:', result);
       } else {
         const result = await backgroundService.saveDieta(dietaData);
-        console.log('✅ Dieta salva:', result);
       }
       onSave();
     } catch (error) {
-      console.error('❌ Erro ao salvar dieta:', error);
       alert('Erro ao salvar dieta. Tente novamente.');
     } finally {
       setSaving(false);
@@ -1633,7 +1595,6 @@ const FimMedicacaoModal: React.FC<FimMedicacaoModalProps> = ({ medicacao, onClos
       });
       onSave();
     } catch (error) {
-      console.error('Erro ao registrar fim da medicação:', error);
       alert('Erro ao registrar fim da medicação');
     } finally {
       setSaving(false);
@@ -1711,7 +1672,6 @@ const FimDispositivoModal: React.FC<FimDispositivoModalProps> = ({ dispositivo, 
       });
       onSave();
     } catch (error) {
-      console.error('Erro ao registrar fim do dispositivo:', error);
       alert('Erro ao registrar fim do dispositivo');
     } finally {
       setSaving(false);

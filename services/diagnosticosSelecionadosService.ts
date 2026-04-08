@@ -26,11 +26,9 @@ export const diagnosticosSelecionadosService = {
   ): Promise<boolean> {
     try {
       if (!diagnosticos || diagnosticos.length === 0) {
-        console.log('Nenhum diagnóstico para salvar');
         return true;
       }
 
-      console.log('Salvando diagnósticos:', diagnosticos);
 
       // Preparar dados para UPSERT
       const data = diagnosticos.map(d => ({
@@ -41,7 +39,6 @@ export const diagnosticosSelecionadosService = {
         status: d.status === 'resolvido' ? 'resolvido' : 'nao_resolvido'
       }));
 
-      console.log('Dados a salvar:', data);
 
       // UPSERT usando a sintaxe correta do Supabase
       const { data: result, error } = await supabase
@@ -49,16 +46,12 @@ export const diagnosticosSelecionadosService = {
         .upsert(data);
 
       if (error) {
-        console.error('Erro ao salvar diagnósticos:', error);
-        console.error('Detalhes do erro:', error.message, error.details);
         logError(error, 'diagnosticosSelecionadosService.saveDiagnosticos');
         return false;
       }
 
-      console.log('✅ Diagnósticos salvos com sucesso!', result);
       return true;
     } catch (error) {
-      console.error('Exception em saveDiagnosticos:', error);
       logError(error, 'diagnosticosSelecionadosService.saveDiagnosticos');
       return false;
     }
@@ -80,14 +73,12 @@ export const diagnosticosSelecionadosService = {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Erro ao buscar diagnósticos:', error);
         logError(error, 'diagnosticosSelecionadosService.getDiagnosticosPaciente');
         return [];
       }
 
       return (data || []) as DiagnosticoSelecionado[];
     } catch (error) {
-      console.error('Exception em getDiagnosticosPaciente:', error);
       logError(error, 'diagnosticosSelecionadosService.getDiagnosticosPaciente');
       return [];
     }
@@ -113,14 +104,12 @@ export const diagnosticosSelecionadosService = {
         .eq('pergunta_id', perguntaId);
 
       if (error) {
-        console.error('Erro ao atualizar diagnóstico:', error);
         logError(error, 'diagnosticosSelecionadosService.updateDiagnosticoStatus');
         return false;
       }
 
       return true;
     } catch (error) {
-      console.error('Exception em updateDiagnosticoStatus:', error);
       logError(error, 'diagnosticosSelecionadosService.updateDiagnosticoStatus');
       return false;
     }
@@ -143,14 +132,12 @@ export const diagnosticosSelecionadosService = {
         .eq('pergunta_id', perguntaId);
 
       if (error) {
-        console.error('Erro ao deletar diagnóstico:', error);
         logError(error, 'diagnosticosSelecionadosService.deleteDiagnostico');
         return false;
       }
 
       return true;
     } catch (error) {
-      console.error('Exception em deleteDiagnostico:', error);
       logError(error, 'diagnosticosSelecionadosService.deleteDiagnostico');
       return false;
     }

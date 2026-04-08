@@ -42,24 +42,18 @@ const CompletedAlertsSection: React.FC<CompletedAlertsSectionProps> = ({ patient
 
   useEffect(() => {
     loadConcluidos();
-  }, [patientId]);
-
-  // Atualizar a cada 60 segundos para refresh do countdown
-  useEffect(() => {
+    // Recarregar dados a cada 5 minutos (não a cada 60s)
     const interval = setInterval(() => {
       loadConcluidos();
-    }, 60000);
+    }, 300000);
     return () => clearInterval(interval);
   }, [patientId]);
 
   const loadConcluidos = async () => {
     try {
-      console.log('📍 CompletedAlertsSection: carregando concluidos para', patientId);
       const data = await alertasService.getConcluidos24h(patientId);
-      console.log('✅ CompletedAlertsSection: recebeu', data?.length || 0, 'alertas', data);
       setAlertas(data);
     } catch (error) {
-      console.error('Erro ao carregar alertas concluidos:', error);
     } finally {
       setLoading(false);
     }
@@ -90,7 +84,6 @@ const CompletedAlertsSection: React.FC<CompletedAlertsSectionProps> = ({ patient
         alert('Erro ao arquivar alerta');
       }
     } catch (error) {
-      console.error('Erro ao arquivar:', error);
       alert('Erro ao arquivar alerta');
     }
   };

@@ -58,7 +58,6 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onNavigate, currentPage, onSe
             setLoading(true);
             setLastFetch(Date.now());
             
-            console.log('📊 Buscando relatórios de clinical_rounds_simple...');
             
             // Buscar de clinical_rounds_simple
             const { data: roundsData, error } = await supabase
@@ -68,18 +67,15 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onNavigate, currentPage, onSe
                 .limit(100); // Limitar a 100 registros mais recentes
 
             if (error) {
-                console.error('❌ Erro ao buscar relatórios:', error);
                 throw error;
             }
 
             if (!roundsData || roundsData.length === 0) {
-                console.log('ℹ️ Nenhum relatório encontrado');
                 setReports([]);
                 setLoading(false);
                 return;
             }
 
-            console.log(`📊 ${roundsData.length} relatórios encontrados`);
 
             // Buscar dados dos pacientes (apenas não-arquivados)
             const patientIds = [...new Set(roundsData.map(r => r.patient_id))];
@@ -136,7 +132,6 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onNavigate, currentPage, onSe
                 })
                 .filter((item): item is GlobalReportItem => item !== null);
 
-            console.log(`📊 ${allReports.length} relatórios processados`);
             setReports(allReports);
 
             // Buscar alertas para cada paciente
@@ -146,7 +141,6 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onNavigate, currentPage, onSe
                     const alertas = await alertasService.getAlertas(report.patient.id);
                     alertasMap[report.patient.id] = alertas;
                 } catch (error) {
-                    console.error(`Erro ao buscar alertas para paciente ${report.patient.id}:`, error);
                     alertasMap[report.patient.id] = [];
                 }
             }
@@ -154,7 +148,6 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onNavigate, currentPage, onSe
             
             setLoading(false);
         } catch (error) {
-            console.error('❌ Erro ao carregar relatórios:', error);
             setReports([]);
             setLoading(false);
         }

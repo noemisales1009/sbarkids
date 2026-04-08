@@ -53,7 +53,6 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, roundId, ale
 
     // Se foram passadas alertas como props, usa elas
     if (propsAlertas && propsAlertas.length > 0) {
-      console.log('📍 AlertasDisplay recebeu alertas como props:', propsAlertas);
       
       // Filtrar apenas alertas visíveis (ativos + concluídos há menos de 24h)
       const alertasVisiveis = propsAlertas.filter(a => alertasService.isAlertaVisible(a));
@@ -130,7 +129,6 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, roundId, ale
         setAlertasPorTurno(agrupados);
       }
     } catch (error) {
-      console.error('Erro ao carregar alertas:', error);
     } finally {
       setLoading(false);
     }
@@ -143,7 +141,6 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, roundId, ale
       const data = await clinicalRoundsSimpleService.getByRound(patientId, roundId);
       setAssessment(data);
     } catch (error) {
-      console.error('Erro ao carregar assessment:', error);
     }
   };
 
@@ -196,7 +193,6 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, roundId, ale
         alert('Erro ao salvar justificativa');
       }
     } catch (error) {
-      console.error('Erro ao salvar justificativa:', error);
       alert('Erro ao salvar justificativa');
     }
   };
@@ -233,7 +229,6 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, roundId, ale
         alert('Erro ao marcar alerta como concluído');
       }
     } catch (error) {
-      console.error('Erro ao concluir alerta:', error);
       alert('Erro ao marcar alerta como concluído');
     }
   };
@@ -288,7 +283,6 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, roundId, ale
         alert('Erro ao arquivar alerta');
       }
     } catch (error) {
-      console.error('Erro ao arquivar alerta:', error);
       alert('Erro ao arquivar alerta');
     }
   };

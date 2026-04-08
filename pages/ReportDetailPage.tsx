@@ -26,7 +26,6 @@ const ReportDetailPage: React.FC<ReportDetailPageProps> = ({ patient, report, on
                 const alertasData = await alertasService.getAlertas(patient.id);
                 setAlertas(alertasData);
             } catch (error) {
-                console.error("Erro ao buscar alertas:", error);
             } finally {
                 setLoading(false);
             }

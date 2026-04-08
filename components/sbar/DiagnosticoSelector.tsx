@@ -93,7 +93,6 @@ const DiagnosticoSelector = ({ pacienteId, onSave, onSaveMessage }: DiagnosticoS
         setSelecionados(diagnosticosCarregadosList);
       }
     } catch (error) {
-      console.error('Erro ao carregar diagnósticos:', error);
     }
   };
 
@@ -118,7 +117,6 @@ const DiagnosticoSelector = ({ pacienteId, onSave, onSaveMessage }: DiagnosticoS
         })
       );
     } catch (error) {
-      console.error('Erro ao carregar opções:', error);
     } finally {
       setLoading(false);
     }

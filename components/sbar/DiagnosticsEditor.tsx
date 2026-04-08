@@ -25,7 +25,6 @@ const DiagnosticsEditor: React.FC<DiagnosticsEditorProps> = ({ patientId }) => {
         const data = await diagnosticsService.getPatientDiagnostics(patientId);
         setDiagnostics(data);
       } catch (error) {
-        console.error('Erro ao carregar diagnósticos:', error);
       } finally {
         setLoading(false);
       }

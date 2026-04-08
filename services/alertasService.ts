@@ -43,7 +43,6 @@ export const alertasService = {
    */
   async getAlertas(patientId: string): Promise<Alerta[]> {
     try {
-      console.log(`📍 alertasService.getAlertas("${patientId}") - buscando de ambas as sources...`);
       
       // Busca de tasks_view_horario_br (apenas NÃO arquivados)
       const { data: tasksAlertas, error: tasksError } = await supabase
@@ -54,7 +53,6 @@ export const alertasService = {
         .order('created_at', { ascending: false });
 
       if (tasksError) {
-        console.warn('⚠️ Erro ao buscar tasks_view_horario_br:', tasksError);
       }
 
       // Busca de alertas_paciente_view_completa (apenas NÃO arquivados)
@@ -66,7 +64,6 @@ export const alertasService = {
         .order('created_at', { ascending: false });
 
       if (alertasError) {
-        console.warn('⚠️ Erro ao buscar alertas_paciente_view_completa:', alertasError);
       }
 
       // Combina resultados de ambas as sources
@@ -90,33 +87,8 @@ export const alertasService = {
 
       const allAlertas = [...taskAlertasFormatted, ...alertasPacienteFormatted];
       
-      console.log(`✅ Total de alertas encontrados (NÃO ARQUIVADOS): ${allAlertas.length}`);
-      console.log(`   - Tasks: ${taskAlertasFormatted.length}`);
-      console.log(`   - Alertas Paciente: ${alertasPacienteFormatted.length}`);
-      console.log(`   ℹ️ Filtro aplicado: archived_at IS NULL (alertas arquivados serão ocultados)`);
-      
-      // Debug: mostrar dados de um alerta de cada fonte
-      if (taskAlertasFormatted.length > 0) {
-        console.log('📌 Exemplo TASK:', {
-          id: taskAlertasFormatted[0].id_alerta,
-          status: taskAlertasFormatted[0].status,
-          archived_at: taskAlertasFormatted[0].archived_at,
-          archived_by: taskAlertasFormatted[0].archived_by
-        });
-      }
-      
-      if (alertasPacienteFormatted.length > 0) {
-        console.log('📌 Exemplo ALERTA_PACIENTE:', {
-          id: alertasPacienteFormatted[0].id_alerta,
-          status: alertasPacienteFormatted[0].status,
-          archived_at: alertasPacienteFormatted[0].archived_at,
-          archived_by: alertasPacienteFormatted[0].archived_by
-        });
-      }
-      
       return allAlertas as Alerta[];
     } catch (error) {
-      console.error('❌ ERRO em getAlertas:', error);
       logError(error, 'alertasService.getAlertas');
       return [];
     }
@@ -142,7 +114,6 @@ export const alertasService = {
     // Alertas concluídos: verificar se ainda estão dentro da janela de 24h
     const conclusaoTimestamp = alerta.concluded_at || alerta.hora_conclusao_br;
     if (!conclusaoTimestamp) {
-      console.warn(`⚠️ Alerta concluído sem timestamp: ${alerta.id_alerta}`);
       return true; // Dar benefício da dúvida
     }
 
@@ -157,15 +128,7 @@ export const alertasService = {
   /**
    * Calcula tempo restante de visibilidade para um alerta concluído
    */
-  getTempoRestanteVisibilidade(alerta: Alerta | any): string | null {
-    console.log(`🔍 getTempoRestanteVisibilidade chamado com:`, {
-      id: alerta.id_alerta,
-      status: alerta.status,
-      live_status: alerta.live_status,
-      concluded_at: alerta.concluded_at,
-      updated_at: alerta.updated_at
-    });
-
+  getTempoRestanteVisibilidade(alerta: Alerta): string | null {
     // Se ainda não foi concluído
     if (
       alerta.status !== 'concluido' && 
@@ -173,7 +136,6 @@ export const alertasService = {
       alerta.live_status !== 'resolvido / arquivado' &&
       alerta.live_status !== 'concluido'
     ) {
-      console.log(`⏰ Status não é concluído (${alerta.status}/${alerta.live_status}) - retornando null`);
       return null;
     }
 
@@ -182,12 +144,9 @@ export const alertasService = {
     
     if (alerta.concluded_at) {
       horaConclusao = new Date(alerta.concluded_at);
-      console.log(`⏰ Usando concluded_at: ${alerta.concluded_at}`);
     } else if (alerta.updated_at) {
       horaConclusao = new Date(alerta.updated_at);
-      console.log(`⏰ Usando updated_at como fallback: ${alerta.updated_at}`);
     } else {
-      console.log(`⏰ Nenhum timestamp de conclusão disponível`);
       return null;
     }
 
@@ -197,22 +156,13 @@ export const alertasService = {
     const tempoDecorridoMs = agoraUTC.getTime() - horaConclusao.getTime();
     const tempoDecorridoHoras = tempoDecorridoMs / (1000 * 60 * 60);
 
-    console.log(`⏰ Cálculo:`, {
-      horaConclusao: horaConclusao.toISOString(),
-      agoraUTC: agoraUTC.toISOString(),
-      tempoDecorridoMs: tempoDecorridoMs,
-      tempoDecorridoHoras: tempoDecorridoHoras.toFixed(2)
-    });
-
     // Se passou 24 horas
     if (tempoDecorridoHoras >= 24) {
-      console.log(`⏰ Passou 24 horas - retornando "Expirado"`);
       return 'Expirado';
     }
 
     // Se tempo decorrido for negativo (relógio do cliente errado)
     if (tempoDecorridoHoras < 0) {
-      console.warn(`⚠️ Tempo decorrido negativo! Relógio pode estar errado.`);
       return 'Calculando...';
     }
 
@@ -221,7 +171,6 @@ export const alertasService = {
     const minutosRestantes = Math.round(((24 - tempoDecorridoHoras) % 1) * 60);
 
     const resultado = `${horasRestantes}h ${minutosRestantes}min visível`;
-    console.log(`⏰ Resultado final: ${resultado}`);
     return resultado;
   },
 
@@ -236,7 +185,6 @@ export const alertasService = {
     fonte: 'tasks' | 'alertas_paciente'
   ): Promise<string | null> {
     try {
-      console.log(`🔍 Chamando função SQL tempo_restante_visibilidade para ${fonte}/${alertaId}`);
 
       // Chamar função SQL do Supabase
       const { data, error } = await supabase.rpc('tempo_restante_visibilidade', {
@@ -245,15 +193,12 @@ export const alertasService = {
       });
 
       if (error) {
-        console.warn(`⚠️ Erro ao chamar tempo_restante_visibilidade:`, error);
         // Fallback: usar método local
         return null;
       }
 
-      console.log(`✅ Tempo restante (SQL):`, data);
       return data as string;
     } catch (error) {
-      console.error('❌ ERRO em getTempoRestanteVisibilidadeSQL:', error);
       return null;
     }
   },
@@ -267,7 +212,6 @@ export const alertasService = {
     concludedAt: string | null
   ): Promise<boolean> {
     try {
-      console.log(`🔍 Chamando função SQL is_alerta_visible`);
 
       // Chamar função SQL do Supabase
       const { data, error } = await supabase.rpc('is_alerta_visible', {
@@ -276,31 +220,25 @@ export const alertasService = {
       });
 
       if (error) {
-        console.warn(`⚠️ Erro ao chamar is_alerta_visible:`, error);
         // Fallback: usar método local
         return true;
       }
 
-      console.log(`✅ Visível (SQL):`, data);
       return data as boolean;
     } catch (error) {
-      console.error('❌ ERRO em verificarVisibilidadeSQL:', error);
       return true; // Mostrar por padrão se houver erro
     }
   },
   async getAtivos(patientId: string): Promise<Alerta[]> {
     try {
-      console.log(`📍 alertasService.getAtivos("${patientId}") - buscando alertas ativos...`);
       
       const allAlertas = await this.getAlertas(patientId);
       const ativos = allAlertas.filter(
         a => a.status !== 'concluido' && a.status !== 'Concluído'
       );
       
-      console.log(`✅ ${ativos.length} alertas ativos encontrados`);
       return ativos;
     } catch (error) {
-      console.error('❌ ERRO em getAtivos:', error);
       logError(error, 'alertasService.getAtivos');
       return [];
     }
@@ -311,15 +249,12 @@ export const alertasService = {
    */
   async getVisiveis(patientId: string): Promise<Alerta[]> {
     try {
-      console.log(`📍 alertasService.getVisiveis("${patientId}") - buscando alertas visíveis...`);
       
       const allAlertas = await this.getAlertas(patientId);
       const visiveis = allAlertas.filter(a => this.isAlertaVisible(a));
       
-      console.log(`✅ ${visiveis.length} alertas visíveis encontrados`);
       return visiveis;
     } catch (error) {
-      console.error('❌ ERRO em getVisiveis:', error);
       logError(error, 'alertasService.getVisiveis');
       return [];
     }
@@ -330,15 +265,12 @@ export const alertasService = {
    */
   async getForaDoPrazo(patientId: string): Promise<Alerta[]> {
     try {
-      console.log(`📍 alertasService.getForaDoPrazo("${patientId}") - buscando alertas fora do prazo...`);
       
       const allAlertas = await this.getAlertas(patientId);
       const foraDoPrazo = allAlertas.filter(a => a.live_status === 'fora_do_prazo');
       
-      console.log(`✅ ${foraDoPrazo.length} alertas fora do prazo encontrados`);
       return foraDoPrazo;
     } catch (error) {
-      console.error('❌ ERRO em getForaDoPrazo:', error);
       logError(error, 'alertasService.getForaDoPrazo');
       return [];
     }
@@ -354,7 +286,6 @@ export const alertasService = {
     justificadoPorUserId: string
   ): Promise<boolean> {
     try {
-      console.log(`📍 alertasService.updateJustificativa - Iniciando para ${fonte}/${alertaId}`);
 
       const tableName = fonte === 'tasks' ? 'tasks' : 'alertas_paciente';
       
@@ -368,17 +299,8 @@ export const alertasService = {
       const columnAtName = fonte === 'tasks' ? 'justification_at' : 'justificativa_at';
       const agora = new Date().toISOString();
 
-      console.log(`📌 Atualizando ${tableName}:`, {
-        id: idAtualizacao,
-        tipo_id: typeof idAtualizacao,
-        [columnName]: justificativa,
-        [columnByName]: justificadoPorUserId,
-        [columnAtName]: agora,
-        updated_at: agora
-      });
-
       // Atualizar com todos os campos de justificativa
-      const { data, error, count } = await supabase
+      const { error, count } = await supabase
         .from(tableName)
         .update({
           [columnName]: justificativa,
@@ -389,29 +311,18 @@ export const alertasService = {
         .eq('id', idAtualizacao)
         .select();
 
-      console.log(`📊 Resultado da atualização:`, {
-        error: error?.message || 'nenhum',
-        count: count,
-        data: data
-      });
-
       if (error) {
-        console.error(`❌ Erro ao atualizar justificativa em ${tableName}:`, error);
         logError(error, `alertasService.updateJustificativa - ${tableName}`);
         return false;
       }
 
       if (!count || count === 0) {
-        console.warn(`⚠️ Nenhum registro foi atualizado. ID usado: ${idAtualizacao}`);
         return false;
       }
 
-      console.log(`✅ Justificativa atualizada com sucesso em ${tableName} - ${count} registro(s) atualizado(s)`);
-      console.log(`   Dados atualizados:`, data?.[0]);
       
       return true;
     } catch (error) {
-      console.error('❌ ERRO em updateJustificativa:', error);
       logError(error, 'alertasService.updateJustificativa');
       return false;
     }
@@ -427,7 +338,6 @@ export const alertasService = {
     concludedByUserId: string
   ): Promise<boolean> {
     try {
-      console.log(`📍 alertasService.marcarComoConcluido - Iniciando para ${fonte}/${alertaId}`);
 
       const tableName = fonte === 'tasks' ? 'tasks' : 'alertas_paciente';
       const agora = new Date().toISOString();
@@ -435,17 +345,8 @@ export const alertasService = {
       // Converter ID se for string numérica
       const idAtualizacao = isNaN(Number(alertaId)) ? alertaId : parseInt(alertaId);
 
-      console.log(`📌 Atualizando ${tableName}:`, {
-        id: idAtualizacao,
-        tipo_id: typeof idAtualizacao,
-        status: 'concluido',
-        concluded_at: agora,
-        concluded_by: concludedByUserId,
-        updated_at: agora
-      });
-
       // Marcar apenas como concluído (NÃO arquivar)
-      const { data, error, count } = await supabase
+      const { error, count } = await supabase
         .from(tableName)
         .update({
           status: 'concluido',
@@ -456,29 +357,18 @@ export const alertasService = {
         .eq('id', idAtualizacao)
         .select();
 
-      console.log(`📊 Resultado da atualização:`, {
-        error: error?.message || 'nenhum',
-        count: count,
-        data: data
-      });
-
       if (error) {
-        console.error(`❌ Erro ao marcar como concluído em ${tableName}:`, error);
         logError(error, `alertasService.marcarComoConcluido - ${tableName}`);
         return false;
       }
 
       if (!count || count === 0) {
-        console.warn(`⚠️ Nenhum registro foi atualizado. ID usado: ${idAtualizacao}`);
         return false;
       }
 
-      console.log(`✅ Alerta marcado como concluído em ${tableName} - ${count} registro(s) atualizado(s)`);
-      console.log(`   Dados atualizados:`, data?.[0]);
       
       return true;
     } catch (error) {
-      console.error('❌ ERRO em marcarComoConcluido:', error);
       logError(error, 'alertasService.marcarComoConcluido');
       return false;
     }
@@ -489,7 +379,6 @@ export const alertasService = {
    */
   async deleteAlerta(alertaId: string, fonte: 'tasks' | 'alertas_paciente'): Promise<boolean> {
     try {
-      console.log(`📍 alertasService.deleteAlerta - Deletando ${fonte}/${alertaId}`);
 
       const tableName = fonte === 'tasks' ? 'tasks' : 'alertas_paciente';
 
@@ -499,15 +388,12 @@ export const alertasService = {
         .eq('id', parseInt(alertaId));
 
       if (error) {
-        console.error(`❌ Erro ao deletar alerta em ${tableName}:`, error);
         logError(error, `alertasService.deleteAlerta - ${tableName}`);
         return false;
       }
 
-      console.log(`✅ Alerta deletado com sucesso de ${tableName}`);
       return true;
     } catch (error) {
-      console.error('❌ ERRO em deleteAlerta:', error);
       logError(error, 'alertasService.deleteAlerta');
       return false;
     }
@@ -523,24 +409,13 @@ export const alertasService = {
     archivedByUserId: string
   ): Promise<boolean> {
     try {
-      console.log(`📍 alertasService.arquivarAlerta - Iniciando para ${fonte}/${alertaId}`);
 
       const tableName = fonte === 'tasks' ? 'tasks' : 'alertas_paciente';
       const agora = new Date().toISOString();
       const idAtualizacao = isNaN(Number(alertaId)) ? alertaId : parseInt(alertaId);
 
-      console.log(`📌 Atualizando ${tableName}:`, {
-        id: idAtualizacao,
-        tipo_id: typeof idAtualizacao,
-        archived_at: agora,
-        archived_by: archivedByUserId,
-        motivo_arquivamento: motivo,
-        status: 'arquivado',
-        updated_at: agora
-      });
-
       // Atualizar o alerta com dados de arquivamento
-      const { data, error, count } = await supabase
+      const { error, count } = await supabase
         .from(tableName)
         .update({
           archived_at: agora,
@@ -552,29 +427,18 @@ export const alertasService = {
         .eq('id', idAtualizacao)
         .select();
 
-      console.log(`📊 Resultado da atualização:`, {
-        error: error?.message || 'nenhum',
-        count: count,
-        data: data
-      });
-
       if (error) {
-        console.error(`❌ Erro ao arquivar alerta em ${tableName}:`, error);
         logError(error, `alertasService.arquivarAlerta - ${tableName}`);
         return false;
       }
 
       if (!count || count === 0) {
-        console.warn(`⚠️ Nenhum registro foi atualizado. ID usado: ${idAtualizacao}`);
         return false;
       }
 
-      console.log(`✅ Alerta arquivado com sucesso em ${tableName} - ${count} registro(s) atualizado(s)`);
-      console.log(`   Dados atualizados:`, data?.[0]);
       
       return true;
     } catch (error) {
-      console.error('❌ ERRO em arquivarAlerta:', error);
       logError(error, 'alertasService.arquivarAlerta');
       return false;
     }
@@ -585,7 +449,6 @@ export const alertasService = {
    */
   async getConcluidos24h(patientId: string): Promise<any[]> {
     try {
-      console.log(`📍 alertasService.getConcluidos24h("${patientId}") - buscando da view visibilidade_24h...`);
 
       const { data, error } = await supabase
         .from('alertas_paciente_visibilidade_24h')
@@ -594,14 +457,11 @@ export const alertasService = {
         .order('concluded_at', { ascending: false });
 
       if (error) {
-        console.warn('⚠️ Erro ao buscar alertas_paciente_visibilidade_24h:', error);
         return [];
       }
 
-      console.log(`✅ ${data?.length || 0} alertas concluídos visíveis encontrados`);
       return data || [];
     } catch (error) {
-      console.error('❌ ERRO em getConcluidos24h:', error);
       logError(error, 'alertasService.getConcluidos24h');
       return [];
     }
@@ -612,7 +472,6 @@ export const alertasService = {
    */
   async getArquivados(patientId: string): Promise<Alerta[]> {
     try {
-      console.log(`📍 alertasService.getArquivados("${patientId}") - buscando alertas arquivados...`);
 
       // Busca diretamente das tabelas (não das views) para pegar arquivados
       const { data: tasksArquivados, error: tasksError } = await supabase
@@ -623,7 +482,6 @@ export const alertasService = {
         .order('archived_at', { ascending: false });
 
       if (tasksError) {
-        console.warn('⚠️ Erro ao buscar tasks arquivadas:', tasksError);
       }
 
       const { data: alertasArquivados, error: alertasError } = await supabase
@@ -634,13 +492,10 @@ export const alertasService = {
         .order('archived_at', { ascending: false });
 
       if (alertasError) {
-        console.warn('⚠️ Erro ao buscar alertas_paciente arquivados:', alertasError);
       }
 
-      console.log(`✅ ${(tasksArquivados?.length || 0) + (alertasArquivados?.length || 0)} alertas arquivados encontrados`);
       return [];  // Retornar vazio ou formatado conforme necessário
     } catch (error) {
-      console.error('❌ ERRO em getArquivados:', error);
       logError(error, 'alertasService.getArquivados');
       return [];
     }

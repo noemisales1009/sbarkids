@@ -30,7 +30,6 @@ const calculateDaysAdmitted = (dt_internacao: string | null): number => {
         
         return diffDays >= 0 ? diffDays : 0;
     } catch (error) {
-        console.error('Erro ao calcular dias de internação:', error);
         return 0;
     }
 };
@@ -46,7 +45,6 @@ const PatientInfoHeader: React.FC<PatientInfoHeaderProps> = ({ patient, onBack }
     const daysAdmitted = calculateDaysAdmitted(patient.dt_internacao);
     
     // Debug: verificar os valores
-    console.log('📅 Data de internação:', patient.dt_internacao, '| Dias:', daysAdmitted);
 
     return (
         <section className="fixed top-0 left-0 right-0 z-50 bg-linear-to-r from-blue-900 to-blue-800 px-4 py-3 border-b border-blue-700">

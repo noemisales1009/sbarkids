@@ -31,7 +31,6 @@ const ComorbidadesSection: React.FC<ComorbidadesSectionProps> = ({ patientId }) 
           }
         }
       } catch (error) {
-        console.error('Erro ao carregar comorbidades:', error);
       } finally {
         setLoading(false);
       }

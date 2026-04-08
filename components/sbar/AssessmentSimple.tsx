@@ -60,7 +60,6 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
           });
         }
       } catch (error) {
-        console.error('Erro ao carregar dados:', error);
       } finally {
         setLoading(false);
       }
@@ -98,7 +97,6 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
         onSaved?.('❌ Erro ao salvar avaliação');
       }
     } catch (error) {
-      console.error('Erro ao salvar:', error);
       onSaved?.('❌ Erro ao salvar avaliação');
     } finally {
       setSaving(false);

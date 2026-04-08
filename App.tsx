@@ -1,16 +1,18 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
-import LoginPage from './pages/LoginPage';
-import PatientsPage from './pages/PatientsPage';
-import SbarReportPage from './pages/SbarReportPage';
-import HistoryPage from './pages/HistoryPage';
-import SettingsPage from './pages/SettingsPage';
-import ReportsPage from './pages/ReportsPage';
 import { Patient, HistoryItemData, CurrentPage } from './types';
-import ReportDetailPage from './pages/ReportDetailPage';
 import { ViewportProvider } from './hooks/useViewport';
-import { TestSupabasePage } from './pages/TestSupabasePage';
+
+// Lazy loading - páginas carregam sob demanda
+const LoginPage = React.lazy(() => import('./pages/LoginPage'));
+const PatientsPage = React.lazy(() => import('./pages/PatientsPage'));
+const SbarReportPage = React.lazy(() => import('./pages/SbarReportPage'));
+const HistoryPage = React.lazy(() => import('./pages/HistoryPage'));
+const SettingsPage = React.lazy(() => import('./pages/SettingsPage'));
+const ReportsPage = React.lazy(() => import('./pages/ReportsPage'));
+const ReportDetailPage = React.lazy(() => import('./pages/ReportDetailPage'));
+const TestSupabasePage = React.lazy(() => import('./pages/TestSupabasePage').then(m => ({ default: m.TestSupabasePage })));
 import { supabase } from './lib/supabase';
 import { patientsService } from './services/patientsService';
 import { UserProvider, useUser } from './contexts/UserContext';
@@ -59,7 +61,6 @@ const AppContent: React.FC = () => {
 
     // Inicializar serviço de limpeza diária (00:05 São Paulo)
     useEffect(() => {
-        console.log('📅 Inicializando serviço de limpeza diária...');
         const cleanup = initializeDailyClearanceService();
         return cleanup;
     }, []);
@@ -70,16 +71,13 @@ const AppContent: React.FC = () => {
     useEffect(() => {
         let mounted = true;
 
-        console.log('🔐 Inicializando autenticação...');
 
         // Escutar mudanças de autenticação - listener passivo
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             if (!mounted) return;
 
-            console.log('🔄 Auth event:', event, 'Session:', session?.user?.email);
 
             if (session?.user) {
-                console.log('✅ Usuário autenticado:', session.user.email);
                 setAuthUser({
                     id: session.user.id,
                     email: session.user.email || '',
@@ -96,7 +94,6 @@ const AppContent: React.FC = () => {
                     navigate('/patients', { replace: true });
                 }
             } else {
-                console.log('ℹ️ sem sessão ativa');
                 setAuthUser(null);
                 // Navegar para login se não autenticado
                 if (location.pathname !== '/login') {
@@ -188,7 +185,6 @@ const AppContent: React.FC = () => {
                 });
             }
         } catch (error) {
-            console.error('Erro ao salvar paciente:', error);
         }
         
         setSelectedPatient(patient);
@@ -245,6 +241,11 @@ const AppContent: React.FC = () => {
                     onLogout={handleLogout}
                 />
             )}
+            <Suspense fallback={
+                <div className="flex items-center justify-center min-h-screen">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                </div>
+            }>
             <Routes>
                 <Route path="/login" element={<LoginPage />} />
                 
@@ -340,6 +341,7 @@ const AppContent: React.FC = () => {
 
                 <Route path="*" element={<Navigate to="/patients" replace />} />
             </Routes>
+            </Suspense>
         </div>
     );
 };

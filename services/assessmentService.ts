@@ -59,7 +59,6 @@ export const assessmentService = {
         [`${shiftPrefix}_saved_at`]: new Date().toISOString()
       };
 
-      console.log(`[AssessmentService] Salvando ${shift}:`, updateData);
 
       // Primeiro, tenta buscar o registro existente
       const { data: existingData, error: selectError } = await supabase
@@ -68,12 +67,10 @@ export const assessmentService = {
         .eq('round_id', roundId)
         .single();
 
-      console.log(`[AssessmentService] Registro existente:`, existingData, selectError);
 
       let error;
       if (existingData) {
         // Se existe, faz update
-        console.log(`[AssessmentService] Atualizando registro existente`);
         const { error: updateError } = await supabase
           .from('assessment_shifts')
           .update(updateData)
@@ -81,7 +78,6 @@ export const assessmentService = {
         error = updateError;
       } else {
         // Se não existe, faz insert
-        console.log(`[AssessmentService] Inserindo novo registro`);
         const { error: insertError } = await supabase
           .from('assessment_shifts')
           .insert([updateData]);
@@ -89,15 +85,12 @@ export const assessmentService = {
       }
 
       if (error) {
-        console.error(`[AssessmentService] Erro ao salvar:`, error);
         logError(error, 'assessmentService.saveShiftAssessment');
         return false;
       }
 
-      console.log(`[AssessmentService] Salvo com sucesso`);
       return true;
     } catch (error) {
-      console.error(`[AssessmentService] Exception:`, error);
       logError(error, 'assessmentService.saveShiftAssessment');
       return false;
     }
@@ -108,30 +101,24 @@ export const assessmentService = {
    */
   async getAssessmentByRound(roundId: string): Promise<ClinicalRoundAssessment | null> {
     try {
-      console.log(`[AssessmentService] Buscando avaliação para round:`, roundId);
       const { data: assessments, error } = await supabase
         .from('assessment_shifts')
         .select('*')
         .eq('round_id', roundId);
 
-      console.log(`[AssessmentService] Resultado da busca:`, assessments, error);
 
       if (error) {
-        console.error(`[AssessmentService] Erro na busca:`, error);
         logError(error, 'assessmentService.getAssessmentByRound');
         return null;
       }
 
       if (!assessments || assessments.length === 0) {
-        console.log(`[AssessmentService] Nenhum registro encontrado`);
         return null;
       }
 
       const assessment = assessments[0];
-      console.log(`[AssessmentService] Avaliação carregada com sucesso:`, assessment);
       return assessment as ClinicalRoundAssessment;
     } catch (error) {
-      console.error(`[AssessmentService] Exception ao buscar:`, error);
       logError(error, 'assessmentService.getAssessmentByRound');
       return null;
     }

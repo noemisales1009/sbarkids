@@ -17,7 +17,6 @@ export const TestSupabasePage: React.FC = () => {
   useEffect(() => {
     const testConnection = async () => {
       try {
-        console.log('🔍 Iniciando teste de conexão com Supabase...');
 
         // Testa conexão simples
         const { data: testData, error: testError } = await supabase
@@ -25,10 +24,8 @@ export const TestSupabasePage: React.FC = () => {
           .select('id, name, bed_number', { count: 'exact' })
           .limit(5);
 
-        console.log('Resposta da query:', { testData, testError });
 
         if (testError) {
-          console.error('❌ Erro na query:', testError);
           setConnectionStatus('error');
           setError(`Erro ao conectar: ${testError.message}`);
           setDebugInfo({ error: testError });
@@ -36,7 +33,6 @@ export const TestSupabasePage: React.FC = () => {
           return;
         }
 
-        console.log('✅ Conexão OK!');
         setConnectionStatus('connected');
 
         // Carrega todos os pacientes
@@ -45,7 +41,6 @@ export const TestSupabasePage: React.FC = () => {
           .select('*')
           .order('name', { ascending: true });
 
-        console.log('Pacientes carregados:', allPatients?.length, 'Erro:', patientsError);
 
         if (patientsError) {
           throw patientsError;
@@ -54,7 +49,6 @@ export const TestSupabasePage: React.FC = () => {
         setPatients((allPatients as Patient[]) || []);
         setError(null);
       } catch (err) {
-        console.error('❌ Erro durante teste:', err);
         setConnectionStatus('error');
         setError(err instanceof Error ? err.message : 'Erro desconhecido');
         setDebugInfo({ error: err });

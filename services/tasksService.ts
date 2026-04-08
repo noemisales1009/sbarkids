@@ -40,7 +40,6 @@ export const tasksService = {
    */
   async getAlertasByPatient(patientId: string): Promise<TaskAlert[]> {
     try {
-      console.log(`📍 tasksService.getAlertasByPatient("${patientId}") - buscando na view tasks_view_horario_br...`);
       
       const { data: alertas, error } = await supabase
         .from('tasks_view_horario_br')
@@ -49,15 +48,12 @@ export const tasksService = {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error(`❌ Erro ao buscar alertas para ${patientId}:`, error);
         logError(error, 'tasksService.getAlertasByPatient');
         return [];
       }
 
-      console.log(`✅ ${alertas?.length || 0} alertas encontrados`);
       return (alertas as TaskAlert[]) || [];
     } catch (error) {
-      console.error('❌ ERRO em getAlertasByPatient:', error);
       logError(error, 'tasksService.getAlertasByPatient');
       return [];
     }
@@ -68,7 +64,6 @@ export const tasksService = {
    */
   async getAtivosByPatient(patientId: string): Promise<TaskAlert[]> {
     try {
-      console.log(`📍 tasksService.getAtivosByPatient("${patientId}") - buscando alertas ativos...`);
       
       const { data: alertas, error } = await supabase
         .from('tasks_view_horario_br')
@@ -79,15 +74,12 @@ export const tasksService = {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error(`❌ Erro ao buscar alertas ativos para ${patientId}:`, error);
         logError(error, 'tasksService.getAtivosByPatient');
         return [];
       }
 
-      console.log(`✅ ${alertas?.length || 0} alertas ativos encontrados`);
       return (alertas as TaskAlert[]) || [];
     } catch (error) {
-      console.error('❌ ERRO em getAtivosByPatient:', error);
       logError(error, 'tasksService.getAtivosByPatient');
       return [];
     }
@@ -98,7 +90,6 @@ export const tasksService = {
    */
   async getForaDoPrazoByPatient(patientId: string): Promise<TaskAlert[]> {
     try {
-      console.log(`📍 tasksService.getForaDoPrazoByPatient("${patientId}") - buscando alertas fora do prazo...`);
       
       const { data: alertas, error } = await supabase
         .from('tasks_view_horario_br')
@@ -108,15 +99,12 @@ export const tasksService = {
         .order('prazo_limite_br', { ascending: true });
 
       if (error) {
-        console.error(`❌ Erro ao buscar alertas fora do prazo para ${patientId}:`, error);
         logError(error, 'tasksService.getForaDoPrazoByPatient');
         return [];
       }
 
-      console.log(`✅ ${alertas?.length || 0} alertas fora do prazo encontrados`);
       return (alertas as TaskAlert[]) || [];
     } catch (error) {
-      console.error('❌ ERRO em getForaDoPrazoByPatient:', error);
       logError(error, 'tasksService.getForaDoPrazoByPatient');
       return [];
     }

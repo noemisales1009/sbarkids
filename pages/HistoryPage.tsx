@@ -40,7 +40,6 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ patient, onBack, onNavigate, 
                 const assessmentsData = await clinicalRoundsSimpleService.getAll(patient.id);
                 setAssessments(assessmentsData);
             } catch (error) {
-                console.error("Erro ao buscar histórico:", error);
             } finally {
                 setLoading(false);
             }

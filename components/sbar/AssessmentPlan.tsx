@@ -52,7 +52,6 @@ const AssessmentHistoryPanel: React.FC<AssessmentHistoryPanelProps> = ({ shift, 
         const logs = await auditLogService.getAuditLogByShift(roundId, shift);
         setAuditLogs(logs);
       } catch (error) {
-        console.error('Erro ao carregar histórico:', error);
       } finally {
         setLoading(false);
       }
@@ -172,7 +171,6 @@ const AssessmentPlan: React.FC<AssessmentPlanProps> = ({
       }
     } catch (error) {
       onSaved?.('❌ Erro ao salvar avaliação');
-      console.error(error);
     } finally {
       setSaving(false);
     }

@@ -23,7 +23,6 @@ export const dailyClearanceService = {
       // Considerar a janela de 00:00 a 00:10 (10 minutos)
       return hours === 0 && minutes <= 10;
     } catch (error) {
-      console.error('❌ Erro ao verificar hora:', error);
       return false;
     }
   },
@@ -49,7 +48,6 @@ export const dailyClearanceService = {
    */
   async clearAssessmentAndRecommendation(patientId: string): Promise<boolean> {
     try {
-      console.log('🔄 Limpando Assessment e Recommendation para paciente:', patientId);
       
       const today = this.getReferenceDate();
       
@@ -62,7 +60,6 @@ export const dailyClearanceService = {
         .single();
 
       if (selectError && selectError.code !== 'PGRST116') {
-        console.warn('⚠️ Erro ao buscar registro:', selectError);
         return false;
       }
 
@@ -94,20 +91,16 @@ export const dailyClearanceService = {
           .eq('id', data.id);
 
         if (updateError) {
-          console.error('❌ Erro ao limpar campos:', updateError);
           logError(updateError, 'dailyClearanceService.clearAssessmentAndRecommendation');
           return false;
         }
 
-        console.log('✅ Assessment e Recommendation limpos com sucesso');
         return true;
       }
 
       // Se não existe registro hoje, nada a fazer
-      console.log('ℹ️ Nenhum registro para limpeza hoje');
       return true;
     } catch (error) {
-      console.error('❌ Exception em clearAssessmentAndRecommendation:', error);
       logError(error, 'dailyClearanceService.clearAssessmentAndRecommendation');
       return false;
     }
@@ -120,11 +113,9 @@ export const dailyClearanceService = {
   async clearAllPatients(): Promise<void> {
     try {
       if (!this.isTimeForDailyClearance()) {
-        console.log('⏭️ Não é hora de limpeza diária (fora da janela 00:00-00:10 SP)');
         return;
       }
 
-      console.log('🧹 Iniciando limpeza diária de todos os pacientes...');
 
       // Buscar todos os pacientes únicos com registros hoje
       const today = this.getReferenceDate();
@@ -134,28 +125,23 @@ export const dailyClearanceService = {
         .eq('reference_date', today);
 
       if (error) {
-        console.error('❌ Erro ao buscar pacientes:', error);
         logError(error, 'dailyClearanceService.clearAllPatients');
         return;
       }
 
       if (!patients || patients.length === 0) {
-        console.log('ℹ️ Nenhum paciente para limpar hoje');
         return;
       }
 
       // Remover duplicatas
       const uniquePatientIds = [...new Set(patients.map(p => p.patient_id))];
-      console.log(`🔄 Limpando ${uniquePatientIds.length} pacientes...`);
 
       // Limpar cada paciente
       for (const patient_id of uniquePatientIds) {
         await this.clearAssessmentAndRecommendation(patient_id);
       }
 
-      console.log('✅ Limpeza diária concluída com sucesso');
     } catch (error) {
-      console.error('❌ Exception em clearAllPatients:', error);
       logError(error, 'dailyClearanceService.clearAllPatients');
     }
   }
@@ -166,7 +152,6 @@ export const dailyClearanceService = {
  * Deve ser chamado na inicialização da app (App.tsx ou em um contexto global)
  */
 export const initializeDailyClearanceService = () => {
-  console.log('🔧 Inicializando serviço de limpeza diária...');
 
   // Verificar a cada 5 minutos se é hora de limpar
   const checkInterval = setInterval(() => {
