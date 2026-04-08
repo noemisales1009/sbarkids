@@ -4,8 +4,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { diagnosticoPerguntasService, PerguntaDiagnostico, OpcaoDiagnostico } from '../../services/diagnosticoPerguntasService';
+import { useToast } from '../Toast';
 
 const DiagnosticoOpcoesAdmin: React.FC = () => {
+  const { showToast } = useToast();
   const [perguntas, setPerguntas] = useState<PerguntaDiagnostico[]>([]);
   const [selectedPergunta, setSelectedPergunta] = useState<number | null>(null);
   const [opcoes, setOpcoes] = useState<OpcaoDiagnostico[]>([]);
@@ -53,7 +55,7 @@ const DiagnosticoOpcoesAdmin: React.FC = () => {
 
   const handleAddOpcao = async () => {
     if (!selectedPergunta || !formData.codigo.trim() || !formData.label.trim()) {
-      alert('Preencha todos os campos obrigatórios');
+      showToast('Preencha todos os campos obrigatórios', 'warning');
       return;
     }
 
@@ -71,21 +73,21 @@ const DiagnosticoOpcoesAdmin: React.FC = () => {
       // Atualizar
       const success = await diagnosticoPerguntasService.updateOpcao(editingId, newOpcao);
       if (success) {
-        alert('Opção atualizada com sucesso!');
+        showToast('Opção atualizada!', 'success');
         setOpcoes(opcoes.map(o => o.id === editingId ? { ...o, ...newOpcao } : o));
         resetForm();
       } else {
-        alert('Erro ao atualizar opção');
+        showToast('Erro ao atualizar opção', 'error');
       }
     } else {
       // Criar nova
       const result = await diagnosticoPerguntasService.createOpcao(newOpcao);
       if (result) {
-        alert('Opção criada com sucesso!');
+        showToast('Opção criada!', 'success');
         setOpcoes([...opcoes, result]);
         resetForm();
       } else {
-        alert('Erro ao criar opção');
+        showToast('Erro ao criar opção', 'error');
       }
     }
   };
@@ -111,10 +113,10 @@ const DiagnosticoOpcoesAdmin: React.FC = () => {
 
     const success = await diagnosticoPerguntasService.deleteOpcao(id);
     if (success) {
-      alert('Opção deletada com sucesso!');
+      showToast('Opção deletada!', 'success');
       setOpcoes(opcoes.filter(o => o.id !== id));
     } else {
-      alert('Erro ao deletar opção');
+      showToast('Erro ao deletar opção', 'error');
     }
   };
 

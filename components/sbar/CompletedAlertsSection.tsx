@@ -7,6 +7,7 @@
 import React, { useState, useEffect } from 'react';
 import { alertasService } from '../../services/alertasService';
 import { useUser } from '../../contexts/UserContext';
+import { useToast } from '../Toast';
 
 interface CompletedAlertsSectionProps {
   patientId: string;
@@ -36,13 +37,13 @@ interface AlertaConcluido {
 
 const CompletedAlertsSection: React.FC<CompletedAlertsSectionProps> = ({ patientId }) => {
   const { user } = useUser();
+  const { showToast, showPrompt } = useToast();
   const [alertas, setAlertas] = useState<AlertaConcluido[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     loadConcluidos();
-    // Recarregar dados a cada 5 minutos (não a cada 60s)
     const interval = setInterval(() => {
       loadConcluidos();
     }, 300000);
@@ -53,18 +54,19 @@ const CompletedAlertsSection: React.FC<CompletedAlertsSectionProps> = ({ patient
     try {
       const data = await alertasService.getConcluidos24h(patientId);
       setAlertas(data);
-    } catch (error) {
+    } catch {
+      showToast('Erro ao carregar alertas concluídos', 'error');
     } finally {
       setLoading(false);
     }
   };
 
   const handleArquivar = async (alerta: AlertaConcluido) => {
-    const motivo = window.prompt('Motivo do arquivamento:');
-    if (!motivo || !motivo.trim()) return;
+    const motivo = await showPrompt('Motivo do arquivamento', 'Informe o motivo...');
+    if (!motivo) return;
 
     if (!user) {
-      alert('Usuário não identificado. Faça login novamente.');
+      showToast('Usuário não identificado. Faça login novamente.', 'error');
       return;
     }
 
@@ -79,12 +81,12 @@ const CompletedAlertsSection: React.FC<CompletedAlertsSectionProps> = ({ patient
 
       if (sucesso) {
         setAlertas(prev => prev.filter(a => a.id_alerta !== alerta.id_alerta));
-        alert('Alerta arquivado com sucesso!');
+        showToast('Alerta arquivado com sucesso!', 'success');
       } else {
-        alert('Erro ao arquivar alerta');
+        showToast('Erro ao arquivar alerta', 'error');
       }
-    } catch (error) {
-      alert('Erro ao arquivar alerta');
+    } catch {
+      showToast('Erro ao arquivar alerta', 'error');
     }
   };
 

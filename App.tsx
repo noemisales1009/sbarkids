@@ -21,6 +21,7 @@ import { initializeDailyClearanceService } from './services/dailyClearanceServic
 import { useInactivityTimeout } from './hooks/useInactivityTimeout';
 import InactivityWarningModal from './components/InactivityWarningModal';
 import { auditService } from './services/auditService';
+import { ToastProvider } from './components/Toast';
 
 interface AuthUser {
     id: string;
@@ -352,9 +353,11 @@ const App: React.FC = () => {
         <ThemeProvider>
             <ViewportProvider>
                 <UserProvider>
-                    <BrowserRouter>
-                        <AppContent />
-                    </BrowserRouter>
+                    <ToastProvider>
+                        <BrowserRouter>
+                            <AppContent />
+                        </BrowserRouter>
+                    </ToastProvider>
                 </UserProvider>
             </ViewportProvider>
         </ThemeProvider>

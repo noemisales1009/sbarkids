@@ -17,6 +17,7 @@ import { balanceHidricoService, BalancoHidrico } from '../../services/balanceHid
 import { diureseService, Diurese } from '../../services/diureseService';
 import { MEDICATION_LIST, MEDICATION_DOSAGE_UNITS, DEVICE_TYPES, DEVICE_LOCATIONS, CULTURE_COLLECTION_SITES } from '../../utils/constants';
 import { PATHOGENS_LIST } from '../../utils/pathogens';
+import { useToast } from '../Toast';
 
 interface BackgroundEditorProps {
   patientId: string;
@@ -145,6 +146,7 @@ const TabContent: React.FC<TabContentProps> = ({
 );
 
 const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
+  const { showToast } = useToast();
   const [medicacoes, setMedicacoes] = useState<Medicacao[]>([]);
   const [dispositivos, setDispositivos] = useState<Dispositivo[]>([]);
   const [culturas, setCulturas] = useState<Cultura[]>([]);
@@ -286,7 +288,7 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
                     </p>
                     {temFim ? (
                       <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1 font-semibold">
-                        Fim: {new Date(med.data_fim).toLocaleDateString('pt-BR')}
+                        Fim: {med.data_fim ? new Date(med.data_fim + 'T00:00:00').toLocaleDateString('pt-BR') : ''}
                       </p>
                     ) : (
                       <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-semibold">
@@ -618,6 +620,7 @@ interface MedicacaoModalProps {
 }
 
 const MedicacaoModal: React.FC<MedicacaoModalProps> = ({ data, patientId, onClose, onSave }) => {
+  const { showToast } = useToast();
   const [form, setForm] = useState<Partial<Medicacao>>({
     nome_medicacao: data?.nome_medicacao || '',
     dosagem_valor: data?.dosagem_valor || '',
@@ -644,7 +647,7 @@ const MedicacaoModal: React.FC<MedicacaoModalProps> = ({ data, patientId, onClos
   const handleSave = async () => {
     // Validar campos obrigatórios
     if (!form.nome_medicacao || !form.dosagem_valor || !form.unidade_medida || !form.data_inicio) {
-      alert('Por favor, preencha todos os campos obrigatórios');
+      showToast('Por favor, preencha todos os campos obrigatórios', 'warning');
       return;
     }
 
@@ -668,7 +671,7 @@ const MedicacaoModal: React.FC<MedicacaoModalProps> = ({ data, patientId, onClos
       }
       onSave();
     } catch (error) {
-      alert('Erro ao salvar medicação. Tente novamente.');
+      showToast('Erro ao salvar medicação', 'error');
     } finally {
       setSaving(false);
     }
@@ -802,6 +805,7 @@ interface DispositivoModalProps {
 }
 
 const DispositivoModal: React.FC<DispositivoModalProps> = ({ data, patientId, onClose, onSave }) => {
+  const { showToast } = useToast();
   const [form, setForm] = useState<Partial<Dispositivo>>({
     tipo_dispositivo: data?.tipo_dispositivo || '',
     localizacao: data?.localizacao || '',
@@ -828,7 +832,7 @@ const DispositivoModal: React.FC<DispositivoModalProps> = ({ data, patientId, on
     try {
       // Validação de campos obrigatórios
       if (!form.tipo_dispositivo || !form.localizacao || !form.data_insercao) {
-        alert('Por favor, preencha todos os campos obrigatórios: Tipo, Localização e Data de Inserção');
+        showToast('Preencha: Tipo, Localização e Data de Inserção', 'warning');
         return;
       }
 
@@ -855,7 +859,7 @@ const DispositivoModal: React.FC<DispositivoModalProps> = ({ data, patientId, on
       }
       onSave();
     } catch (error) {
-      alert('Erro ao salvar dispositivo. Tente novamente.');
+      showToast('Erro ao salvar dispositivo', 'error');
     } finally {
       setSaving(false);
     }
@@ -965,6 +969,7 @@ interface CulturaModalProps {
 }
 
 const CulturaModal: React.FC<CulturaModalProps> = ({ data, patientId, onClose, onSave }) => {
+  const { showToast } = useToast();
   const [form, setForm] = useState<Partial<Cultura>>({
     local: data?.local || '',
     microorganismo: data?.microorganismo || '',
@@ -1002,7 +1007,7 @@ const CulturaModal: React.FC<CulturaModalProps> = ({ data, patientId, onClose, o
   const handleSave = async () => {
     // Validar campos obrigatórios
     if (!form.local || !form.microorganismo || !form.data_coleta) {
-      alert('Por favor, preencha todos os campos obrigatórios: Local, Microrganismo e Data');
+      showToast('Preencha: Local, Microrganismo e Data', 'warning');
       return;
     }
 
@@ -1023,7 +1028,7 @@ const CulturaModal: React.FC<CulturaModalProps> = ({ data, patientId, onClose, o
       }
       onSave();
     } catch (error) {
-      alert('Erro ao salvar cultura. Tente novamente.');
+      showToast('Erro ao salvar cultura', 'error');
     } finally {
       setSaving(false);
     }
@@ -1136,6 +1141,7 @@ interface ProcedimentoModalProps {
 }
 
 const ProcedimentoModal: React.FC<ProcedimentoModalProps> = ({ data, patientId, onClose, onSave }) => {
+  const { showToast } = useToast();
   const [form, setForm] = useState<Partial<Procedimento>>({
     nome_procedimento: data?.nome_procedimento || '',
     data_procedimento: data?.data_procedimento || '',
@@ -1147,7 +1153,7 @@ const ProcedimentoModal: React.FC<ProcedimentoModalProps> = ({ data, patientId, 
   const handleSave = async () => {
     // Validar campos obrigatórios
     if (!form.nome_procedimento || !form.data_procedimento) {
-      alert('Por favor, preencha todos os campos obrigatórios: Procedimento e Data');
+      showToast('Preencha: Procedimento e Data', 'warning');
       return;
     }
 
@@ -1168,7 +1174,7 @@ const ProcedimentoModal: React.FC<ProcedimentoModalProps> = ({ data, patientId, 
       }
       onSave();
     } catch (error) {
-      alert('Erro ao salvar procedimento. Tente novamente.');
+      showToast('Erro ao salvar procedimento', 'error');
     } finally {
       setSaving(false);
     }
@@ -1262,6 +1268,7 @@ interface ExameModalProps {
 }
 
 const ExameModal: React.FC<ExameModalProps> = ({ data, patientId, onClose, onSave }) => {
+  const { showToast } = useToast();
   const [form, setForm] = useState<Partial<Exame>>({
     nome_exame: data?.nome_exame || '',
     data_exame: data?.data_exame || '',
@@ -1272,7 +1279,7 @@ const ExameModal: React.FC<ExameModalProps> = ({ data, patientId, onClose, onSav
   const handleSave = async () => {
     // Validar campos obrigatórios
     if (!form.nome_exame || !form.data_exame) {
-      alert('Por favor, preencha todos os campos obrigatórios: Nome e Data');
+      showToast('Preencha: Nome e Data', 'warning');
       return;
     }
 
@@ -1293,7 +1300,7 @@ const ExameModal: React.FC<ExameModalProps> = ({ data, patientId, onClose, onSav
       }
       onSave();
     } catch (error) {
-      alert('Erro ao salvar exame. Tente novamente.');
+      showToast('Erro ao salvar exame', 'error');
     } finally {
       setSaving(false);
     }
@@ -1359,6 +1366,7 @@ interface DietaModalProps {
 }
 
 const DietaModal: React.FC<DietaModalProps> = ({ data, patientId, onClose, onSave }) => {
+  const { showToast } = useToast();
   const [form, setForm] = useState<Partial<Dieta>>({
     tipo: data?.tipo || '',
     data_inicio: data?.data_inicio || '',
@@ -1376,7 +1384,7 @@ const DietaModal: React.FC<DietaModalProps> = ({ data, patientId, onClose, onSav
   const handleSave = async () => {
     // Validar campos obrigatórios
     if (!form.tipo || !form.data_inicio) {
-      alert('Por favor, preencha todos os campos obrigatórios: Tipo e Data de Início');
+      showToast('Preencha: Tipo e Data de Início', 'warning');
       return;
     }
 
@@ -1398,7 +1406,7 @@ const DietaModal: React.FC<DietaModalProps> = ({ data, patientId, onClose, onSav
       }
       onSave();
     } catch (error) {
-      alert('Erro ao salvar dieta. Tente novamente.');
+      showToast('Erro ao salvar dieta', 'error');
     } finally {
       setSaving(false);
     }
@@ -1578,13 +1586,14 @@ interface FimMedicacaoModalProps {
 }
 
 const FimMedicacaoModal: React.FC<FimMedicacaoModalProps> = ({ medicacao, onClose, onSave }) => {
+  const { showToast } = useToast();
   const [dataFim, setDataFim] = useState('');
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
     try {
       if (!dataFim) {
-        alert('Por favor, selecione uma data');
+        showToast('Por favor, selecione uma data', 'warning');
         return;
       }
 
@@ -1595,7 +1604,7 @@ const FimMedicacaoModal: React.FC<FimMedicacaoModalProps> = ({ medicacao, onClos
       });
       onSave();
     } catch (error) {
-      alert('Erro ao registrar fim da medicação');
+      showToast('Erro ao registrar fim da medicação', 'error');
     } finally {
       setSaving(false);
     }
@@ -1655,13 +1664,14 @@ interface FimDispositivoModalProps {
 }
 
 const FimDispositivoModal: React.FC<FimDispositivoModalProps> = ({ dispositivo, onClose, onSave }) => {
+  const { showToast } = useToast();
   const [dataRemocao, setDataRemocao] = useState('');
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
     try {
       if (!dataRemocao) {
-        alert('Por favor, selecione uma data');
+        showToast('Por favor, selecione uma data', 'warning');
         return;
       }
 
@@ -1672,7 +1682,7 @@ const FimDispositivoModal: React.FC<FimDispositivoModalProps> = ({ dispositivo, 
       });
       onSave();
     } catch (error) {
-      alert('Erro ao registrar fim do dispositivo');
+      showToast('Erro ao registrar fim do dispositivo', 'error');
     } finally {
       setSaving(false);
     }

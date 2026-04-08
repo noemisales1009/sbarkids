@@ -8,6 +8,7 @@ import React, { useState, useEffect } from 'react';
 import { recommendationService, ClinicalRoundRecommendation } from '../../services/recommendationService';
 import { auditLogService, AuditLogEntry } from '../../services/auditLogService';
 import { backgroundService, Exame } from '../../services/backgroundService';
+import { useToast } from '../Toast';
 
 interface RecommendationByShift {
   respiratorio: string;
@@ -114,8 +115,9 @@ const RecommendationPlan: React.FC<RecommendationPlanProps> = ({
 }) => {
   const [internalSelectedShift, setInternalSelectedShift] = useState<'morning' | 'afternoon' | 'night'>('morning');
   const [saving, setSaving] = useState(false);
+  const { showToast } = useToast();
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
-  
+
   // Estado para modal de exames
   const [exameModal, setExameModal] = useState<{ open: boolean; exame?: Exame }>({ open: false });
   const [exames, setExames] = useState<Exame[]>([]);
@@ -211,7 +213,7 @@ const RecommendationPlan: React.FC<RecommendationPlanProps> = ({
         const result = await backgroundService.saveExame(dataToSave);
         
         if (!result) {
-          alert('Erro ao salvar exame. Verifique o console.');
+          showToast('Erro ao salvar exame', 'error');
           return;
         }
       }
@@ -222,7 +224,7 @@ const RecommendationPlan: React.FC<RecommendationPlanProps> = ({
       setRefreshKey(prev => prev + 1); // Força atualização
       setExameModal({ open: false });
     } catch (error) {
-      alert('Erro ao salvar exame: ' + (error as any).message);
+      showToast('Erro ao salvar exame', 'error');
     }
   };
 

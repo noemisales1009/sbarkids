@@ -15,6 +15,7 @@ import { shiftFilterService } from '../../services/shiftFilterService';
 import { clinicalRoundsSimpleService, ClinicalRoundsSimple } from '../../services/clinicalRoundsSimpleService';
 import { useUser } from '../../contexts/UserContext';
 import { auditService } from '../../services/auditService';
+import { useToast } from '../Toast';
 
 interface AlertasDisplayProps {
   patientId: string;
@@ -25,7 +26,8 @@ interface AlertasDisplayProps {
 
 const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, patientName, roundId, alertas: propsAlertas }) => {
   const { user } = useUser();
-  
+  const { showToast, showConfirm } = useToast();
+
   const [alertas, setAlertas] = useState<Alerta[]>(propsAlertas || []);
   const [assessment, setAssessment] = useState<ClinicalRoundsSimple | null>(null);
   const [alertasPorTurno, setAlertasPorTurno] = useState<{
@@ -152,20 +154,19 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, patientName,
 
   const handleSalvarJustificativa = async () => {
     if (!justificativaModal.texto.trim()) {
-      alert('Por favor, informe uma justificativa');
+      showToast('Por favor, informe uma justificativa', 'warning');
       return;
     }
 
     if (!user) {
-      alert('Usuário não identificado. Faça login novamente.');
+      showToast('Usuário não identificado. Faça login novamente.', 'error');
       return;
     }
 
     try {
-      // Encontrar o alerta para pegar a fonte
       const alerta = alertas.find(a => a.id_alerta === justificativaModal.alertaId);
       if (!alerta) {
-        alert('Alerta não encontrado');
+        showToast('Alerta não encontrado', 'error');
         return;
       }
 
@@ -173,66 +174,57 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, patientName,
         justificativaModal.alertaId,
         justificativaModal.texto,
         alerta.fonte || 'alertas_paciente',
-        user.id  // Passar ID do usuário
+        user.id
       );
-      
+
       if (sucesso) {
-        // Atualizar estado local com todos os campos
-        const agora = new Date().toISOString();
-        setAlertas(alertas.map(a => 
-          a.id_alerta === justificativaModal.alertaId 
-            ? { 
-                ...a, 
-                justificativa: justificativaModal.texto,
-                justificativa_by: user.id  // Pode ser não-exista essa propriedade, mas colocamos
-              }
+        setAlertas(alertas.map(a =>
+          a.id_alerta === justificativaModal.alertaId
+            ? { ...a, justificativa: justificativaModal.texto, justificativa_by: user.id }
             : a
         ));
-        
         auditService.logJustificouAlerta(user.id, user.name, patientId, patientName || '', alerta.alertaclinico);
         setJustificativaModal({ visible: false, alertaId: '', texto: '' });
-        alert('✓ Justificativa salva com sucesso!');
+        showToast('Justificativa salva com sucesso!', 'success');
       } else {
-        alert('Erro ao salvar justificativa');
+        showToast('Erro ao salvar justificativa', 'error');
       }
-    } catch (error) {
-      alert('Erro ao salvar justificativa');
+    } catch {
+      showToast('Erro ao salvar justificativa', 'error');
     }
   };
 
   const handleConcluir = async (alertaId: string) => {
-    if (!window.confirm('Deseja concluir este alerta? (Ficará visível por 24 horas)')) {
-      return;
-    }
+    const confirmado = await showConfirm('Deseja concluir este alerta? (Ficará visível por 24 horas)');
+    if (!confirmado) return;
 
     if (!user) {
-      alert('Usuário não identificado. Faça login novamente.');
+      showToast('Usuário não identificado. Faça login novamente.', 'error');
       return;
     }
 
     try {
-      // Encontrar o alerta para pegar a fonte
       const alerta = alertas.find(a => a.id_alerta === alertaId);
       if (!alerta) {
-        alert('Alerta não encontrado');
+        showToast('Alerta não encontrado', 'error');
         return;
       }
 
       const sucesso = await alertasService.marcarComoConcluido(
         alertaId,
         alerta.fonte || 'alertas_paciente',
-        user.id  // Passar ID do usuário logado
+        user.id
       );
-      
+
       if (sucesso) {
         auditService.logConclusaoAlerta(user.id, user.name, patientId, patientName || '', alerta.alertaclinico);
         await loadAlertas();
-        alert('✓ Alerta concluído! Ficará visível por 24 horas.');
+        showToast('Alerta concluído! Ficará visível por 24 horas.', 'success');
       } else {
-        alert('Erro ao marcar alerta como concluído');
+        showToast('Erro ao marcar alerta como concluído', 'error');
       }
-    } catch (error) {
-      alert('Erro ao marcar alerta como concluído');
+    } catch {
+      showToast('Erro ao marcar alerta como concluído', 'error');
     }
   };
 
@@ -246,19 +238,19 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, patientName,
 
   const handleConfirmarArquivamento = async () => {
     if (!arquivamentoModal.motivo.trim()) {
-      alert('Por favor, informe o motivo do arquivamento');
+      showToast('Por favor, informe o motivo do arquivamento', 'warning');
       return;
     }
 
     if (!user) {
-      alert('Usuário não identificado. Faça login novamente.');
+      showToast('Usuário não identificado. Faça login novamente.', 'error');
       return;
     }
 
     try {
       const alerta = alertas.find(a => a.id_alerta === arquivamentoModal.alertaId);
       if (!alerta) {
-        alert('Alerta não encontrado');
+        showToast('Alerta não encontrado', 'error');
         return;
       }
 
@@ -266,28 +258,24 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, patientName,
         arquivamentoModal.alertaId,
         arquivamentoModal.motivo,
         alerta.fonte || 'alertas_paciente',
-        user.id  // Passar ID do usuário logado
+        user.id
       );
-      
+
       if (sucesso) {
         auditService.logArquivouAlerta(user.id, user.name, patientId, patientName || '', alerta.alertaclinico, arquivamentoModal.motivo);
-        // Remover da lista principal
         setAlertas(alertas.filter(a => a.id_alerta !== arquivamentoModal.alertaId));
-
-        // Remover também da lista por turno se estiver sendo usada
         setAlertasPorTurno(prev => ({
           morning: prev.morning.filter(a => a.id_alerta !== arquivamentoModal.alertaId),
           afternoon: prev.afternoon.filter(a => a.id_alerta !== arquivamentoModal.alertaId),
           night: prev.night.filter(a => a.id_alerta !== arquivamentoModal.alertaId)
         }));
-
         setArquivamentoModal({ visible: false, alertaId: '', motivo: '' });
-        alert('✓ Alerta arquivado com sucesso!');
+        showToast('Alerta arquivado com sucesso!', 'success');
       } else {
-        alert('Erro ao arquivar alerta');
+        showToast('Erro ao arquivar alerta', 'error');
       }
-    } catch (error) {
-      alert('Erro ao arquivar alerta');
+    } catch {
+      showToast('Erro ao arquivar alerta', 'error');
     }
   };
 

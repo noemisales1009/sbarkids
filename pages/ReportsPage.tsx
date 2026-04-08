@@ -6,6 +6,7 @@ import DesktopLayout from '../components/layout/DesktopLayout';
 import { supabase } from '../lib/supabase';
 import { historyService } from '../services/historyService';
 import { alertasService, Alerta } from '../services/alertasService';
+import { useToast } from '../components/Toast';
 
 interface GlobalReportItem {
     id: string;
@@ -32,6 +33,7 @@ interface ReportsPageProps {
 }
 
 const ReportsPage: React.FC<ReportsPageProps> = ({ onNavigate, currentPage, onSelectReportContext }) => {
+    const { showToast } = useToast();
     const [statusFilter, setStatusFilter] = useState<string>('');
     const [dateFilter, setDateFilter] = useState<string>('');
     const [selectedReports, setSelectedReports] = useState<Set<string>>(new Set());
@@ -188,7 +190,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onNavigate, currentPage, onSe
 
     const handlePrint = () => {
         if (selectedReports.size === 0) {
-            alert("Selecione pelo menos um relatório para imprimir.");
+            showToast("Selecione pelo menos um relatório para imprimir.", "warning");
             return;
         }
         window.print();
