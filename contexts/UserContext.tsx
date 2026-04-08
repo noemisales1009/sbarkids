@@ -74,21 +74,10 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }, []);
 
     useEffect(() => {
-        // Carregar na montagem
-        refetchUser(true);
-
-        // Ouvir mudanças de auth
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-            if (session?.user) {
-                refetchUser(true);
-            } else {
-                setUser(null);
-                setLoading(false);
-            }
-        });
-
-        return () => subscription?.unsubscribe();
-    }, [refetchUser]);
+        // Carregar apenas na montagem - sem listener duplicado
+        // O App.tsx já tem o listener de onAuthStateChange
+        refetchUser();
+    }, []);
 
     return (
         <UserContext.Provider value={{ user, loading, error, refetchUser }}>

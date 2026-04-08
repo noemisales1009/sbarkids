@@ -13,7 +13,7 @@ import { ViewportProvider } from './hooks/useViewport';
 import { TestSupabasePage } from './pages/TestSupabasePage';
 import { supabase } from './lib/supabase';
 import { patientsService } from './services/patientsService';
-import { UserProvider } from './contexts/UserContext';
+import { UserProvider, useUser } from './contexts/UserContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { initializeDailyClearanceService } from './services/dailyClearanceService';
 
@@ -27,10 +27,10 @@ interface AuthUser {
 const AppContent: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
+    const { refetchUser } = useUser();
     const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
     const [selectedReport, setSelectedReport] = useState<HistoryItemData | null>(null);
     const [authUser, setAuthUser] = useState<AuthUser | null>(null);
-    const [loadingAuth, setLoadingAuth] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
 
     // Estado mantido apenas em memória (sem sessionStorage) por segurança LGPD
@@ -63,6 +63,8 @@ const AppContent: React.FC = () => {
                     email: session.user.email || '',
                     name: session.user.user_metadata?.name || 'Usuário'
                 });
+                // Atualizar dados do usuário no contexto
+                refetchUser();
                 // Navegar automaticamente ao fazer login
                 if (location.pathname === '/login') {
                     navigate('/patients', { replace: true });
@@ -111,6 +113,7 @@ const AppContent: React.FC = () => {
             settings: '/settings',
             reports: '/reports',
             reportDetail: '/report-detail',
+            ponto: '/ponto',
             test: '/test'
         };
         
