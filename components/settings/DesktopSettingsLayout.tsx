@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { CurrentPage } from '../../App';
+import { CurrentPage } from '../../types';
 import Sidebar from './Sidebar';
 
 interface DesktopSettingsLayoutProps {

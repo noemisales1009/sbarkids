@@ -196,7 +196,7 @@ const RecommendationPlan: React.FC<RecommendationPlanProps> = ({
     }
   };
 
-  const handleSaveExame = async (exameData: { nome_exame: string; data_exame: string; observacao?: string }) => {
+  const handleSaveExame = async (exameData: { nome_exame: string; data_exame: string; observacao?: string | null }) => {
     if (!patientId) {
       console.error('❌ PatientId não encontrado');
       return;
@@ -214,6 +214,7 @@ const RecommendationPlan: React.FC<RecommendationPlanProps> = ({
         console.log('➕ Criando novo exame');
         const dataToSave = {
           ...exameData,
+          observacao: exameData.observacao ?? null,
           paciente_id: patientId,
           is_archived: false
         };
@@ -242,7 +243,7 @@ const RecommendationPlan: React.FC<RecommendationPlanProps> = ({
     }
   };
 
-  const handleDeleteExame = async (id: string) => {
+  const handleDeleteExame = async (id: number) => {
     if (!patientId) return;
     await backgroundService.deleteExame(id);
     const updatedExames = await backgroundService.getExames(patientId);

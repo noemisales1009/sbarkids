@@ -20,6 +20,7 @@ export interface Patient {
   dt_internacao: string | null; // formato: YYYY-MM-DD
   peso: number | null;
   destino: string | null;
+  archived_at?: string | null;
   created_at?: string;
   updated_at?: string;
 }

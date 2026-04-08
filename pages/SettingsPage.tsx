@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { CurrentPage } from '../App';
+import { CurrentPage } from '../types';
 import SettingsHeader from '../components/settings/SettingsHeader';
 import Accordion from '../components/settings/Accordion';
 import ProfileSection from '../components/settings/ProfileSection';

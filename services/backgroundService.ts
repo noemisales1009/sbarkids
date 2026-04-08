@@ -419,6 +419,25 @@ export const backgroundService = {
     }
   },
 
+  async deleteExame(id: number): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('exames_pacientes')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('❌ Erro ao deletar exame:', error);
+        throw error;
+      }
+      return true;
+    } catch (error) {
+      console.error('❌ Erro ao deletar exame:', error);
+      logError(error, 'backgroundService.deleteExame');
+      return false;
+    }
+  },
+
   // ========== DIETAS ==========
   async getDietas(patientId: string): Promise<Dieta[]> {
     try {

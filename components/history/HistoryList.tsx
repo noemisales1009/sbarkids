@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import HistoryItem, { HistoryItemData } from './HistoryItem';
+import HistoryItem from './HistoryItem';
+import { HistoryItemData } from '../../types';
 import { historyService, HistoryRound } from '../../services/historyService';
 
 interface HistoryListProps {
@@ -88,6 +89,7 @@ const HistoryList: React.FC<HistoryListProps> = ({ onSelectReport, patientId, se
                       'Não preenchido';
 
         return {
+            patient_id: patientId,
             datetime: `${dateStr} - ${timeStr}`,
             status: round.status === 'instavel' ? 'Urgente' : 
                     round.status === 'em_risco' ? 'Atenção' : 
@@ -95,7 +97,14 @@ const HistoryList: React.FC<HistoryListProps> = ({ onSelectReport, patientId, se
             description: shiftLabels.join(' | ') + '\n' + description,
             author,
             sbar: {
-                situation: '',
+                situation: {
+                    diagnosis_principal: '',
+                    diagnosis_secundarios: [],
+                    status_atual: round.status || 'estavel',
+                    suportes_vigentes: [],
+                    drogas_vasoativas: '',
+                    sedoanalgesia: ''
+                },
                 background: '',
                 assessment: round.assessment,
                 recommendation: round.recommendation

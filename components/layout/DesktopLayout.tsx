@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { CurrentPage } from '../../App';
+import { CurrentPage } from '../../types';
 import MainSidebar from './MainSidebar';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useUser } from '../../contexts/UserContext';

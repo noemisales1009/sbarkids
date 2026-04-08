@@ -1,9 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-import { CurrentPage } from '../App';
+import { CurrentPage, Patient } from '../types';
 import BottomNavBar from '../components/patients/BottomNavBar';
 import DesktopLayout from '../components/layout/DesktopLayout';
-import { Patient } from '../components/patients/PatientCard';
 import { supabase } from '../lib/supabase';
 import { historyService } from '../services/historyService';
 import { alertasService, Alerta } from '../services/alertasService';

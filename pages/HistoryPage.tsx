@@ -1,12 +1,10 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Patient } from '../components/patients/PatientCard';
+import { Patient, CurrentPage, HistoryItemData } from '../types';
 import HistoryHeader from '../components/history/HistoryHeader';
 import BottomNavBar from '../components/patients/BottomNavBar';
-import { CurrentPage } from '../App';
 import DesktopLayout from '../components/layout/DesktopLayout';
 import DesktopHistoryHeader from '../components/history/DesktopHistoryHeader';
-import { HistoryItemData } from '../components/history/HistoryItem';
 import HistoryFilter from '../components/history/HistoryFilter';
 import HistoryTimeline from '../components/history/HistoryTimeline';
 import { Alerta, alertasService } from '../services/alertasService';
@@ -144,7 +142,7 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ patient, onBack, onNavigate, 
                     <div class="patient-info">
                         <div class="header-item"><span class="header-label">Nome:</span> ${patient.name}</div>
                         <div class="header-item"><span class="header-label">Leito:</span> ${patient.bed_number || 'N/A'}</div>
-                        <div class="header-item"><span class="header-label">Data Nasc:</span> ${patient.birth_date || 'N/A'}</div>
+                        <div class="header-item"><span class="header-label">Data Nasc:</span> ${patient.dob || 'N/A'}</div>
                         <div class="header-item"><span class="header-label">Nome da Mãe:</span> ${patient.mother_name || 'N/A'}</div>
                     </div>
                     <div style="margin-top: 10px; font-size: 12px; text-align: right;">

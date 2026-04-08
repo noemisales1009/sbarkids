@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { CurrentPage } from '../../App';
+import { CurrentPage } from '../../types';
 
 interface SidebarProps {
     onNavigate: (page: CurrentPage) => void;
@@ -8,9 +8,9 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
     const navItems: { page: CurrentPage; icon: string; label: string }[] = [
-        { page: 'home', icon: 'home', label: 'Início' },
-        { page: 'patients', icon: 'groups', label: 'Pacientes' },
-        { page: 'messages', icon: 'forum', label: 'Mensagens' },
+        { page: 'patients', icon: 'home', label: 'Início' },
+        { page: 'history', icon: 'groups', label: 'Histórico' },
+        { page: 'reports', icon: 'forum', label: 'Relatórios' },
         { page: 'settings', icon: 'settings', label: 'Ajustes' },
     ];
     
