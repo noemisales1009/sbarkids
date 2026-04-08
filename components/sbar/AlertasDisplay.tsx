@@ -440,30 +440,6 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, roundId, ale
                               <p className="font-semibold text-gray-900 dark:text-white break-word">
                                 {alerta.alertaclinico}
                               </p>
-                              <div className="mt-2 space-y-1 text-sm">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-gray-600 dark:text-gray-400">👤 Responsável:</span>
-                                  <span className="text-gray-900 dark:text-white font-medium">
-                                    {alerta.responsavel}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-gray-600 dark:text-gray-400">📅 Prazo:</span>
-                                  <span className="text-gray-900 dark:text-white font-medium">
-                                    {alerta.prazo_limite_formatado || 'Sem prazo'}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-gray-600 dark:text-gray-400">⏱ Tempo:</span>
-                                  <span className="text-gray-900 dark:text-white font-medium">
-                                    {alerta.prazo_formatado || 'Sem prazo'}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-xs">
-                                  <span className="text-gray-600 dark:text-gray-400">🕐 Horário:</span>
-                                  <span>{alerta.hora_criacao_formatado}</span>
-                                </div>
-                              </div>
                             </div>
                           </div>
                           <div className="shrink-0 flex flex-col items-end gap-2">
@@ -561,30 +537,6 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, roundId, ale
                               <p className="font-semibold text-gray-900 dark:text-white break-word">
                                 {alerta.alertaclinico}
                               </p>
-                              <div className="mt-2 space-y-1 text-sm">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-gray-600 dark:text-gray-400">👤 Responsável:</span>
-                                  <span className="text-gray-900 dark:text-white font-medium">
-                                    {alerta.responsavel}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-gray-600 dark:text-gray-400">📅 Prazo:</span>
-                                  <span className="text-gray-900 dark:text-white font-medium">
-                                    {alerta.prazo_limite_formatado || 'Sem prazo'}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-gray-600 dark:text-gray-400">⏱ Tempo:</span>
-                                  <span className="text-gray-900 dark:text-white font-medium">
-                                    {alerta.prazo_formatado || 'Sem prazo'}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-xs">
-                                  <span className="text-gray-600 dark:text-gray-400">🕐 Horário:</span>
-                                  <span>{alerta.hora_criacao_formatado}</span>
-                                </div>
-                              </div>
                             </div>
                           </div>
                           <div className="shrink-0">
@@ -687,30 +639,6 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, roundId, ale
                               <p className="font-semibold text-gray-900 dark:text-white break-word">
                                 {alerta.alertaclinico}
                               </p>
-                              <div className="mt-2 space-y-1 text-sm">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-gray-600 dark:text-gray-400">👤 Responsável:</span>
-                                  <span className="text-gray-900 dark:text-white font-medium">
-                                    {alerta.responsavel}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-gray-600 dark:text-gray-400">📅 Prazo:</span>
-                                  <span className="text-gray-900 dark:text-white font-medium">
-                                    {alerta.prazo_limite_formatado || 'Sem prazo'}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-gray-600 dark:text-gray-400">⏱ Tempo:</span>
-                                  <span className="text-gray-900 dark:text-white font-medium">
-                                    {alerta.prazo_formatado || 'Sem prazo'}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-xs">
-                                  <span className="text-gray-600 dark:text-gray-400">🕐 Horário:</span>
-                                  <span>{alerta.hora_criacao_formatado}</span>
-                                </div>
-                              </div>
                             </div>
                           </div>
                           <div className="shrink-0">
@@ -781,37 +709,6 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, roundId, ale
                       <p className="font-semibold text-gray-900 dark:text-white break-word">
                         {alerta.alertaclinico}
                       </p>
-                      <div className="mt-2 space-y-1 text-sm">
-                        {/* Responsável */}
-                        <div className="flex items-center gap-2">
-                          <span className="text-gray-600 dark:text-gray-400">👤 Responsável:</span>
-                          <span className="text-gray-900 dark:text-white font-medium">
-                            {alerta.responsavel}
-                          </span>
-                        </div>
-
-                        {/* Prazo */}
-                        <div className="flex items-center gap-2">
-                          <span className="text-gray-600 dark:text-gray-400">📅 Prazo:</span>
-                          <span className="text-gray-900 dark:text-white font-medium">
-                            {alerta.prazo_limite_formatado || 'Sem prazo'}
-                          </span>
-                        </div>
-
-                        {/* Tempo */}
-                        <div className="flex items-center gap-2">
-                          <span className="text-gray-600 dark:text-gray-400">⏱ Tempo:</span>
-                          <span className="text-gray-900 dark:text-white font-medium">
-                            {alerta.prazo_formatado || 'Sem prazo'}
-                          </span>
-                        </div>
-
-                        {/* Horário de criação */}
-                        <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-xs">
-                          <span className="text-gray-600 dark:text-gray-400">🕐 Horário:</span>
-                          <span>{alerta.hora_criacao_formatado}</span>
-                        </div>
-                      </div>
                     </div>
                   </div>
 
