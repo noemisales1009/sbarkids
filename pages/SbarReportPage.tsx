@@ -333,7 +333,7 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
                 created_by: null,
                 
                 // S - Situação (salvando apenas a descrição clínica)
-                s_clinical_status: status || null,
+                s_clinical_status: status || undefined,
                 
                 // R - Recomendação (salvando os 3 turnos como JSON)
                 r_exams_evaluations_requests: {
@@ -727,7 +727,7 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
 
                     {/* Alertas do Paciente */}
                     <div className="bg-gray-900 p-4 rounded-lg border border-gray-800">
-                        <AlertasDisplay patientId={patient.id} roundId={currentRoundId || undefined} alertas={alertas} />
+                        <AlertasDisplay patientId={patient.id} patientName={patient.name} roundId={currentRoundId || undefined} alertas={alertas} />
                     </div>
 
                     {/* Alertas Concluidos (visiveis por 24h) */}

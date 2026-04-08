@@ -14,14 +14,16 @@ import { alertasService, Alerta } from '../../services/alertasService';
 import { shiftFilterService } from '../../services/shiftFilterService';
 import { clinicalRoundsSimpleService, ClinicalRoundsSimple } from '../../services/clinicalRoundsSimpleService';
 import { useUser } from '../../contexts/UserContext';
+import { auditService } from '../../services/auditService';
 
 interface AlertasDisplayProps {
   patientId: string;
+  patientName?: string;
   roundId?: string;
   alertas?: Alerta[];
 }
 
-const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, roundId, alertas: propsAlertas }) => {
+const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, patientName, roundId, alertas: propsAlertas }) => {
   const { user } = useUser();
   
   const [alertas, setAlertas] = useState<Alerta[]>(propsAlertas || []);
@@ -187,6 +189,7 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, roundId, ale
             : a
         ));
         
+        auditService.logJustificouAlerta(user.id, user.name, patientId, patientName || '', alerta.alertaclinico);
         setJustificativaModal({ visible: false, alertaId: '', texto: '' });
         alert('✓ Justificativa salva com sucesso!');
       } else {
@@ -222,7 +225,7 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, roundId, ale
       );
       
       if (sucesso) {
-        // Recarregar os alertas do servidor para ter dados sincronizados
+        auditService.logConclusaoAlerta(user.id, user.name, patientId, patientName || '', alerta.alertaclinico);
         await loadAlertas();
         alert('✓ Alerta concluído! Ficará visível por 24 horas.');
       } else {
@@ -267,16 +270,17 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, roundId, ale
       );
       
       if (sucesso) {
+        auditService.logArquivouAlerta(user.id, user.name, patientId, patientName || '', alerta.alertaclinico, arquivamentoModal.motivo);
         // Remover da lista principal
         setAlertas(alertas.filter(a => a.id_alerta !== arquivamentoModal.alertaId));
-        
+
         // Remover também da lista por turno se estiver sendo usada
         setAlertasPorTurno(prev => ({
           morning: prev.morning.filter(a => a.id_alerta !== arquivamentoModal.alertaId),
           afternoon: prev.afternoon.filter(a => a.id_alerta !== arquivamentoModal.alertaId),
           night: prev.night.filter(a => a.id_alerta !== arquivamentoModal.alertaId)
         }));
-        
+
         setArquivamentoModal({ visible: false, alertaId: '', motivo: '' });
         alert('✓ Alerta arquivado com sucesso!');
       } else {

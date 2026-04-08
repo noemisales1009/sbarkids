@@ -104,4 +104,101 @@ export const auditService = {
       action: 'logout',
     });
   },
+
+  /**
+   * Registrar salvamento de assessment
+   */
+  async logSalvouAssessment(userId: string, userName: string, patientId: string, patientName: string, turno: string): Promise<void> {
+    await this.log({
+      user_id: userId,
+      user_name: userName,
+      action: 'salvou_assessment',
+      patient_id: patientId,
+      patient_name: patientName,
+      details: `Turno: ${turno}`,
+    });
+  },
+
+  /**
+   * Registrar salvamento de recommendation
+   */
+  async logSalvouRecommendation(userId: string, userName: string, patientId: string, patientName: string, turno: string): Promise<void> {
+    await this.log({
+      user_id: userId,
+      user_name: userName,
+      action: 'salvou_recommendation',
+      patient_id: patientId,
+      patient_name: patientName,
+      details: `Turno: ${turno}`,
+    });
+  },
+
+  /**
+   * Registrar criação de alerta
+   */
+  async logCriouAlerta(userId: string, userName: string, patientId: string, patientName: string, alertaDescricao: string): Promise<void> {
+    await this.log({
+      user_id: userId,
+      user_name: userName,
+      action: 'criou_alerta',
+      patient_id: patientId,
+      patient_name: patientName,
+      details: alertaDescricao,
+    });
+  },
+
+  /**
+   * Registrar arquivamento de alerta
+   */
+  async logArquivouAlerta(userId: string, userName: string, patientId: string, patientName: string, alertaDescricao: string, motivo: string): Promise<void> {
+    await this.log({
+      user_id: userId,
+      user_name: userName,
+      action: 'arquivou_alerta',
+      patient_id: patientId,
+      patient_name: patientName,
+      details: `${alertaDescricao} | Motivo: ${motivo}`,
+    });
+  },
+
+  /**
+   * Registrar justificativa de alerta
+   */
+  async logJustificouAlerta(userId: string, userName: string, patientId: string, patientName: string, alertaDescricao: string): Promise<void> {
+    await this.log({
+      user_id: userId,
+      user_name: userName,
+      action: 'justificou_alerta',
+      patient_id: patientId,
+      patient_name: patientName,
+      details: alertaDescricao,
+    });
+  },
+
+  /**
+   * Registrar edição de dados do paciente
+   */
+  async logEditouPaciente(userId: string, userName: string, patientId: string, patientName: string, campo: string): Promise<void> {
+    await this.log({
+      user_id: userId,
+      user_name: userName,
+      action: 'editou_paciente',
+      patient_id: patientId,
+      patient_name: patientName,
+      details: `Campo: ${campo}`,
+    });
+  },
+
+  /**
+   * Registrar geração de relatório
+   */
+  async logGerouRelatorio(userId: string, userName: string, patientId: string, patientName: string): Promise<void> {
+    await this.log({
+      user_id: userId,
+      user_name: userName,
+      action: 'gerou_relatorio',
+      patient_id: patientId,
+      patient_name: patientName,
+    });
+  },
 };
