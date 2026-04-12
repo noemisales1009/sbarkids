@@ -12,7 +12,6 @@ const HistoryPage = React.lazy(() => import('./pages/HistoryPage'));
 const SettingsPage = React.lazy(() => import('./pages/SettingsPage'));
 const ReportsPage = React.lazy(() => import('./pages/ReportsPage'));
 const ReportDetailPage = React.lazy(() => import('./pages/ReportDetailPage'));
-const CalculadoraNPTPage = React.lazy(() => import('./pages/CalculadoraNPTPage'));
 const TestSupabasePage = React.lazy(() => import('./pages/TestSupabasePage').then(m => ({ default: m.TestSupabasePage })));
 import { supabase } from './lib/supabase';
 import { patientsService } from './services/patientsService';
@@ -142,7 +141,6 @@ const AppContent: React.FC = () => {
             reports: '/reports',
             reportDetail: '/report-detail',
             ponto: '/ponto',
-            calculadora: '/calculadora',
             test: '/test'
         };
         
@@ -341,12 +339,6 @@ const AppContent: React.FC = () => {
                         </ProtectedRoute>
                     } />
                 )}
-
-                <Route path="/calculadora" element={
-                    <ProtectedRoute>
-                        <CalculadoraNPTPage onNavigate={handleNavigate} currentPage="calculadora" />
-                    </ProtectedRoute>
-                } />
 
                 <Route path="*" element={<Navigate to="/patients" replace />} />
             </Routes>

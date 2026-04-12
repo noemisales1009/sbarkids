@@ -11,7 +11,6 @@ const MainSidebar: React.FC<MainSidebarProps> = ({ currentPage, onNavigate }) =>
     const navItems: { page: CurrentPage; icon: string; label: string }[] = [
         { page: 'patients', icon: 'groups', label: 'Pacientes' },
         { page: 'reports', icon: 'summarize', label: 'Relatórios' },
-        { page: 'calculadora', icon: 'calculate', label: 'Calculadora NPT' },
         { page: 'settings', icon: 'settings', label: 'Ajustes' },
     ];
 

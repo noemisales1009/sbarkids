@@ -11,15 +11,44 @@
 
 import React, { useState, useEffect } from 'react';
 import { alertasService, Alerta } from '../../services/alertasService';
-import { shiftFilterService } from '../../services/shiftFilterService';
 import { clinicalRoundsSimpleService, ClinicalRoundsSimple } from '../../services/clinicalRoundsSimpleService';
 import { useUser } from '../../contexts/UserContext';
 import { auditService } from '../../services/auditService';
 import { useToast } from '../Toast';
 import AlertasHeader from './AlertasHeader';
-import AlertaCard from './AlertaCard';
 import AlertasTurno from './AlertasTurno';
 import { AlertasSkeleton } from '../SkeletonLoader';
+
+type ShiftKey = 'morning' | 'afternoon' | 'night';
+
+const getShiftFromHour = (hour: number): ShiftKey => {
+  if (hour >= 7 && hour < 13) return 'morning';
+  if (hour >= 13 && hour < 19) return 'afternoon';
+  return 'night';
+};
+
+const isAlertaAtivo = (a: Alerta): boolean => {
+  const s = (a.status || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const ls = (a.live_status || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return !a.concluded_at && s !== 'concluido' && s !== 'resolvido' && !ls.includes('resolvido') && !ls.includes('concluido') && !ls.includes('arquivado');
+};
+
+const agruparPorTurno = (lista: Alerta[]): Record<ShiftKey, Alerta[]> => {
+  const ativos = lista.filter(isAlertaAtivo);
+  const grupos: Record<ShiftKey, Alerta[]> = { morning: [], afternoon: [], night: [] };
+  for (const a of ativos) {
+    const shiftCampo = (a as any).shift_criacao as ShiftKey | undefined;
+    let shift: ShiftKey;
+    if (shiftCampo === 'morning' || shiftCampo === 'afternoon' || shiftCampo === 'night') {
+      shift = shiftCampo;
+    } else {
+      const ref = a.created_at ? new Date(a.created_at) : new Date();
+      shift = getShiftFromHour(ref.getHours());
+    }
+    grupos[shift].push(a);
+  }
+  return grupos;
+};
 
 interface AlertasDisplayProps {
   patientId: string;
@@ -39,7 +68,6 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, patientName,
     afternoon: Alerta[];
     night: Alerta[];
   }>({ morning: [], afternoon: [], night: [] });
-  const [usarTurnos, setUsarTurnos] = useState(false);
   const [loading, setLoading] = useState(!propsAlertas);
   const [expanded, setExpanded] = useState(false);
   const [justificativaModal, setJustificativaModal] = useState<{ visible: boolean; alertaId: string; texto: string }>({
@@ -66,25 +94,7 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, patientName,
       const alertasVisiveis = propsAlertas.filter(a => alertasService.isAlertaVisible(a));
       setAlertas(alertasVisiveis);
       
-      // Separar apenas alertas ATIVOS para os turnos (excluir concluídos)
-      const alertasAtivos = alertasVisiveis.filter(
-        a => !a.concluded_at && a.status !== 'concluido' && a.status !== 'resolvido' && a.live_status !== 'resolvido / arquivado' && a.live_status !== 'concluido'
-      );
-      
-      // Verificar se os alertas têm o campo shift_criacao
-      const temShift = alertasAtivos.some((a: any) => a.shift_criacao);
-      setUsarTurnos(temShift);
-      
-      if (temShift) {
-        // Agrupar por turno (apenas ativos)
-        const agrupados = {
-          morning: alertasAtivos.filter(a => (a as any).shift_criacao === 'morning'),
-          afternoon: alertasAtivos.filter(a => (a as any).shift_criacao === 'afternoon'),
-          night: alertasAtivos.filter(a => (a as any).shift_criacao === 'night')
-        };
-        setAlertasPorTurno(agrupados);
-      }
-      
+      setAlertasPorTurno(agruparPorTurno(alertasVisiveis));
       setLoading(false);
       return;
     }
@@ -117,25 +127,7 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, patientName,
       // Usar getVisiveis em vez de getAlertas para filtrar alertas visíveis
       const data = await alertasService.getVisiveis(patientId);
       setAlertas(data);
-      
-      // Separar apenas alertas ATIVOS para os turnos (excluir concluídos)
-      const alertasAtivos = data.filter(
-        a => !a.concluded_at && a.status !== 'concluido' && a.status !== 'resolvido' && a.live_status !== 'resolvido / arquivado' && a.live_status !== 'concluido'
-      );
-      
-      // Verificar se os alertas têm o campo shift_criacao
-      const temShift = alertasAtivos.some((a: any) => a.shift_criacao);
-      setUsarTurnos(temShift);
-      
-      if (temShift) {
-        // Agrupar por turno (apenas ativos)
-        const agrupados = {
-          morning: alertasAtivos.filter(a => (a as any).shift_criacao === 'morning'),
-          afternoon: alertasAtivos.filter(a => (a as any).shift_criacao === 'afternoon'),
-          night: alertasAtivos.filter(a => (a as any).shift_criacao === 'night')
-        };
-        setAlertasPorTurno(agrupados);
-      }
+      setAlertasPorTurno(agruparPorTurno(data));
     } catch (error) {
     } finally {
       setLoading(false);
@@ -283,48 +275,7 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, patientName,
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'concluido':
-      case 'Concluído':
-        return 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800';
-      case 'fora_do_prazo':
-        return 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800';
-      default:
-        return 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800';
-    }
-  };
-
-  const getStatusBadgeColor = (status: string) => {
-    switch (status) {
-      case 'concluido':
-      case 'Concluído':
-        return 'bg-green-500 text-white';
-      case 'fora_do_prazo':
-        return 'bg-red-500 text-white';
-      default:
-        return 'bg-yellow-500 text-white';
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'concluido':
-        return '✓ Concluído';
-      case 'fora_do_prazo':
-        return '⚠ Fora do prazo';
-      default:
-        return '⏳ No prazo';
-    }
-  };
-
-  const isAtivo = (a: Alerta) => {
-    const s = (a.status || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    const ls = (a.live_status || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    return !a.concluded_at && s !== 'concluido' && s !== 'resolvido' && !ls.includes('resolvido') && !ls.includes('concluido') && !ls.includes('arquivado');
-  };
-
-  const alertasAtivos = alertas.filter(isAtivo);
+  const alertasAtivos = alertas.filter(isAlertaAtivo);
 
   if (loading) {
     return <AlertasSkeleton count={3} />;
@@ -344,7 +295,7 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, patientName,
             <div className="text-center py-6 text-gray-500 dark:text-gray-400">
               ✓ Nenhum alerta ativo
             </div>
-          ) : usarTurnos ? (
+          ) : (
             <AlertasTurno
               alertasPorTurno={alertasPorTurno}
               assessment={assessment}
@@ -352,18 +303,6 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, patientName,
               onConcluir={handleConcluir}
               onArquivar={handleArquivar}
             />
-          ) : (
-            <div className="space-y-2">
-              {alertasAtivos.map((alerta) => (
-                <AlertaCard
-                  key={alerta.id_alerta}
-                  alerta={alerta}
-                  onJustificar={handleJustificar}
-                  onConcluir={handleConcluir}
-                  onArquivar={handleArquivar}
-                />
-              ))}
-            </div>
           )}
         </div>
       )}
