@@ -66,89 +66,252 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ patient, onBack, onNavigate, 
         setSelectedCategories({});
     };
 
+    const getStatusBadge = (liveStatus: string) => {
+        const s = (liveStatus || '').toLowerCase();
+        if (s === 'concluido' || s.includes('concluí')) {
+            return { label: 'Concluído', bg: '#10b981', color: '#fff' };
+        }
+        if (s === 'fora_do_prazo' || s.includes('fora')) {
+            return { label: 'Fora do prazo', bg: '#ef4444', color: '#fff' };
+        }
+        if (s.includes('arquivado') || s.includes('resolvido')) {
+            return { label: 'Arquivado', bg: '#6b7280', color: '#fff' };
+        }
+        return { label: 'No prazo', bg: '#f59e0b', color: '#fff' };
+    };
+
     const handleGeneratePDF = () => {
-        // Criar HTML para PDF
         const htmlContent = `
             <html>
             <head>
                 <meta charset="UTF-8">
+                <title>SBAR Kids - ${patient.name}</title>
                 <style>
                     * { box-sizing: border-box; }
                     html, body { margin: 0; padding: 0; }
-                    body { 
-                        font-family: Arial, sans-serif; 
-                        margin: 0; 
-                        padding: 20px 20px 150px 20px; 
-                        color: #333; 
-                        min-height: 100%;
-                        filter: grayscale(100%);
+                    body {
+                        font-family: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+                        margin: 0;
+                        padding: 24px 28px 40px;
+                        color: #1f2937;
+                        background: #fff;
+                        font-size: 12px;
+                        line-height: 1.5;
                     }
-                    .header { border: 2px solid #333; padding: 15px; margin-bottom: 20px; }
-                    .header h2 { margin: 0 0 10px 0; font-size: 16px; }
-                    .header-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 10px; }
-                    .header-item { font-size: 13px; }
-                    .header-label { font-weight: bold; }
-                    .header-value { font-weight: normal; }
-                    .patient-info { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; font-size: 12px; margin-top: 10px; }
-                    .shift-section { border: 2px solid #333; margin-bottom: 5px; padding: 0; page-break-inside: avoid; }
-                    .shift-header { 
-                        background-color: #f0f0f0; 
-                        padding: 10px 15px; 
-                        font-weight: bold; 
-                        font-size: 14px;
-                        border-bottom: 2px solid #333;
+
+                    /* Cabeçalho principal */
+                    .brand-bar {
+                        background: linear-gradient(90deg, #1e3a8a 0%, #2563eb 100%);
+                        color: #fff;
+                        padding: 14px 20px;
+                        border-radius: 10px 10px 0 0;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
                     }
-                    .shift-morning { border-left: 5px solid #444; }
-                    .shift-afternoon { border-left: 5px solid #666; }
-                    .shift-night { border-left: 5px solid #222; }
-                    .shift-content { padding: 15px; }
-                    .assessment-block { margin-bottom: 15px; }
-                    .assessment-title { font-weight: bold; font-size: 12px; margin-bottom: 8px; }
-                    .assessment-text { font-size: 12px; line-height: 1.4; margin-bottom: 10px; white-space: pre-wrap; word-wrap: break-word; }
-                    .alerts-title { font-weight: bold; font-size: 12px; margin-top: 15px; margin-bottom: 8px; }
-                    .alert-item { 
-                        border-left: 3px solid #555; 
-                        padding-left: 10px; 
-                        margin-bottom: 10px; 
+                    .brand-bar h1 { margin: 0; font-size: 22px; letter-spacing: 0.5px; }
+                    .brand-bar .subtitle { font-size: 11px; opacity: 0.85; }
+                    .brand-bar .meta { font-size: 10px; text-align: right; opacity: 0.9; }
+
+                    /* Card do paciente */
+                    .patient-card {
+                        border: 1px solid #e5e7eb;
+                        border-top: none;
+                        border-radius: 0 0 10px 10px;
+                        padding: 14px 20px;
+                        margin-bottom: 20px;
+                        background: #f9fafb;
+                    }
+                    .patient-name {
+                        font-size: 18px;
+                        font-weight: 700;
+                        color: #111827;
+                        margin: 0 0 10px;
+                    }
+                    .patient-grid {
+                        display: grid;
+                        grid-template-columns: repeat(4, 1fr);
+                        gap: 10px;
                         font-size: 11px;
-                        line-height: 1.4;
+                    }
+                    .patient-item { display: flex; flex-direction: column; }
+                    .patient-label {
+                        font-size: 9px;
+                        font-weight: 600;
+                        color: #2563eb;
+                        text-transform: uppercase;
+                        letter-spacing: 0.5px;
+                        margin-bottom: 2px;
+                    }
+                    .patient-value { font-size: 12px; font-weight: 600; color: #111827; }
+
+                    /* Seção de turno */
+                    .shift-section {
+                        margin-bottom: 18px;
+                        border-radius: 10px;
+                        overflow: hidden;
+                        border: 1px solid #e5e7eb;
                         page-break-inside: avoid;
                     }
-                    .alert-description { font-weight: bold; }
-                    .alert-detail { margin: 3px 0; }
-                    .alert-justification { 
-                        background-color: #e8e8e8; 
-                        padding: 8px; 
-                        margin-top: 5px; 
-                        border-radius: 3px;
-                        font-style: italic;
-                        font-size: 10px;
+                    .shift-header {
+                        padding: 10px 16px;
+                        font-weight: 700;
+                        font-size: 13px;
+                        color: #fff;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
                     }
-                    .page-break { page-break-before: always; }
+                    .shift-morning .shift-header { background: #f97316; }
+                    .shift-afternoon .shift-header { background: #eab308; }
+                    .shift-night .shift-header { background: #4f46e5; }
+                    .shift-morning { border-left: 5px solid #f97316; }
+                    .shift-afternoon { border-left: 5px solid #eab308; }
+                    .shift-night { border-left: 5px solid #4f46e5; }
+                    .shift-content { padding: 14px 16px; background: #fff; }
+
+                    /* Assessment */
+                    .assessment-block {
+                        padding: 12px;
+                        background: #eff6ff;
+                        border: 1px solid #bfdbfe;
+                        border-radius: 8px;
+                        margin-bottom: 14px;
+                    }
+                    .assessment-title {
+                        font-weight: 700;
+                        font-size: 11px;
+                        color: #1e40af;
+                        margin-bottom: 6px;
+                        text-transform: uppercase;
+                        letter-spacing: 0.3px;
+                    }
+                    .assessment-text {
+                        font-size: 11px;
+                        color: #1f2937;
+                        white-space: pre-wrap;
+                        word-wrap: break-word;
+                    }
+
+                    /* Alertas */
+                    .alerts-title {
+                        font-weight: 700;
+                        font-size: 11px;
+                        color: #374151;
+                        margin: 14px 0 8px;
+                        text-transform: uppercase;
+                        letter-spacing: 0.3px;
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                    }
+                    .alert-item {
+                        border: 1px solid #e5e7eb;
+                        border-left: 4px solid #2563eb;
+                        border-radius: 8px;
+                        padding: 10px 12px;
+                        margin-bottom: 8px;
+                        background: #fff;
+                        page-break-inside: avoid;
+                    }
+                    .alert-top {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: start;
+                        gap: 8px;
+                        margin-bottom: 8px;
+                    }
+                    .alert-description { font-weight: 700; font-size: 12px; color: #111827; flex: 1; }
+                    .alert-badge {
+                        font-size: 9px;
+                        font-weight: 700;
+                        padding: 3px 8px;
+                        border-radius: 999px;
+                        white-space: nowrap;
+                    }
+                    .alert-meta-grid {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 4px 12px;
+                        font-size: 10px;
+                        color: #4b5563;
+                    }
+                    .alert-meta-label { color: #6b7280; font-weight: 600; }
+                    .alert-justification {
+                        margin-top: 8px;
+                        padding: 8px 10px;
+                        background: #f3f4f6;
+                        border-left: 3px solid #9ca3af;
+                        border-radius: 4px;
+                        font-size: 10px;
+                        color: #374151;
+                    }
+                    .alert-justification strong { color: #111827; }
+
+                    .empty-shift {
+                        font-size: 11px;
+                        color: #9ca3af;
+                        font-style: italic;
+                        text-align: center;
+                        padding: 10px;
+                    }
+
+                    /* Rodapé */
+                    .doc-footer {
+                        margin-top: 24px;
+                        padding-top: 12px;
+                        border-top: 1px solid #e5e7eb;
+                        font-size: 9px;
+                        color: #9ca3af;
+                        text-align: center;
+                    }
+
                     @media print {
-                        body { margin: 0; padding: 20px; filter: grayscale(100%); }
+                        body { padding: 20px; }
                         .shift-section { page-break-inside: auto; }
                         .alert-item { page-break-inside: auto; }
                     }
                 </style>
             </head>
             <body>
-                <div style="text-align: center; margin-bottom: 20px;">
-                    <h1 style="font-size: 24px; font-weight: bold; margin: 0; padding: 10px 0;">SBAR KIDS</h1>
-                </div>
-                <div class="header">
-                    <h2>IDENTIFICAÇÃO DO PACIENTE</h2>
-                    <div class="patient-info">
-                        <div class="header-item"><span class="header-label">Nome:</span> ${patient.name}</div>
-                        <div class="header-item"><span class="header-label">Leito:</span> ${patient.bed_number || 'N/A'}</div>
-                        <div class="header-item"><span class="header-label">Data Nasc:</span> ${patient.dob || 'N/A'}</div>
-                        <div class="header-item"><span class="header-label">Nome da Mãe:</span> ${patient.mother_name || 'N/A'}</div>
+                <div class="brand-bar">
+                    <div>
+                        <h1>SBAR KIDS</h1>
+                        <div class="subtitle">Relatório Clínico do Paciente</div>
                     </div>
-                    <div style="margin-top: 10px; font-size: 12px; text-align: right;">
-                        <strong>Data:</strong> ${new Date().toLocaleString('pt-BR')} | <strong>Médico:</strong> ${user?.name || 'Médico'}
+                    <div class="meta">
+                        <div>${new Date().toLocaleString('pt-BR')}</div>
+                        <div>Responsável: <strong>${user?.name || 'Médico'}</strong></div>
                     </div>
                 </div>
+
+                <div class="patient-card">
+                    <h2 class="patient-name">${patient.name}</h2>
+                    <div class="patient-grid">
+                        <div class="patient-item">
+                            <span class="patient-label">Leito</span>
+                            <span class="patient-value">${patient.bed_number || '-'}</span>
+                        </div>
+                        <div class="patient-item">
+                            <span class="patient-label">Data Nasc.</span>
+                            <span class="patient-value">${patient.dob ? new Date(patient.dob).toLocaleDateString('pt-BR') : '-'}</span>
+                        </div>
+                        <div class="patient-item">
+                            <span class="patient-label">Peso</span>
+                            <span class="patient-value">${patient.peso ? patient.peso + ' kg' : '-'}</span>
+                        </div>
+                        <div class="patient-item">
+                            <span class="patient-label">Mãe</span>
+                            <span class="patient-value">${patient.mother_name || '-'}</span>
+                        </div>
+                    </div>
+                </div>
+
                 ${generateShiftSections()}
+
+                <div class="doc-footer">
+                    Documento gerado automaticamente · SBAR Kids · ${new Date().toLocaleDateString('pt-BR')}
+                </div>
             </body>
             </html>
         `;
@@ -166,47 +329,59 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ patient, onBack, onNavigate, 
     const generateShiftSections = () => {
         const shifts = ['morning', 'afternoon', 'night'];
         const shiftInfo = {
-            morning: { label: 'MANHÃ', hours: '(7:01 - 13:00)', class: 'shift-morning' },
-            afternoon: { label: 'TARDE', hours: '(13:01 - 19:00)', class: 'shift-afternoon' },
-            night: { label: 'NOITE', hours: '(19:01 - 07:00)', class: 'shift-night' }
+            morning: { label: '🌅 MANHÃ', hours: '07:00 - 13:00', class: 'shift-morning' },
+            afternoon: { label: '☀️ TARDE', hours: '13:00 - 19:00', class: 'shift-afternoon' },
+            night: { label: '🌙 NOITE', hours: '19:00 - 07:00', class: 'shift-night' }
         };
 
         return shifts.map(shift => {
             const info = shiftInfo[shift as keyof typeof shiftInfo];
             const assessment = assessments[0]?.[`assessment_${shift}` as keyof typeof assessments[0]];
             const shiftAlerts = alertas.filter((a: any) => a.shift_criacao === shift);
-            const pageBreak = shift === 'night' ? 'page-break-before: always;' : '';
+
+            // Se não tiver nada no turno, pula
+            if (!assessment && shiftAlerts.length === 0) {
+                return '';
+            }
 
             return `
-                <div class="shift-section ${info.class}" style="${pageBreak}">
-                    <div class="shift-header">${info.label} ${info.hours}</div>
+                <div class="shift-section ${info.class}">
+                    <div class="shift-header">
+                        <span>${info.label}</span>
+                        <span style="font-size: 11px; opacity: 0.9;">${info.hours}</span>
+                    </div>
                     <div class="shift-content">
                         ${assessment ? `
                             <div class="assessment-block">
-                                <div class="assessment-title">A - ASSESSMENT (Avaliação)</div>
+                                <div class="assessment-title">📝 Assessment (Avaliação Clínica)</div>
                                 <div class="assessment-text">${assessment}</div>
                             </div>
                         ` : ''}
-                        
+
                         ${shiftAlerts.length > 0 ? `
-                            <div class="alerts-title">ALERTAS CLÍNICOS</div>
-                            ${shiftAlerts.map((alert: any) => `
+                            <div class="alerts-title">🔔 Alertas Clínicos (${shiftAlerts.length})</div>
+                            ${shiftAlerts.map((alert: any) => {
+                                const badge = getStatusBadge(alert.live_status || alert.status || '');
+                                return `
                                 <div class="alert-item">
-                                    <div class="alert-description">${alert.alertaclinico}</div>
-                                    <div class="alert-detail">Responsável: ${alert.responsavel}</div>
-                                    <div class="alert-detail">Prazo Limite: ${alert.prazo_limite_formatado || 'Sem prazo'}</div>
-                                    <div class="alert-detail">Prazo: ${alert.prazo_formatado || 'Sem prazo'}</div>
-                                    <div class="alert-detail">Criado em: ${alert.hora_criacao_formatado || 'Não informado'}</div>
-                                    <div class="alert-detail">Criado por: ${alert.created_by_name || 'Não informado'}</div>
-                                    <div class="alert-detail">Status: ${alert.status || 'Sem status'}</div>
-                                    ${alert.justificativa ? `
+                                    <div class="alert-top">
+                                        <div class="alert-description">${alert.alertaclinico}</div>
+                                        <span class="alert-badge" style="background:${badge.bg}; color:${badge.color};">${badge.label}</span>
+                                    </div>
+                                    <div class="alert-meta-grid">
+                                        <div><span class="alert-meta-label">Responsável:</span> ${alert.responsavel || '-'}</div>
+                                        <div><span class="alert-meta-label">Criado por:</span> ${alert.created_by_name || '-'}</div>
+                                        <div><span class="alert-meta-label">Criado em:</span> ${alert.hora_criacao_formatado || alert.hora_criacao_br || '-'}</div>
+                                        <div><span class="alert-meta-label">Prazo:</span> ${alert.prazo_formatado || alert.prazo_limite_formatado || '-'}</div>
+                                    </div>
+                                    ${alert.justificativa && alert.justificativa.trim() !== '' ? `
                                         <div class="alert-justification">
                                             <strong>Justificativa:</strong> ${alert.justificativa}
                                         </div>
                                     ` : ''}
                                 </div>
-                            `).join('')}
-                        ` : '<p style="font-size: 11px; color: #999;">Nenhum alerta neste turno</p>'}
+                            `}).join('')}
+                        ` : ''}
                     </div>
                 </div>
             `;

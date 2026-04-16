@@ -603,7 +603,7 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
                         
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                             <div className="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg">
-                                <p className="text-gray-600 dark:text-gray-400 text-xs mb-1">Idade</p>
+                                <p className="text-blue-400 text-xs mb-1">Idade</p>
                                 <p className="text-gray-900 dark:text-white text-sm font-semibold">
                                     {(() => {
                                         const birthDate = new Date(patient.dob);
@@ -617,7 +617,7 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
                             </div>
                             
                             <div className="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg">
-                                <p className="text-gray-600 dark:text-gray-400 text-xs mb-1">Dias Int.</p>
+                                <p className="text-blue-400 text-xs mb-1">Dias Int.</p>
                                 <p className="text-gray-900 dark:text-white text-sm font-semibold">
                                     {(() => {
                                         if (!patient.dt_internacao) return '0 dias';
@@ -633,28 +633,28 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
                             </div>
                             
                             <div className="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg">
-                                <p className="text-gray-600 dark:text-gray-400 text-xs mb-1">Nascimento</p>
+                                <p className="text-blue-400 text-xs mb-1">Nascimento</p>
                                 <p className="text-gray-900 dark:text-white text-sm font-semibold">
                                     {new Date(patient.dob).toLocaleDateString('pt-BR')}
                                 </p>
                             </div>
                             
                             <div className="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg">
-                                <p className="text-gray-600 dark:text-gray-400 text-xs mb-1">Admissão</p>
+                                <p className="text-blue-400 text-xs mb-1">Admissão</p>
                                 <p className="text-gray-900 dark:text-white text-sm font-semibold">
                                     {patient.dt_internacao ? new Date(patient.dt_internacao).toLocaleDateString('pt-BR') : '-'}
                                 </p>
                             </div>
                             
                             <div className="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg">
-                                <p className="text-gray-600 dark:text-gray-400 text-xs mb-1">Peso</p>
+                                <p className="text-blue-400 text-xs mb-1">Peso</p>
                                 <p className="text-gray-900 dark:text-white text-sm font-semibold">
                                     {patient.peso ? `${patient.peso} kg` : '-'}
                                 </p>
                             </div>
                             
                             <div className="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg">
-                                <p className="text-gray-600 dark:text-gray-400 text-xs mb-1">Mãe</p>
+                                <p className="text-blue-400 text-xs mb-1">Mãe</p>
                                 <p className="text-gray-900 dark:text-white text-sm font-semibold truncate">
                                     {patient.mother_name || '-'}
                                 </p>
