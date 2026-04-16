@@ -108,6 +108,34 @@ const TabButton: React.FC<TabButtonProps> = ({ label, isActive, onClick }) => (
   </button>
 );
 
+interface CategoryCardProps {
+  icon: string;
+  title: string;
+  count: number;
+  gradient: string;
+  isActive: boolean;
+  onClick: () => void;
+}
+
+const CategoryCard: React.FC<CategoryCardProps> = ({ icon, title, count, gradient, isActive, onClick }) => (
+  <button
+    onClick={onClick}
+    className={`relative rounded-2xl p-4 text-left text-white bg-linear-to-br ${gradient} shadow-md transition-all hover:-translate-y-0.5 hover:shadow-xl ${
+      isActive ? 'ring-4 ring-white/60 scale-[1.02]' : 'ring-0'
+    }`}
+  >
+    <div className="flex items-start justify-between mb-3">
+      <span className="text-3xl drop-shadow-sm">{icon}</span>
+      {count > 0 && (
+        <span className="inline-flex items-center justify-center min-w-[28px] h-7 px-2 rounded-full bg-white/25 backdrop-blur text-white text-xs font-bold">
+          {count}
+        </span>
+      )}
+    </div>
+    <p className="text-sm font-bold leading-tight">{title}</p>
+  </button>
+);
+
 interface TabContentProps {
   title: string;
   addButtonLabel?: string;
@@ -156,7 +184,18 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
   const [balanceHidrico, setBalanceHidrico] = useState<BalancoHidrico[]>([]);
   const [diurese, setDiurese] = useState<Diurese[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'medicacoes' | 'dispositivos' | 'culturas' | 'procedimentos' | 'exames' | 'dietas' | 'balancoHidrico' | 'diurese'>('medicacoes');
+  const [activeTab, setActiveTab] = useState<'medicacoes' | 'dispositivos' | 'culturas' | 'procedimentos' | 'exames' | 'dietas' | 'balancoHidrico' | 'diurese' | null>(null);
+
+  const categoryTitles: Record<NonNullable<typeof activeTab>, string> = {
+    medicacoes: '💊 Medicações',
+    dispositivos: '🔧 Dispositivos',
+    culturas: '🧬 Culturas',
+    procedimentos: '⚕️ Procedimentos',
+    exames: '🔬 Exames',
+    dietas: '🍽️ Dietas',
+    balancoHidrico: '💧 Balanço Hídrico',
+    diurese: '💦 Diurese',
+  };
 
   // Modal states (desativado - componente em modo leitura)
   const [fimMedicacaoModal, setFimMedicacaoModal] = useState<{ open: boolean; medicacao?: Medicacao }>({ open: false });
@@ -210,52 +249,97 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
 
   return (
     <div className="space-y-4">
-      {/* TAB NAVIGATION */}
-      <div className="border-b border-gray-700 flex overflow-x-auto gap-1">
-        <TabButton
-          label="💊 Medicações"
+      {/* GRID DE CATEGORIAS */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        <CategoryCard
+          icon="💊"
+          title="Medicações"
+          count={medicacoes.length}
+          gradient="from-blue-500 to-blue-700"
           isActive={activeTab === 'medicacoes'}
           onClick={() => setActiveTab('medicacoes')}
         />
-        <TabButton
-          label="🔧 Dispositivos"
+        <CategoryCard
+          icon="🔧"
+          title="Dispositivos"
+          count={dispositivos.length}
+          gradient="from-emerald-500 to-green-700"
           isActive={activeTab === 'dispositivos'}
           onClick={() => setActiveTab('dispositivos')}
         />
-        <TabButton
-          label="🧬 Culturas"
+        <CategoryCard
+          icon="🧬"
+          title="Culturas"
+          count={culturas.length}
+          gradient="from-purple-500 to-fuchsia-700"
           isActive={activeTab === 'culturas'}
           onClick={() => setActiveTab('culturas')}
         />
-        <TabButton
-          label="⚕️ Procedimentos"
+        <CategoryCard
+          icon="⚕️"
+          title="Procedimentos"
+          count={procedimentos.length}
+          gradient="from-orange-500 to-red-600"
           isActive={activeTab === 'procedimentos'}
           onClick={() => setActiveTab('procedimentos')}
         />
-        <TabButton
-          label="🔬 Exames"
+        <CategoryCard
+          icon="🔬"
+          title="Exames"
+          count={exames.length}
+          gradient="from-teal-500 to-cyan-700"
           isActive={activeTab === 'exames'}
           onClick={() => setActiveTab('exames')}
         />
-        <TabButton
-          label="🍽️ Dietas"
+        <CategoryCard
+          icon="🍽️"
+          title="Dietas"
+          count={dietas.length}
+          gradient="from-amber-500 to-yellow-600"
           isActive={activeTab === 'dietas'}
           onClick={() => setActiveTab('dietas')}
         />
-        <TabButton
-          label="💧 Balanço Hídrico"
+        <CategoryCard
+          icon="💧"
+          title="Balanço Hídrico"
+          count={balanceHidrico.length}
+          gradient="from-sky-500 to-blue-700"
           isActive={activeTab === 'balancoHidrico'}
           onClick={() => setActiveTab('balancoHidrico')}
         />
-        <TabButton
-          label="💦 Diurese"
+        <CategoryCard
+          icon="💦"
+          title="Diurese"
+          count={diurese.length}
+          gradient="from-pink-500 to-rose-700"
           isActive={activeTab === 'diurese'}
           onClick={() => setActiveTab('diurese')}
         />
       </div>
 
-      {/* TAB CONTENT */}
-      <div>
+      {/* MODAL DA CATEGORIA ATIVA */}
+      {activeTab && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={() => setActiveTab(null)}
+        >
+          <div
+            className="bg-white dark:bg-gray-900 rounded-2xl max-w-3xl w-full max-h-[85vh] overflow-hidden shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                {categoryTitles[activeTab]}
+              </h3>
+              <button
+                onClick={() => setActiveTab(null)}
+                className="w-9 h-9 flex items-center justify-center rounded-full text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                aria-label="Fechar"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-4 overflow-y-auto flex-1">
         {/* MEDICAÇÕES */}
         {activeTab === 'medicacoes' && (
           <TabContent
@@ -602,7 +686,10 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
             </div>
           </TabContent>
         )}
-      </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAIS DESATIVADOS - COMPONENTE EM MODO LEITURA */}
     </div>

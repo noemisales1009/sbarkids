@@ -13,6 +13,30 @@ interface CompletedAlertsSectionProps {
   patientId: string;
 }
 
+type ShiftKey = 'morning' | 'afternoon' | 'night';
+
+interface ShiftConfig {
+  key: ShiftKey;
+  label: string;
+  icon: string;
+  timeRange: string;
+  badgeColor: string;
+}
+
+const SHIFT_CONFIGS: ShiftConfig[] = [
+  { key: 'morning', label: 'Manhã', icon: '🌅', timeRange: '07:00 - 13:00', badgeColor: 'bg-orange-500' },
+  { key: 'afternoon', label: 'Tarde', icon: '☀️', timeRange: '13:00 - 19:00', badgeColor: 'bg-yellow-500' },
+  { key: 'night', label: 'Noite', icon: '🌙', timeRange: '19:00 - 07:00', badgeColor: 'bg-indigo-500' },
+];
+
+const getShiftFromHour = (hour: number): ShiftKey => {
+  if (hour >= 7 && hour < 13) return 'morning';
+  if (hour >= 13 && hour < 19) return 'afternoon';
+  return 'night';
+};
+
+const getCurrentShift = (): ShiftKey => getShiftFromHour(new Date().getHours());
+
 interface AlertaConcluido {
   id_alerta: string;
   patient_id: string;
@@ -41,6 +65,27 @@ const CompletedAlertsSection: React.FC<CompletedAlertsSectionProps> = ({ patient
   const [alertas, setAlertas] = useState<AlertaConcluido[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(false);
+  const [activeShift, setActiveShift] = useState<ShiftKey>(getCurrentShift());
+
+  const getShiftOfAlerta = (alerta: AlertaConcluido): ShiftKey => {
+    const shiftCampo = (alerta as any).shift_criacao as ShiftKey | undefined;
+    if (shiftCampo === 'morning' || shiftCampo === 'afternoon' || shiftCampo === 'night') {
+      return shiftCampo;
+    }
+    const ref = alerta.created_at ? new Date(alerta.created_at) : new Date();
+    return getShiftFromHour(ref.getHours());
+  };
+
+  const alertasPorTurno: Record<ShiftKey, AlertaConcluido[]> = {
+    morning: [],
+    afternoon: [],
+    night: [],
+  };
+  for (const a of alertas) {
+    alertasPorTurno[getShiftOfAlerta(a)].push(a);
+  }
+  const alertasDoTurno = alertasPorTurno[activeShift];
+  const activeConfig = SHIFT_CONFIGS.find(s => s.key === activeShift)!;
 
   useEffect(() => {
     loadConcluidos();
@@ -152,7 +197,46 @@ const CompletedAlertsSection: React.FC<CompletedAlertsSectionProps> = ({ patient
               ✓ Nenhum alerta concluído nas últimas 24h
             </div>
           ) : (
-            alertas.map((alerta) => (
+            <>
+              {/* Tabs por turno */}
+              <div role="tablist" className="flex border-b border-slate-700 mb-3">
+                {SHIFT_CONFIGS.map((shift) => {
+                  const count = alertasPorTurno[shift.key].length;
+                  const isActive = shift.key === activeShift;
+                  return (
+                    <button
+                      key={shift.key}
+                      role="tab"
+                      aria-selected={isActive}
+                      onClick={() => setActiveShift(shift.key)}
+                      className={`flex-1 px-4 py-3 text-sm font-semibold transition-colors border-b-2 -mb-px flex items-center justify-center gap-2 ${
+                        isActive
+                          ? 'border-primary text-primary'
+                          : 'border-transparent text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <span>{shift.icon}</span>
+                      <span>{shift.label}</span>
+                      {count > 0 && (
+                        <span className={`inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full ${shift.badgeColor} text-white text-xs font-bold`}>
+                          {count}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="text-xs text-slate-400 mb-3">
+                {activeConfig.icon} {activeConfig.label} · {activeConfig.timeRange}
+              </div>
+
+              {alertasDoTurno.length === 0 ? (
+                <p className="text-sm text-center py-6 text-gray-500 dark:text-gray-400">
+                  ✓ Nenhum alerta concluído neste turno
+                </p>
+              ) : (
+                alertasDoTurno.map((alerta) => (
               <div
                 key={`${alerta.tipo_origem}-${alerta.id_alerta}`}
                 className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-green-200 dark:border-green-800 border-l-4 border-l-green-500"
@@ -222,7 +306,9 @@ const CompletedAlertsSection: React.FC<CompletedAlertsSectionProps> = ({ patient
                   </button>
                 </div>
               </div>
-            ))
+                ))
+              )}
+            </>
           )}
         </div>
       )}

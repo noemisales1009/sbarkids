@@ -300,7 +300,7 @@ export const alertasService = {
       const agora = new Date().toISOString();
 
       // Atualizar com todos os campos de justificativa
-      const { error, count } = await supabase
+      const { error, data } = await supabase
         .from(tableName)
         .update({
           [columnName]: justificativa,
@@ -316,7 +316,7 @@ export const alertasService = {
         return false;
       }
 
-      if (!count || count === 0) {
+      if (!data || data.length === 0) {
         return false;
       }
 
@@ -346,7 +346,7 @@ export const alertasService = {
       const idAtualizacao = isNaN(Number(alertaId)) ? alertaId : parseInt(alertaId);
 
       // Marcar apenas como concluído (NÃO arquivar)
-      const { error, count } = await supabase
+      const { error, data } = await supabase
         .from(tableName)
         .update({
           status: 'concluido',
@@ -362,7 +362,7 @@ export const alertasService = {
         return false;
       }
 
-      if (!count || count === 0) {
+      if (!data || data.length === 0) {
         return false;
       }
 
@@ -415,7 +415,7 @@ export const alertasService = {
       const idAtualizacao = isNaN(Number(alertaId)) ? alertaId : parseInt(alertaId);
 
       // Atualizar o alerta com dados de arquivamento
-      const { error, count } = await supabase
+      const { error, data } = await supabase
         .from(tableName)
         .update({
           archived_at: agora,
@@ -432,7 +432,7 @@ export const alertasService = {
         return false;
       }
 
-      if (!count || count === 0) {
+      if (!data || data.length === 0) {
         return false;
       }
 
