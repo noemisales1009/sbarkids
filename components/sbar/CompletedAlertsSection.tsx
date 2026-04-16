@@ -257,24 +257,10 @@ const CompletedAlertsSection: React.FC<CompletedAlertsSectionProps> = ({ patient
                         Status: <strong className="text-green-500 dark:text-green-300">{alerta.status}</strong>
                       </div>
 
-                      {/* Criado em */}
-                      {alerta.created_at && (
-                        <div className="text-gray-600 dark:text-gray-300">
-                          📅 Criado: {formatDate(alerta.created_at)}
-                        </div>
-                      )}
-
                       {/* Concluído por */}
                       {alerta.concluded_by_name && (
                         <div className="text-gray-600 dark:text-gray-300">
                           ✓ Concluído por: <strong className="text-white">{alerta.concluded_by_name}</strong>
-                        </div>
-                      )}
-
-                      {/* Responsável */}
-                      {alerta.responsavel && (
-                        <div className="text-gray-600 dark:text-gray-300">
-                          👤 Responsável: <strong className="text-white">{alerta.responsavel}</strong>
                         </div>
                       )}
 

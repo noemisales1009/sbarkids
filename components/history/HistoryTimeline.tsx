@@ -1,6 +1,5 @@
 import React from 'react';
-import { Alerta } from '../../services/alertasService';
-import { getStatusColor, getStatusBadgeColor, getStatusLabel } from '../sbar/AlertaCard';
+import { Alerta, alertasService } from '../../services/alertasService';
 
 interface HistoryTimelineProps {
   date: string;
@@ -15,6 +14,35 @@ const getShiftBorderColor = (createdAt: string | undefined): string => {
   return 'border-l-indigo-500';
 };
 
+const isConcluded = (status: string, liveStatus: string): boolean => {
+  const s = (status || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const ls = (liveStatus || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return s === 'concluido' || s === 'resolvido' || ls.includes('concluido') || ls.includes('resolvido');
+};
+
+const getStatusColor = (status: string, liveStatus: string): string => {
+  if (isConcluded(status, liveStatus)) return 'text-green-400';
+  const ls = (liveStatus || '').toLowerCase();
+  if (ls === 'fora_do_prazo' || ls.includes('fora')) return 'text-red-400';
+  return 'text-yellow-400';
+};
+
+const getOriginBadge = (fonte?: string) => {
+  if (fonte === 'tasks') {
+    return <span className="inline-block px-2 py-0.5 rounded-full bg-purple-500 text-white text-xs font-semibold ml-2">Task</span>;
+  }
+  return <span className="inline-block px-2 py-0.5 rounded-full bg-blue-500 text-white text-xs font-semibold ml-2">Clínico</span>;
+};
+
+const formatDate = (dateStr: string | null | undefined): string => {
+  if (!dateStr) return '-';
+  try {
+    return new Date(dateStr).toLocaleString('pt-BR');
+  } catch {
+    return dateStr;
+  }
+};
+
 const HistoryTimeline: React.FC<HistoryTimelineProps> = ({ date, items }) => {
   return (
     <div className="mb-6">
@@ -22,44 +50,66 @@ const HistoryTimeline: React.FC<HistoryTimelineProps> = ({ date, items }) => {
         {date}
       </h3>
       <div className="space-y-2">
-        {items.map((item) => (
-          <div
-            key={item.id_alerta}
-            className={`p-4 rounded-lg border-l-4 ${getStatusColor(item.live_status)} ${getShiftBorderColor(item.created_at)}`}
-          >
-            <div className="flex items-start justify-between gap-4 mb-3">
-              <div className="flex items-start gap-3 flex-1">
-                <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center shrink-0 mt-0.5">
-                  <span className="text-white text-lg">🔔</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-gray-900 dark:text-white break-word">
-                    {item.alertaclinico}
-                  </p>
-                </div>
+        {items.map((item) => {
+          const concluded = isConcluded(item.status, item.live_status);
+          const statusLabel = item.status?.replace('_', ' ') || 'ativo';
+          const tempoVisibilidade = concluded ? alertasService.getTempoRestanteVisibilidade(item) : null;
+
+          return (
+            <div
+              key={item.id_alerta}
+              className={`p-4 bg-gray-800/40 rounded-lg border border-gray-700 border-l-4 ${getShiftBorderColor(item.created_at)}`}
+            >
+              {/* Título e badge de origem */}
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                <p className="font-semibold text-white text-sm">{item.alertaclinico}</p>
+                {getOriginBadge(item.fonte)}
               </div>
-              <div className="shrink-0 flex flex-col items-end gap-2">
-                <span
-                  className={`inline-block px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${getStatusBadgeColor(item.live_status)}`}
-                >
-                  {getStatusLabel(item.live_status)}
-                </span>
+
+              <div className="space-y-1.5 text-xs">
+                {/* Status */}
+                <div className="text-gray-300">
+                  Status: <strong className={getStatusColor(item.status, item.live_status)}>{statusLabel}</strong>
+                </div>
+
+                {/* Criado em */}
+                <div className="text-gray-400">
+                  📅 Criado: {item.hora_criacao_formatado || formatDate(item.created_at)}
+                </div>
+
+                {/* Concluído por (se concluído) */}
+                {concluded && item.concluded_by_name && (
+                  <div className="text-gray-300">
+                    ✓ Concluído por: <strong className="text-white">{item.concluded_by_name}</strong>
+                  </div>
+                )}
+
+                {/* Criado por (se não concluído) */}
+                {!concluded && item.created_by_name && (
+                  <div className="text-gray-400">
+                    👤 Criado por: <strong className="text-white">{item.created_by_name}</strong>
+                  </div>
+                )}
+
+                {/* Justificativa */}
+                {item.justificativa && item.justificativa.trim() !== '' && (
+                  <div className="mt-2 p-2 bg-blue-900/30 rounded border-l-2 border-blue-400">
+                    <p className="text-blue-200">
+                      <strong>Justificativa:</strong> {item.justificativa}
+                    </p>
+                  </div>
+                )}
+
+                {/* Timer de visibilidade (apenas para concluídos dentro de 24h) */}
+                {tempoVisibilidade && tempoVisibilidade !== 'Expirado' && (
+                  <div className="mt-2 inline-block px-2 py-1 bg-yellow-900/30 text-yellow-400 rounded text-xs font-semibold">
+                    ⏰ Visível por: {tempoVisibilidade}
+                  </div>
+                )}
               </div>
             </div>
-
-            {item.justificativa && item.justificativa.trim() !== '' && (
-              <div className="mt-3 p-2 bg-white/50 dark:bg-gray-800/50 rounded border border-gray-200 dark:border-gray-700">
-                <p className="text-xs text-gray-700 dark:text-gray-300">
-                  <strong>Justificativa:</strong> {item.justificativa}
-                </p>
-              </div>
-            )}
-
-            <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-              Criado por: <strong>{item.created_by_name}</strong>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
