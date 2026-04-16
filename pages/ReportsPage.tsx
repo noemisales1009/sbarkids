@@ -19,7 +19,17 @@ interface GlobalReportItem {
         afternoon: string;
         night: string;
     };
+    assessmentBy: {
+        morning: string;
+        afternoon: string;
+        night: string;
+    };
     recommendation: {
+        morning: string;
+        afternoon: string;
+        night: string;
+    };
+    recommendationBy: {
         morning: string;
         afternoon: string;
         night: string;
@@ -36,6 +46,9 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onNavigate, currentPage, onSe
     const { showToast } = useToast();
     const [statusFilter, setStatusFilter] = useState<string>('');
     const [dateFilter, setDateFilter] = useState<string>('');
+    const [selectedPatientIds, setSelectedPatientIds] = useState<Set<string>>(new Set());
+    const [patientSearch, setPatientSearch] = useState<string>('');
+    const [patientDropdownOpen, setPatientDropdownOpen] = useState<boolean>(false);
     const [selectedReports, setSelectedReports] = useState<Set<string>>(new Set());
     const [reports, setReports] = useState<GlobalReportItem[]>([]);
     const [alertasPorPaciente, setAlertasPorPaciente] = useState<Record<string, Alerta[]>>({});
@@ -125,10 +138,20 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onNavigate, currentPage, onSe
                             afternoon: round.assessment_afternoon || '',
                             night: round.assessment_night || ''
                         },
+                        assessmentBy: {
+                            morning: round.assessment_morning_saved_by_name || '',
+                            afternoon: round.assessment_afternoon_saved_by_name || '',
+                            night: round.assessment_night_saved_by_name || ''
+                        },
                         recommendation: {
                             morning: round.recommendation_morning || '',
                             afternoon: round.recommendation_afternoon || '',
                             night: round.recommendation_night || ''
+                        },
+                        recommendationBy: {
+                            morning: round.recommendation_morning_saved_by_name || '',
+                            afternoon: round.recommendation_afternoon_saved_by_name || '',
+                            night: round.recommendation_night_saved_by_name || ''
                         }
                     };
                 })
@@ -160,15 +183,47 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onNavigate, currentPage, onSe
         const itemStatus = typeof item.status === 'string' ? item.status.toLowerCase() : '';
         const filterStatus = statusFilter.toLowerCase();
         const matchesStatus = filterStatus ? itemStatus === filterStatus : true;
-        
+
         // Extrair apenas a data (DD/MM/YYYY) do datetime para comparação
         // datetime vem como "02/02/2026, 10:52" então pega tudo antes da vírgula
         const itemDate = item.datetime.split(',')[0].trim();
         const filterDate = dateFilter ? dateFilter.split('-').reverse().join('/') : '';
         const matchesDate = filterDate ? itemDate === filterDate : true;
-        
-        return matchesStatus && matchesDate;
+
+        // Filtro por paciente (multi-select)
+        const matchesPatient = selectedPatientIds.size === 0 || selectedPatientIds.has(item.patient.id);
+
+        return matchesStatus && matchesDate && matchesPatient;
     });
+
+    // Lista única de pacientes dos relatórios carregados
+    const uniquePatients = React.useMemo(() => {
+        const map = new Map<string, Patient>();
+        for (const r of reports) {
+            if (!map.has(r.patient.id)) map.set(r.patient.id, r.patient);
+        }
+        return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+    }, [reports]);
+
+    const filteredUniquePatients = React.useMemo(() => {
+        const q = patientSearch.trim().toLowerCase();
+        if (!q) return uniquePatients;
+        return uniquePatients.filter(p => p.name.toLowerCase().includes(q));
+    }, [uniquePatients, patientSearch]);
+
+    const togglePatientSelection = (id: string) => {
+        const newSet = new Set(selectedPatientIds);
+        if (newSet.has(id)) newSet.delete(id); else newSet.add(id);
+        setSelectedPatientIds(newSet);
+    };
+
+    const toggleAllPatients = () => {
+        if (selectedPatientIds.size === filteredUniquePatients.length && filteredUniquePatients.length > 0) {
+            setSelectedPatientIds(new Set());
+        } else {
+            setSelectedPatientIds(new Set(filteredUniquePatients.map(p => p.id)));
+        }
+    };
 
     const toggleSelect = (id: string) => {
         const newSelected = new Set(selectedReports);
@@ -188,12 +243,309 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onNavigate, currentPage, onSe
         }
     };
 
+    const getAlertStatusBadge = (status: string) => {
+        const s = (status || '').toLowerCase();
+        if (s === 'concluido' || s.includes('concluí')) return { label: 'Concluído', bg: '#10b981', color: '#fff' };
+        if (s === 'fora_do_prazo' || s.includes('fora')) return { label: 'Fora do prazo', bg: '#ef4444', color: '#fff' };
+        if (s.includes('arquivado') || s.includes('resolvido')) return { label: 'Arquivado', bg: '#6b7280', color: '#fff' };
+        return { label: 'No prazo', bg: '#f59e0b', color: '#fff' };
+    };
+
+    const buildShiftSection = (
+        shiftKey: 'morning' | 'afternoon' | 'night',
+        item: GlobalReportItem,
+    ): string => {
+        const shiftInfo = {
+            morning: { label: '🌅 MANHÃ', hours: '07:00 - 13:00', color: '#f97316', class: 'shift-morning' },
+            afternoon: { label: '☀️ TARDE', hours: '13:00 - 19:00', color: '#eab308', class: 'shift-afternoon' },
+            night: { label: '🌙 NOITE', hours: '19:00 - 07:00', color: '#4f46e5', class: 'shift-night' },
+        }[shiftKey];
+
+        const assessment = item.assessment[shiftKey];
+        const assessmentBy = item.assessmentBy[shiftKey];
+        const recommendation = item.recommendation[shiftKey];
+        const recommendationBy = item.recommendationBy[shiftKey];
+        const shiftAlerts = (alertasPorPaciente[item.patient.id] || []).filter((a: any) => a.shift_criacao === shiftKey);
+
+        if (!assessment && !recommendation && shiftAlerts.length === 0) return '';
+
+        return `
+            <div class="shift-section ${shiftInfo.class}">
+                <div class="shift-header" style="background:${shiftInfo.color};">
+                    <span>${shiftInfo.label}</span>
+                    <span style="font-size: 11px; opacity: 0.9;">${shiftInfo.hours}</span>
+                </div>
+                <div class="shift-content">
+                    ${assessment ? `
+                        <div class="sbar-block" style="background:#eff6ff;border-color:#bfdbfe;">
+                            <div class="sbar-label" style="color:#1e40af;"><span class="sbar-chip" style="background:#1e40af;">A</span> ASSESSMENT (Avaliação)</div>
+                            <div class="sbar-text">${assessment}</div>
+                            ${assessmentBy ? `<div class="sbar-author">✍️ Registrado por: <strong>${assessmentBy}</strong></div>` : ''}
+                        </div>
+                    ` : ''}
+
+                    ${recommendation ? `
+                        <div class="sbar-block" style="background:#f0fdf4;border-color:#bbf7d0;">
+                            <div class="sbar-label" style="color:#166534;"><span class="sbar-chip" style="background:#166534;">R</span> RECOMENDAÇÃO / PLANO</div>
+                            <div class="sbar-text">${recommendation}</div>
+                            ${recommendationBy ? `<div class="sbar-author">✍️ Registrado por: <strong>${recommendationBy}</strong></div>` : ''}
+                        </div>
+                    ` : ''}
+
+                    ${shiftAlerts.length > 0 ? `
+                        <div class="alerts-title">🔔 Alertas Clínicos (${shiftAlerts.length})</div>
+                        ${shiftAlerts.map((alert: any) => {
+                            const badge = getAlertStatusBadge(alert.live_status || alert.status || '');
+                            return `
+                                <div class="alert-item">
+                                    <div class="alert-top">
+                                        <div class="alert-description">${alert.alertaclinico}</div>
+                                        <span class="alert-badge" style="background:${badge.bg};color:${badge.color};">${badge.label}</span>
+                                    </div>
+                                    ${alert.justificativa && alert.justificativa.trim() !== '' ? `
+                                        <div class="alert-justification"><strong>Justificativa:</strong> ${alert.justificativa}</div>
+                                    ` : ''}
+                                </div>
+                            `;
+                        }).join('')}
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    };
+
+    const buildReportHtml = (item: GlobalReportItem, isLast: boolean): string => {
+        const patient = item.patient;
+        return `
+            <section class="report-page" ${isLast ? '' : 'style="page-break-after: always;"'}>
+                <div class="brand-bar">
+                    <div>
+                        <h1>SBAR KIDS</h1>
+                        <div class="subtitle">Relatório Clínico do Paciente</div>
+                    </div>
+                    <div class="meta">
+                        <div>${item.datetime}</div>
+                        <div>Responsável: <strong>${item.author}</strong></div>
+                    </div>
+                </div>
+
+                <div class="patient-card">
+                    <h2 class="patient-name">${patient.name}</h2>
+                    <div class="patient-grid">
+                        <div class="patient-item">
+                            <span class="patient-label">Leito</span>
+                            <span class="patient-value">${patient.bed_number || '-'}</span>
+                        </div>
+                        <div class="patient-item">
+                            <span class="patient-label">Data Nasc.</span>
+                            <span class="patient-value">${patient.dob ? new Date(patient.dob).toLocaleDateString('pt-BR') : '-'}</span>
+                        </div>
+                        <div class="patient-item">
+                            <span class="patient-label">Status</span>
+                            <span class="patient-value">${item.status}</span>
+                        </div>
+                        <div class="patient-item">
+                            <span class="patient-label">Mãe</span>
+                            <span class="patient-value">${patient.mother_name || '-'}</span>
+                        </div>
+                    </div>
+                </div>
+
+                ${['morning', 'afternoon', 'night'].map(s => buildShiftSection(s as any, item)).join('')}
+
+                <div class="doc-footer">
+                    Documento gerado automaticamente · SBAR Kids · ${new Date().toLocaleString('pt-BR')}
+                </div>
+            </section>
+        `;
+    };
+
     const handlePrint = () => {
         if (selectedReports.size === 0) {
             showToast("Selecione pelo menos um relatório para imprimir.", "warning");
             return;
         }
-        window.print();
+
+        const itemsToPrint = filteredReports.filter(r => selectedReports.has(r.id));
+        const body = itemsToPrint.map((item, idx) => buildReportHtml(item, idx === itemsToPrint.length - 1)).join('');
+
+        const html = `
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>SBAR Kids - Relatórios</title>
+                <style>
+                    * { box-sizing: border-box; }
+                    html, body { margin: 0; padding: 0; }
+                    body {
+                        font-family: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+                        padding: 24px 28px 32px;
+                        color: #1f2937;
+                        background: #fff;
+                        font-size: 13px;
+                        line-height: 1.55;
+                    }
+                    .report-page { padding-bottom: 20px; }
+
+                    .brand-bar {
+                        background: linear-gradient(90deg, #1e3a8a 0%, #2563eb 100%);
+                        color: #fff;
+                        padding: 14px 20px;
+                        border-radius: 10px 10px 0 0;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                    }
+                    .brand-bar h1 { margin: 0; font-size: 24px; letter-spacing: 0.5px; }
+                    .brand-bar .subtitle { font-size: 12px; opacity: 0.85; }
+                    .brand-bar .meta { font-size: 11px; text-align: right; opacity: 0.9; }
+
+                    .patient-card {
+                        border: 1px solid #e5e7eb;
+                        border-top: none;
+                        border-radius: 0 0 10px 10px;
+                        padding: 14px 20px;
+                        margin-bottom: 20px;
+                        background: #f9fafb;
+                    }
+                    .patient-name { font-size: 20px; font-weight: 700; color: #111827; margin: 0 0 10px; }
+                    .patient-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; font-size: 12px; }
+                    .patient-item { display: flex; flex-direction: column; }
+                    .patient-label { font-size: 10px; font-weight: 600; color: #2563eb; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+                    .patient-value { font-size: 13px; font-weight: 600; color: #111827; }
+
+                    .shift-section {
+                        margin-bottom: 18px;
+                        border-radius: 10px;
+                        overflow: hidden;
+                        border: 1px solid #e5e7eb;
+                        page-break-inside: avoid;
+                    }
+                    .shift-header {
+                        padding: 10px 16px;
+                        font-weight: 700;
+                        font-size: 14px;
+                        color: #fff;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                    }
+                    .shift-morning { border-left: 5px solid #f97316; }
+                    .shift-afternoon { border-left: 5px solid #eab308; }
+                    .shift-night { border-left: 5px solid #4f46e5; }
+                    .shift-content { padding: 14px 16px; background: #fff; }
+
+                    .sbar-block {
+                        padding: 12px;
+                        border: 1px solid;
+                        border-radius: 8px;
+                        margin-bottom: 12px;
+                    }
+                    .sbar-label {
+                        font-weight: 700;
+                        font-size: 12px;
+                        margin-bottom: 6px;
+                        text-transform: uppercase;
+                        letter-spacing: 0.3px;
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                    }
+                    .sbar-chip {
+                        display: inline-block;
+                        width: 22px;
+                        height: 22px;
+                        line-height: 22px;
+                        text-align: center;
+                        color: #fff;
+                        border-radius: 4px;
+                        font-weight: 700;
+                    }
+                    .sbar-text {
+                        font-size: 13px;
+                        color: #1f2937;
+                        white-space: pre-wrap;
+                        word-wrap: break-word;
+                    }
+                    .sbar-author {
+                        margin-top: 6px;
+                        padding-top: 6px;
+                        border-top: 1px dashed #d1d5db;
+                        font-size: 11px;
+                        color: #6b7280;
+                    }
+                    .sbar-author strong { color: #111827; }
+
+                    .alerts-title {
+                        font-weight: 700;
+                        font-size: 12px;
+                        color: #374151;
+                        margin: 14px 0 8px;
+                        text-transform: uppercase;
+                        letter-spacing: 0.3px;
+                    }
+                    .alert-item {
+                        border: 1px solid #e5e7eb;
+                        border-left: 4px solid #2563eb;
+                        border-radius: 8px;
+                        padding: 10px 12px;
+                        margin-bottom: 8px;
+                        background: #fff;
+                        page-break-inside: avoid;
+                    }
+                    .alert-top { display: flex; justify-content: space-between; align-items: start; gap: 8px; margin-bottom: 8px; }
+                    .alert-description { font-weight: 700; font-size: 13px; color: #111827; flex: 1; }
+                    .alert-badge { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
+                    .alert-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; font-size: 11px; color: #4b5563; }
+                    .alert-meta-label { color: #6b7280; font-weight: 600; }
+                    .alert-justification {
+                        margin-top: 8px;
+                        padding: 8px 10px;
+                        background: #f3f4f6;
+                        border-left: 3px solid #9ca3af;
+                        border-radius: 4px;
+                        font-size: 11px;
+                        color: #374151;
+                    }
+
+                    .signature-block {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 40px;
+                        margin-top: 40px;
+                        padding: 0 40px;
+                    }
+                    .signature { text-align: center; }
+                    .sig-line { border-top: 1px solid #1f2937; margin-bottom: 6px; }
+                    .sig-name { margin: 0; font-size: 11px; font-weight: 700; color: #111827; }
+                    .sig-role { margin: 2px 0 0; font-size: 9px; color: #6b7280; }
+
+                    .doc-footer {
+                        margin-top: 24px;
+                        padding-top: 12px;
+                        border-top: 1px solid #e5e7eb;
+                        font-size: 9px;
+                        color: #9ca3af;
+                        text-align: center;
+                    }
+
+                    @media print {
+                        body { padding: 20px; }
+                        .shift-section { page-break-inside: auto; }
+                        .alert-item { page-break-inside: auto; }
+                    }
+                </style>
+            </head>
+            <body>${body}</body>
+            </html>
+        `;
+
+        const printWindow = window.open('', '', 'height=600,width=800');
+        if (printWindow) {
+            printWindow.document.write(html);
+            printWindow.document.close();
+            setTimeout(() => { printWindow.print(); }, 300);
+        }
     };
 
     const calculateAge = (dob: string): number => {
@@ -431,28 +783,101 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onNavigate, currentPage, onSe
     const ReportsContent = () => (
         <div className="flex flex-col gap-4 screen-only">
             {/* Filters */}
-            <div className="flex flex-col sm:flex-row gap-3 bg-white dark:bg-slate-900/50 p-4 rounded-xl border border-gray-200 dark:border-gray-800">
-                <div className="flex-1">
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">Filtrar por Status</label>
-                    <select 
-                        className="w-full h-11 rounded-lg border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white"
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                    >
-                        <option value="">Todos os Status</option>
-                        <option value="estavel">Estável</option>
-                        <option value="instavel">Instável</option>
-                        <option value="em_risco">Em risco</option>
-                    </select>
+            <div className="flex flex-col gap-3 bg-white dark:bg-slate-900/50 p-4 rounded-xl border border-gray-200 dark:border-gray-800">
+                <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="flex-1">
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">Filtrar por Status</label>
+                        <select
+                            className="w-full h-11 rounded-lg border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white"
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                        >
+                            <option value="">Todos os Status</option>
+                            <option value="estavel">Estável</option>
+                            <option value="instavel">Instável</option>
+                            <option value="em_risco">Em risco</option>
+                        </select>
+                    </div>
+                    <div className="flex-1">
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">Filtrar por Data</label>
+                        <input
+                            type="date"
+                            className="w-full h-11 rounded-lg border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white"
+                            value={dateFilter}
+                            onChange={(e) => setDateFilter(e.target.value)}
+                        />
+                    </div>
                 </div>
-                <div className="flex-1">
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">Filtrar por Data</label>
-                    <input 
-                        type="date" 
-                        className="w-full h-11 rounded-lg border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white"
-                        value={dateFilter}
-                        onChange={(e) => setDateFilter(e.target.value)}
-                    />
+
+                {/* Filtro por paciente (multi-select) */}
+                <div className="relative">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">
+                        Filtrar por Paciente
+                    </label>
+                    <button
+                        type="button"
+                        onClick={() => setPatientDropdownOpen(v => !v)}
+                        className="w-full h-11 px-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white text-left text-sm flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                    >
+                        <span>
+                            {selectedPatientIds.size === 0
+                                ? 'Todos os pacientes'
+                                : `${selectedPatientIds.size} paciente(s) selecionado(s)`}
+                        </span>
+                        <span className="text-gray-400">{patientDropdownOpen ? '▲' : '▼'}</span>
+                    </button>
+
+                    {patientDropdownOpen && (
+                        <div className="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-xl max-h-72 overflow-hidden flex flex-col">
+                            <div className="p-2 border-b border-gray-200 dark:border-gray-700">
+                                <input
+                                    type="text"
+                                    placeholder="Buscar paciente por nome..."
+                                    value={patientSearch}
+                                    onChange={(e) => setPatientSearch(e.target.value)}
+                                    className="w-full px-3 py-1.5 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded text-gray-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent"
+                                />
+                            </div>
+                            <div className="overflow-y-auto flex-1">
+                                {uniquePatients.length === 0 ? (
+                                    <div className="p-3 text-sm text-gray-500 text-center">Nenhum paciente disponível</div>
+                                ) : (
+                                    <>
+                                        <button
+                                            type="button"
+                                            onClick={toggleAllPatients}
+                                            className="w-full px-3 py-2 text-left text-xs font-semibold text-primary hover:bg-gray-100 dark:hover:bg-gray-700 border-b border-gray-200 dark:border-gray-700"
+                                        >
+                                            {selectedPatientIds.size === filteredUniquePatients.length && filteredUniquePatients.length > 0
+                                                ? 'Desmarcar todos'
+                                                : 'Selecionar todos'}
+                                        </button>
+                                        {filteredUniquePatients.length === 0 ? (
+                                            <div className="p-3 text-sm text-gray-500 text-center">Nenhum paciente encontrado</div>
+                                        ) : (
+                                            filteredUniquePatients.map(p => (
+                                                <label
+                                                    key={p.id}
+                                                    className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer text-sm"
+                                                >
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedPatientIds.has(p.id)}
+                                                        onChange={() => togglePatientSelection(p.id)}
+                                                        className="h-4 w-4 appearance-auto accent-primary"
+                                                    />
+                                                    <span className="text-gray-900 dark:text-white flex-1">{p.name}</span>
+                                                    {p.bed_number != null && (
+                                                        <span className="text-xs text-gray-500">Leito {p.bed_number}</span>
+                                                    )}
+                                                </label>
+                                            ))
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -534,6 +959,49 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onNavigate, currentPage, onSe
                                         ].filter(Boolean).join(', ')}</p>
                                     )}
                                 </div>
+
+                                {/* Alertas clínicos do paciente */}
+                                {alertasPorPaciente[item.patient.id] && alertasPorPaciente[item.patient.id].length > 0 && (
+                                    <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
+                                        <p className="text-xs font-bold text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-1">
+                                            🔔 Alertas Clínicos ({alertasPorPaciente[item.patient.id].length})
+                                        </p>
+                                        <div className="space-y-2">
+                                            {alertasPorPaciente[item.patient.id].slice(0, 5).map((alerta: any) => {
+                                                const status = (alerta.live_status || alerta.status || '').toLowerCase();
+                                                const borderColor = status === 'fora_do_prazo' ? 'border-l-red-500'
+                                                    : (status === 'concluido' || status === 'resolvido') ? 'border-l-green-500'
+                                                    : 'border-l-yellow-500';
+                                                const badgeStyle = status === 'fora_do_prazo' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+                                                    : (status === 'concluido' || status === 'resolvido') ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                                                    : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300';
+                                                return (
+                                                    <div
+                                                        key={alerta.id_alerta}
+                                                        className={`p-2 rounded-md bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 border-l-4 ${borderColor}`}
+                                                    >
+                                                        <div className="flex items-start justify-between gap-2">
+                                                            <p className="text-xs font-semibold text-gray-900 dark:text-white flex-1">{alerta.alertaclinico}</p>
+                                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap ${badgeStyle}`}>
+                                                                {(alerta.status || '').replace('_', ' ') || 'ativo'}
+                                                            </span>
+                                                        </div>
+                                                        {alerta.justificativa && alerta.justificativa.trim() !== '' && (
+                                                            <p className="text-[11px] text-gray-600 dark:text-gray-400 mt-1 italic">
+                                                                <strong>Justificativa:</strong> {alerta.justificativa}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                            {alertasPorPaciente[item.patient.id].length > 5 && (
+                                                <p className="text-[11px] text-gray-500 italic text-center pt-1">
+                                                    + {alertasPorPaciente[item.patient.id].length - 5} outros alerta(s)
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ))
@@ -549,8 +1017,6 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onNavigate, currentPage, onSe
 
     return (
         <>
-            <PrintableContent />
-
             {/* Mobile View */}
             <div className="w-full overflow-x-hidden sm:hidden bg-background-light dark:bg-background-dark min-h-screen screen-only">
                 <header className="sticky top-0 z-10 flex items-center justify-between bg-background-light/80 p-4 pb-3 backdrop-blur-sm dark:bg-background-dark/80 border-b border-gray-200 dark:border-gray-800">

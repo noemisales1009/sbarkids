@@ -95,8 +95,8 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ patient, onBack, onNavigate, 
                         padding: 24px 28px 40px;
                         color: #1f2937;
                         background: #fff;
-                        font-size: 12px;
-                        line-height: 1.5;
+                        font-size: 13px;
+                        line-height: 1.55;
                     }
 
                     /* Cabeçalho principal */
@@ -109,9 +109,9 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ patient, onBack, onNavigate, 
                         justify-content: space-between;
                         align-items: center;
                     }
-                    .brand-bar h1 { margin: 0; font-size: 22px; letter-spacing: 0.5px; }
-                    .brand-bar .subtitle { font-size: 11px; opacity: 0.85; }
-                    .brand-bar .meta { font-size: 10px; text-align: right; opacity: 0.9; }
+                    .brand-bar h1 { margin: 0; font-size: 24px; letter-spacing: 0.5px; }
+                    .brand-bar .subtitle { font-size: 12px; opacity: 0.85; }
+                    .brand-bar .meta { font-size: 11px; text-align: right; opacity: 0.9; }
 
                     /* Card do paciente */
                     .patient-card {
@@ -123,7 +123,7 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ patient, onBack, onNavigate, 
                         background: #f9fafb;
                     }
                     .patient-name {
-                        font-size: 18px;
+                        font-size: 20px;
                         font-weight: 700;
                         color: #111827;
                         margin: 0 0 10px;
@@ -132,18 +132,18 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ patient, onBack, onNavigate, 
                         display: grid;
                         grid-template-columns: repeat(4, 1fr);
                         gap: 10px;
-                        font-size: 11px;
+                        font-size: 12px;
                     }
                     .patient-item { display: flex; flex-direction: column; }
                     .patient-label {
-                        font-size: 9px;
+                        font-size: 10px;
                         font-weight: 600;
                         color: #2563eb;
                         text-transform: uppercase;
                         letter-spacing: 0.5px;
                         margin-bottom: 2px;
                     }
-                    .patient-value { font-size: 12px; font-weight: 600; color: #111827; }
+                    .patient-value { font-size: 13px; font-weight: 600; color: #111827; }
 
                     /* Seção de turno */
                     .shift-section {
@@ -156,7 +156,7 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ patient, onBack, onNavigate, 
                     .shift-header {
                         padding: 10px 16px;
                         font-weight: 700;
-                        font-size: 13px;
+                        font-size: 14px;
                         color: #fff;
                         display: flex;
                         justify-content: space-between;
@@ -180,14 +180,14 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ patient, onBack, onNavigate, 
                     }
                     .assessment-title {
                         font-weight: 700;
-                        font-size: 11px;
+                        font-size: 12px;
                         color: #1e40af;
                         margin-bottom: 6px;
                         text-transform: uppercase;
                         letter-spacing: 0.3px;
                     }
                     .assessment-text {
-                        font-size: 11px;
+                        font-size: 13px;
                         color: #1f2937;
                         white-space: pre-wrap;
                         word-wrap: break-word;
@@ -196,7 +196,7 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ patient, onBack, onNavigate, 
                     /* Alertas */
                     .alerts-title {
                         font-weight: 700;
-                        font-size: 11px;
+                        font-size: 12px;
                         color: #374151;
                         margin: 14px 0 8px;
                         text-transform: uppercase;
@@ -221,9 +221,9 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ patient, onBack, onNavigate, 
                         gap: 8px;
                         margin-bottom: 8px;
                     }
-                    .alert-description { font-weight: 700; font-size: 12px; color: #111827; flex: 1; }
+                    .alert-description { font-weight: 700; font-size: 13px; color: #111827; flex: 1; }
                     .alert-badge {
-                        font-size: 9px;
+                        font-size: 10px;
                         font-weight: 700;
                         padding: 3px 8px;
                         border-radius: 999px;
@@ -233,7 +233,7 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ patient, onBack, onNavigate, 
                         display: grid;
                         grid-template-columns: 1fr 1fr;
                         gap: 4px 12px;
-                        font-size: 10px;
+                        font-size: 11px;
                         color: #4b5563;
                     }
                     .alert-meta-label { color: #6b7280; font-weight: 600; }
@@ -243,7 +243,7 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ patient, onBack, onNavigate, 
                         background: #f3f4f6;
                         border-left: 3px solid #9ca3af;
                         border-radius: 4px;
-                        font-size: 10px;
+                        font-size: 11px;
                         color: #374151;
                     }
                     .alert-justification strong { color: #111827; }
@@ -367,12 +367,6 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ patient, onBack, onNavigate, 
                                     <div class="alert-top">
                                         <div class="alert-description">${alert.alertaclinico}</div>
                                         <span class="alert-badge" style="background:${badge.bg}; color:${badge.color};">${badge.label}</span>
-                                    </div>
-                                    <div class="alert-meta-grid">
-                                        <div><span class="alert-meta-label">Responsável:</span> ${alert.responsavel || '-'}</div>
-                                        <div><span class="alert-meta-label">Criado por:</span> ${alert.created_by_name || '-'}</div>
-                                        <div><span class="alert-meta-label">Criado em:</span> ${alert.hora_criacao_formatado || alert.hora_criacao_br || '-'}</div>
-                                        <div><span class="alert-meta-label">Prazo:</span> ${alert.prazo_formatado || alert.prazo_limite_formatado || '-'}</div>
                                     </div>
                                     ${alert.justificativa && alert.justificativa.trim() !== '' ? `
                                         <div class="alert-justification">
