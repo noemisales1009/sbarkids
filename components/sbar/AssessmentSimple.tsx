@@ -33,6 +33,11 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
   const [afternoonInfo, setAfternoonInfo] = useState({ savedBy: '', savedAt: '' });
   const [nightInfo, setNightInfo] = useState({ savedBy: '', savedAt: '' });
 
+  // Histórico de edições
+  type EditRow = { id: number; content: string; nome_editor: string; data_edicao: string };
+  const [edits, setEdits] = useState<EditRow[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+
   // Carregar dados ao montar
   useEffect(() => {
     const loadData = async () => {
@@ -67,6 +72,15 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
 
     loadData();
   }, [patientId, roundId]);
+
+  // Carregar histórico de edições quando trocar de turno
+  useEffect(() => {
+    const loadEdits = async () => {
+      const rows = await clinicalRoundsSimpleService.getAssessmentEdits(patientId, selectedShift);
+      setEdits(rows);
+    };
+    loadEdits();
+  }, [patientId, selectedShift, saving]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -166,13 +180,28 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
         />
       </div>
 
-      {/* Info de salvamento */}
-      {currentData.info.savedBy && (
-        <div className="mb-4 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-300">
-          <p>💾 Salvo por: <span className="text-blue-600 dark:text-blue-400 font-medium">{currentData.info.savedBy}</span></p>
-          <p>🕐 Em: <span className="text-blue-600 dark:text-blue-400 font-medium">{currentData.info.savedAt}</span></p>
-        </div>
-      )}
+      {/* Info de criação/edição */}
+      {edits.length > 0 && (() => {
+        // edits vem ordenado por data_edicao DESC → último = 1º criador, primeiro = última edição
+        const criador = edits[edits.length - 1];
+        const ultimoEditor = edits[0];
+        const foiEditado = edits.length > 1 && ultimoEditor.nome_editor !== criador.nome_editor;
+
+        return (
+          <div className="mb-4 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-300 space-y-1">
+            <p>
+              ✍️ Criado por: <span className="text-blue-600 dark:text-blue-400 font-medium">{criador.nome_editor}</span>
+              <span className="text-xs text-gray-500 ml-2">• {new Date(criador.data_edicao).toLocaleString('pt-BR')}</span>
+            </p>
+            {foiEditado && (
+              <p>
+                📝 Editado por: <span className="text-amber-600 dark:text-amber-400 font-medium">{ultimoEditor.nome_editor}</span>
+                <span className="text-xs text-gray-500 ml-2">• {new Date(ultimoEditor.data_edicao).toLocaleString('pt-BR')}</span>
+              </p>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Botão Salvar */}
       <button

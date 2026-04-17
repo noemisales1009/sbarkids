@@ -105,9 +105,26 @@ export const clinicalRoundsSimpleService = {
         if (result.message?.includes('406') || result.code === '406') {
           return false;
         }
-        
+
         logError(result, `clinicalRoundsSimpleService.saveAssessment.${shift}`);
         return false;
+      }
+
+      // Registrar no histórico de edições (não bloqueia o save se falhar)
+      try {
+        const { data: authData } = await supabase.auth.getUser();
+        await supabase
+          .from('clinical_rounds_assessment_edits')
+          .insert([{
+            patient_id: patientId,
+            round_id: roundId || null,
+            shift,
+            content,
+            edited_by: authData?.user?.id || null,
+            edited_by_name: userName
+          }]);
+      } catch (historyErr) {
+        logError(historyErr, 'clinicalRoundsSimpleService.saveAssessment.history');
       }
 
       return true;
@@ -116,9 +133,35 @@ export const clinicalRoundsSimpleService = {
       if (error?.message?.includes('406') || error?.status === 406) {
         return false;
       }
-      
+
       logError(error, 'clinicalRoundsSimpleService.saveAssessment');
       return false;
+    }
+  },
+
+  /**
+   * Buscar histórico de edições do Assessment
+   */
+  async getAssessmentEdits(
+    patientId: string,
+    shift: 'morning' | 'afternoon' | 'night'
+  ): Promise<Array<{ id: number; content: string; nome_editor: string; data_edicao: string }>> {
+    try {
+      const { data, error } = await supabase
+        .from('clinical_rounds_assessment_edits_com_usuario')
+        .select('id, content, nome_editor, data_edicao')
+        .eq('patient_id', patientId)
+        .eq('shift', shift)
+        .order('data_edicao', { ascending: false });
+
+      if (error) {
+        logError(error, 'clinicalRoundsSimpleService.getAssessmentEdits');
+        return [];
+      }
+      return (data || []) as any[];
+    } catch (error) {
+      logError(error, 'clinicalRoundsSimpleService.getAssessmentEdits');
+      return [];
     }
   },
 
