@@ -40,10 +40,29 @@ export const diagnosticosSelecionadosService = {
       }));
 
 
-      // UPSERT usando a sintaxe correta do Supabase
-      const { data: result, error } = await supabase
-        .from('paciente_diagnosticos')
-        .upsert(data);
+      // Para cada diagnóstico: atualiza se já existe, insere se não existe
+      for (const item of data) {
+        const { data: existing } = await supabase
+          .from('paciente_diagnosticos')
+          .select('id')
+          .eq('patient_id', item.patient_id)
+          .eq('pergunta_id', item.pergunta_id)
+          .eq('opcao_id', item.opcao_id)
+          .limit(1);
+
+        if (existing && existing.length > 0) {
+          await supabase
+            .from('paciente_diagnosticos')
+            .update({ texto_digitado: item.texto_digitado, status: item.status })
+            .eq('id', existing[0].id);
+        } else {
+          await supabase
+            .from('paciente_diagnosticos')
+            .insert([item]);
+        }
+      }
+
+      const error = null;
 
       if (error) {
         logError(error, 'diagnosticosSelecionadosService.saveDiagnosticos');
@@ -66,18 +85,27 @@ export const diagnosticosSelecionadosService = {
   ): Promise<DiagnosticoSelecionado[]> {
     try {
       const { data, error } = await supabase
-        .from('paciente_diagnosticos')
+        .from('diagnosticos_historico_com_usuario')
         .select('*')
         .eq('patient_id', patientId)
         .eq('pergunta_id', perguntaId)
-        .order('created_at', { ascending: false });
+        .eq('arquivado', false)
+        .order('data_criacao', { ascending: false });
 
       if (error) {
         logError(error, 'diagnosticosSelecionadosService.getDiagnosticosPaciente');
         return [];
       }
 
-      return (data || []) as DiagnosticoSelecionado[];
+      // Deduplicar por opcao_id (manter o mais recente de cada)
+      const seen = new Set<number>();
+      const deduped = (data || []).filter((d: any) => {
+        if (seen.has(d.opcao_id)) return false;
+        seen.add(d.opcao_id);
+        return true;
+      });
+
+      return deduped as DiagnosticoSelecionado[];
     } catch (error) {
       logError(error, 'diagnosticosSelecionadosService.getDiagnosticosPaciente');
       return [];
