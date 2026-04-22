@@ -445,22 +445,42 @@ export const alertasService = {
   },
 
   /**
-   * Busca alertas concluídos visíveis (dentro da janela de 24h) da view alertas_paciente_visibilidade_24h
+   * Busca alertas concluídos visíveis usando is_alerta_visible e tempo_restante_visibilidade do Supabase
    */
   async getConcluidos24h(patientId: string): Promise<any[]> {
     try {
-
       const { data, error } = await supabase
         .from('alertas_paciente_visibilidade_24h')
         .select('*')
         .eq('patient_id', patientId)
         .order('concluded_at', { ascending: false });
 
-      if (error) {
-        return [];
-      }
+      if (error) return [];
 
-      return data || [];
+      const alertas = data || [];
+
+      const enriched = await Promise.all(
+        alertas.map(async (alerta) => {
+          const concludedAt = alerta.concluded_at ?? null;
+          const [visivelRes, tempoRes] = await Promise.all([
+            supabase.rpc('is_alerta_visible', {
+              p_status: alerta.status,
+              p_hora_conclusao: concludedAt
+            }),
+            supabase.rpc('tempo_restante_visibilidade', {
+              p_status: alerta.status,
+              p_hora_conclusao: concludedAt
+            })
+          ]);
+          return {
+            ...alerta,
+            tempo_visibilidade: (tempoRes.data as string | null) ?? alerta.tempo_visibilidade,
+            _is_visible: visivelRes.error ? true : (visivelRes.data as boolean)
+          };
+        })
+      );
+
+      return enriched.filter(a => a._is_visible);
     } catch (error) {
       logError(error, 'alertasService.getConcluidos24h');
       return [];

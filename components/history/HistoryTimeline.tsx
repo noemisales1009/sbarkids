@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Alerta, alertasService } from '../../services/alertasService';
 
 interface HistoryTimelineProps {
@@ -44,6 +44,27 @@ const formatDate = (dateStr: string | null | undefined): string => {
 };
 
 const HistoryTimeline: React.FC<HistoryTimelineProps> = ({ date, items }) => {
+  const [visibilityMap, setVisibilityMap] = useState<Record<string, string | null>>({});
+
+  useEffect(() => {
+    const concluded = items.filter(i => isConcluded(i.status, i.live_status));
+    if (concluded.length === 0) return;
+
+    Promise.all(
+      concluded.map(async (item) => {
+        const tempo = await alertasService.getTempoRestanteVisibilidadeSQL(
+          item.id_alerta,
+          item.status,
+          item.concluded_at ?? item.updated_at ?? null,
+          item.fonte ?? 'alertas_paciente'
+        );
+        return [item.id_alerta, tempo] as [string, string | null];
+      })
+    ).then(results => {
+      setVisibilityMap(Object.fromEntries(results));
+    });
+  }, [items]);
+
   return (
     <div className="mb-6">
       <h3 className="text-gray-400 text-sm font-medium mb-3">
@@ -53,7 +74,7 @@ const HistoryTimeline: React.FC<HistoryTimelineProps> = ({ date, items }) => {
         {items.map((item) => {
           const concluded = isConcluded(item.status, item.live_status);
           const statusLabel = item.status?.replace('_', ' ') || 'ativo';
-          const tempoVisibilidade = concluded ? alertasService.getTempoRestanteVisibilidade(item) : null;
+          const tempoVisibilidade = concluded ? (visibilityMap[item.id_alerta] ?? null) : null;
 
           return (
             <div

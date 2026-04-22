@@ -15,6 +15,8 @@ import {
 } from '../../services/backgroundService';
 import { balanceHidricoService, BalancoHidrico } from '../../services/balanceHidricoService';
 import { diureseService, Diurese } from '../../services/diureseService';
+import { aportesService, AportesPaciente } from '../../services/aportesService';
+import { scalesService, ScaleScore } from '../../services/scalesService';
 import { MEDICATION_LIST, MEDICATION_DOSAGE_UNITS, DEVICE_TYPES, DEVICE_LOCATIONS, CULTURE_COLLECTION_SITES } from '../../utils/constants';
 import { PATHOGENS_LIST } from '../../utils/pathogens';
 import { useToast } from '../Toast';
@@ -183,8 +185,10 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
   const [dietas, setDietas] = useState<Dieta[]>([]);
   const [balanceHidrico, setBalanceHidrico] = useState<BalancoHidrico[]>([]);
   const [diurese, setDiurese] = useState<Diurese[]>([]);
+  const [aportes, setAportes] = useState<AportesPaciente[]>([]);
+  const [scaleScores, setScaleScores] = useState<ScaleScore[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'medicacoes' | 'dispositivos' | 'culturas' | 'procedimentos' | 'exames' | 'dietas' | 'balancoHidrico' | 'diurese' | null>(null);
+  const [activeTab, setActiveTab] = useState<'medicacoes' | 'dispositivos' | 'culturas' | 'procedimentos' | 'exames' | 'dietas' | 'balancoHidrico' | 'diurese' | 'aportes' | 'escalas' | null>(null);
 
   const categoryTitles: Record<NonNullable<typeof activeTab>, string> = {
     medicacoes: '💊 Medicações',
@@ -195,6 +199,8 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
     dietas: '🍽️ Dietas',
     balancoHidrico: '💧 Balanço Hídrico',
     diurese: '💦 Diurese',
+    aportes: '💉 Aportes',
+    escalas: '📊 Escalas',
   };
 
   // Modal states (desativado - componente em modo leitura)
@@ -213,7 +219,7 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
     try {
       setLoading(true);
       
-      const [meds, devs, cults, procs, exs, diets, bhidricos, diur] = await Promise.all([
+      const [meds, devs, cults, procs, exs, diets, bhidricos, diur, aports, scales] = await Promise.all([
         backgroundService.getMedicacoes(patientId),
         backgroundService.getDispositivos(patientId),
         backgroundService.getCulturas(patientId),
@@ -221,9 +227,10 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
         backgroundService.getExames(patientId),
         backgroundService.getDietas(patientId),
         balanceHidricoService.getBalanceHidrico(patientId),
-        diureseService.getDiurese(patientId)
+        diureseService.getDiurese(patientId),
+        aportesService.getAportes(patientId),
+        scalesService.getScaleScores(patientId)
       ]);
-
 
       setMedicacoes(meds);
       setDispositivos(devs);
@@ -233,6 +240,8 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
       setDietas(diets);
       setBalanceHidrico(bhidricos);
       setDiurese(diur);
+      setAportes(aports);
+      setScaleScores(scales);
     } catch (error) {
     } finally {
       setLoading(false);
@@ -314,6 +323,22 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
           gradient="from-pink-500 to-rose-700"
           isActive={activeTab === 'diurese'}
           onClick={() => setActiveTab('diurese')}
+        />
+        <CategoryCard
+          icon="💉"
+          title="Aportes"
+          count={aportes.length}
+          gradient="from-indigo-500 to-violet-700"
+          isActive={activeTab === 'aportes'}
+          onClick={() => setActiveTab('aportes')}
+        />
+        <CategoryCard
+          icon="📊"
+          title="Escalas"
+          count={scaleScores.length}
+          gradient="from-lime-500 to-green-700"
+          isActive={activeTab === 'escalas'}
+          onClick={() => setActiveTab('escalas')}
         />
       </div>
 
@@ -621,6 +646,82 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
                         {balance.resultado > 0 ? 'Ganho' : balance.resultado < 0 ? 'Perda' : 'Equilibrado'}
                       </p>
                     </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </TabContent>
+        )}
+
+        {/* ESCALAS */}
+        {activeTab === 'escalas' && (
+          <TabContent
+            title="Escalas"
+            isEmpty={scaleScores.length === 0}
+            emptyMessage="Nenhuma escala registrada"
+          >
+            <div className="space-y-2">
+              {scaleScores.map((scale) => (
+                <div key={scale.id} className="p-3 bg-lime-50 dark:bg-lime-900/20 border border-lime-200 dark:border-lime-800 rounded-lg space-y-2">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">{scale.scale_name}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {new Date(scale.date).toLocaleDateString('pt-BR', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                      })}
+                    </p>
+                  </div>
+                  <div className="bg-lime-100 dark:bg-lime-900/40 border border-lime-300 dark:border-lime-700 rounded-lg p-3">
+                    <div className="text-center">
+                      <p className="text-xs text-lime-600 dark:text-lime-400 mb-1">Score</p>
+                      <p className="text-2xl font-bold text-lime-900 dark:text-white">{scale.score}</p>
+                      <p className="text-xs text-lime-700 dark:text-lime-300 font-medium mt-1">{scale.interpretation}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </TabContent>
+        )}
+
+        {/* APORTES */}
+        {activeTab === 'aportes' && (
+          <TabContent
+            title="Aportes"
+            isEmpty={aportes.length === 0}
+            emptyMessage="Nenhum aporte registrado"
+          >
+            <div className="space-y-2">
+              {aportes.map((aporte) => (
+                <div key={aporte.id} className="p-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg space-y-2">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                    {new Date(aporte.data_referencia + 'T00:00:00').toLocaleDateString('pt-BR')}
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded">
+                      <p className="text-gray-500 dark:text-gray-400 mb-1">VO</p>
+                      <p className="font-bold text-gray-900 dark:text-white">{Number(aporte.vo_ml_kg_h).toFixed(3)}</p>
+                      <p className="text-gray-400 text-xs">ml/kg/h</p>
+                    </div>
+                    <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded">
+                      <p className="text-gray-500 dark:text-gray-400 mb-1">HV/NPT</p>
+                      <p className="font-bold text-gray-900 dark:text-white">{Number(aporte.hv_npt_ml_kg_h).toFixed(3)}</p>
+                      <p className="text-gray-400 text-xs">ml/kg/h</p>
+                    </div>
+                    <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded">
+                      <p className="text-gray-500 dark:text-gray-400 mb-1">Medicações</p>
+                      <p className="font-bold text-gray-900 dark:text-white">{Number(aporte.medicacoes_ml_kg_h).toFixed(3)}</p>
+                      <p className="text-gray-400 text-xs">ml/kg/h</p>
+                    </div>
+                    {aporte.tht_ml_kg_h !== null && (
+                      <div className="p-2 bg-indigo-100 dark:bg-indigo-900/40 border border-indigo-300 dark:border-indigo-700 rounded">
+                        <p className="text-indigo-600 dark:text-indigo-400 mb-1">THT Total</p>
+                        <p className="font-bold text-indigo-900 dark:text-white">{Number(aporte.tht_ml_kg_h).toFixed(3)}</p>
+                        <p className="text-indigo-400 text-xs">ml/kg/h</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
