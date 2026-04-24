@@ -10,33 +10,8 @@ interface Props {
 interface FormState {
   nome_paciente: string;
   numero_leito: string;
-  dt_nasc: string;       // YYYY-MM-DD (date input)
-  dt_internacao: string; // YYYY-MM-DD (date input)
-}
-
-function normalizeNome(nome: string): string {
-  return nome
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9]/g, ' ')
-    .trim()
-    .replace(/\s+/g, ' ');
-}
-
-// Converte YYYY-MM-DD → DD/MM/YYYY (formato da automação)
-function toDisplayDate(iso: string): string {
-  if (!iso) return '';
-  const [y, m, d] = iso.split('-');
-  return `${d}/${m}/${y}`;
-}
-
-// Replica exatamente o makeChave da automação n8n
-function makeChave(nome: string, dtNascISO: string): string {
-  const nomeKey = normalizeNome(nome).split(' ').slice(0, 3).join('');
-  if (!dtNascISO) return nomeKey + '_';
-  const [y, m, d] = dtNascISO.split('-');
-  return nomeKey + '_' + y + m + d;
+  dt_nasc: string;
+  dt_internacao: string;
 }
 
 const CadastroManualModal: React.FC<Props> = ({ onClose, onSuccess }) => {
@@ -48,10 +23,6 @@ const CadastroManualModal: React.FC<Props> = ({ onClose, onSuccess }) => {
   });
   const [saving, setSaving] = useState(false);
   const [erro, setErro] = useState('');
-
-  const nomeNorm = normalizeNome(form.nome_paciente);
-  const leitoKey = form.numero_leito ? `${form.numero_leito}_${nomeNorm.replace(/\s+/g, '')}` : '';
-  const chaveLink = makeChave(form.nome_paciente, form.dt_nasc);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -73,32 +44,20 @@ const CadastroManualModal: React.FC<Props> = ({ onClose, onSuccess }) => {
 
     setSaving(true);
     try {
-      const nomeFinal = form.nome_paciente.trim().toUpperCase();
-      const record = {
-        // campos da automação (exatamente como no output)
-        nome_paciente: nomeFinal,
-        numero_leito: parseInt(form.numero_leito),
-        dt_nasc: toDisplayDate(form.dt_nasc),
-        dt_internacao: toDisplayDate(form.dt_internacao),
-        nome_norm: nomeNorm,
-        leito_key: leitoKey,
-        chave_link: chaveLink,
-        // campos usados pelo app para renderizar a lista
-        name: nomeFinal,
-        bed_number: parseInt(form.numero_leito),
-        dob: form.dt_nasc,
-        nomepaciente_norm: nomeNorm,
-        status: 'estavel',
-        mother_name: null,
-        diagnosis: null,
-        comorbidade: null,
-        peso: null,
-        destino: null,
-      };
-
       const { data, error } = await supabase
         .from('patients')
-        .insert([record])
+        .insert([{
+          name: form.nome_paciente.trim().toUpperCase(),
+          bed_number: parseInt(form.numero_leito),
+          dob: form.dt_nasc,
+          dt_internacao: form.dt_internacao,
+          status: 'estavel',
+          mother_name: null,
+          diagnosis: null,
+          comorbidade: null,
+          peso: null,
+          destino: null,
+        }])
         .select()
         .single();
 
@@ -192,23 +151,6 @@ const CadastroManualModal: React.FC<Props> = ({ onClose, onSuccess }) => {
               />
             </div>
           </div>
-
-          {/* Preview gerado automaticamente */}
-          {nomeNorm && (
-            <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 p-3 space-y-2">
-              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Gerado automaticamente</p>
-              {[
-                { label: 'nome_norm', value: nomeNorm },
-                { label: 'leito_key', value: leitoKey },
-                { label: 'chave_link', value: chaveLink !== '_' ? chaveLink : '' },
-              ].map(({ label, value }) => value ? (
-                <div key={label} className="flex items-center gap-2 text-xs">
-                  <span className="text-gray-400 w-20 shrink-0">{label}</span>
-                  <code className="text-blue-600 dark:text-blue-400 font-mono bg-white dark:bg-gray-900 px-2 py-0.5 rounded border border-gray-200 dark:border-gray-700 truncate flex-1">{value}</code>
-                </div>
-              ) : null)}
-            </div>
-          )}
 
           {/* Erro */}
           {erro && (

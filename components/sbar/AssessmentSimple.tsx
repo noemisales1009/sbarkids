@@ -26,10 +26,14 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
 
   const [assessmentMorning, setAssessmentMorning] = useState('');
   const [assessmentAfternoon, setAssessmentAfternoon] = useState('');
   const [assessmentNight, setAssessmentNight] = useState('');
+
+  // Rastreia o que está salvo no banco — só entra em modo leitura quando há conteúdo salvo
+  const [savedContent, setSavedContent] = useState({ morning: '', afternoon: '', night: '' });
 
   const cancelContentRef = useRef('');
   const [edits, setEdits] = useState<EditRow[]>([]);
@@ -41,9 +45,13 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
       try {
         const data = await clinicalRoundsSimpleService.getByRound(patientId, roundId);
         if (!cancelled && data) {
-          setAssessmentMorning(data.assessment_morning || '');
-          setAssessmentAfternoon(data.assessment_afternoon || '');
-          setAssessmentNight(data.assessment_night || '');
+          const m = data.assessment_morning || '';
+          const a = data.assessment_afternoon || '';
+          const n = data.assessment_night || '';
+          setAssessmentMorning(m);
+          setAssessmentAfternoon(a);
+          setAssessmentNight(n);
+          setSavedContent({ morning: m, afternoon: a, night: n });
         }
       } catch (error) {
         if (!cancelled) {
@@ -58,8 +66,10 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
     return () => { cancelled = true; };
   }, [patientId, roundId]);
 
+  // Ao trocar de turno, sai do modo edição e descarta alterações não salvas
   useEffect(() => {
     setEditing(false);
+    setHasChanges(false);
   }, [selectedShift]);
 
   useEffect(() => {
@@ -75,11 +85,13 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
   const handleEdit = (content: string) => {
     cancelContentRef.current = content;
     setEditing(true);
+    setHasChanges(false);
   };
 
   const handleCancel = (setContent: (v: string) => void) => {
     setContent(cancelContentRef.current);
     setEditing(false);
+    setHasChanges(false);
   };
 
   const handleSave = async () => {
@@ -102,7 +114,9 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
 
       if (success) {
         onSaved?.(`✅ Avaliação da ${shiftFilterService.getShiftLabel(selectedShift)} salva com sucesso!`);
+        setSavedContent(prev => ({ ...prev, [selectedShift]: content }));
         setEditing(false);
+        setHasChanges(false);
         const updatedEdits = await clinicalRoundsSimpleService.getAssessmentEdits(patientId, selectedShift);
         setEdits(updatedEdits);
       } else {
@@ -127,7 +141,9 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
 
   const currentData = shiftData[selectedShift];
   const hasContent = currentData.content.trim().length > 0;
-  const isReadOnly = hasContent && !editing;
+
+  // Entra em read-only apenas quando: há conteúdo salvo no banco E não está editando E não tem mudanças pendentes
+  const isReadOnly = savedContent[selectedShift] !== '' && !editing && !hasChanges;
 
   const criador = edits.length > 0 ? edits[edits.length - 1] : null;
   const ultimoEditor = edits.length > 1 ? edits[0] : null;
@@ -170,7 +186,10 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
           ) : (
             <textarea
               value={currentData.content}
-              onChange={(e) => currentData.setContent(e.target.value)}
+              onChange={(e) => {
+                currentData.setContent(e.target.value);
+                setHasChanges(true);
+              }}
               placeholder="Digite a avaliação do paciente..."
               autoFocus={editing}
               className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 dark:focus:border-blue-500 text-sm leading-relaxed transition"
@@ -180,8 +199,8 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
           )}
         </div>
 
-        {/* Info de criação/edição */}
-        {criador && (
+        {/* Info de criação/edição — só exibe em modo leitura */}
+        {isReadOnly && criador && (
           <div className="mb-3 flex flex-col gap-0.5 text-xs text-gray-400 dark:text-gray-500">
             <span>
               ✍️ Criado por{' '}
