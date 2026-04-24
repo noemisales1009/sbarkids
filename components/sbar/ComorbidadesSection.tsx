@@ -48,36 +48,40 @@ const ComorbidadesSection: React.FC<ComorbidadesSectionProps> = ({ patientId }) 
   }
 
   return (
-    <div className="flex flex-col rounded-xl border border-gray-700 bg-gray-800/40">
+    <div className="rounded-xl border border-gray-700/50 bg-gradient-to-br from-gray-900/80 to-gray-800/40 overflow-hidden shadow-sm">
       {/* Header */}
-      <div className="px-4 py-3 text-white text-sm font-medium leading-normal flex items-center gap-3">
-        <span className="text-base">📋</span>
-        <span>Comorbidades</span>
+      <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-700/50 bg-gray-800/30">
+        <div className="flex items-center gap-2">
+          <span className="w-1.5 h-4 rounded-full bg-purple-500 shrink-0" />
+          <p className="text-sm font-semibold text-gray-200">Comorbidades</p>
+        </div>
         {comorbidades.length > 0 && (
-          <span className="text-xs bg-blue-600 text-white rounded-full px-2 py-0.5">
-            ({comorbidades.length})
+          <span className="text-xs bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-full px-2.5 py-0.5 font-bold">
+            {comorbidades.length}
           </span>
         )}
       </div>
 
-      {/* Card com as comorbidades */}
-      <div className="border-t border-gray-700 px-4 py-3">
-        <div className="bg-gray-900/60 border border-gray-700 rounded-lg p-4">
-          {comorbidades.length > 0 ? (
-            <div className="space-y-2">
-              {comorbidades.map((comorbidade, index) => (
-                <div
-                  key={`${comorbidade}-${index}`}
-                  className="flex items-center"
-                >
-                  <span className="text-gray-300 text-sm">• {comorbidade}</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-400 text-sm italic">Nenhuma comorbidade registrada</p>
-          )}
-        </div>
+      {/* Conteúdo */}
+      <div className="px-5 py-4">
+        {comorbidades.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {comorbidades.map((comorbidade, index) => (
+              <span
+                key={`${comorbidade}-${index}`}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-800/80 border border-gray-600/50 text-gray-200 text-sm font-medium hover:border-purple-500/40 transition-colors"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-400 shrink-0" />
+                {comorbidade}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 text-gray-600">
+            <span className="w-1.5 h-1.5 rounded-full bg-gray-700" />
+            <p className="text-sm italic">Nenhuma comorbidade registrada</p>
+          </div>
+        )}
       </div>
     </div>
   );

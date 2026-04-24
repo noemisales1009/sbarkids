@@ -4,6 +4,7 @@ import CadastroManualModal from './CadastroManualModal';
 import { Patient } from '../../types';
 import { patientsService } from '../../services/patientsService';
 import { PatientListSkeleton } from '../SkeletonLoader';
+import { supabase } from '../../lib/supabase';
 
 interface PatientListProps {
     onSelectPatient: (patient: Patient) => void;
@@ -13,6 +14,7 @@ interface PatientListProps {
 
 const PatientList: React.FC<PatientListProps> = ({ onSelectPatient, onSelectHistory, searchTerm = '' }) => {
     const [patients, setPatients] = useState<Patient[]>([]);
+    const [precaucoesMap, setPrecaucoesMap] = useState<Record<string, string[]>>({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showCadastro, setShowCadastro] = useState(false);
@@ -23,6 +25,24 @@ const PatientList: React.FC<PatientListProps> = ({ onSelectPatient, onSelectHist
                 setLoading(true);
                 const data = await patientsService.listPatients();
                 setPatients(data);
+
+                const today = new Date().toISOString().split('T')[0];
+                const { data: prec } = await supabase
+                    .from('precautions_com_calculo')
+                    .select('patient_id, tipo_precaucao, doenca_nome')
+                    .is('archived_at', null)
+                    .or(`data_fim_calculada.is.null,data_fim_calculada.gte.${today}`);
+
+                if (prec) {
+                    const map: Record<string, string[]> = {};
+                    for (const p of prec) {
+                        const nome = p.doenca_nome || p.tipo_precaucao;
+                        if (!nome) continue;
+                        if (!map[p.patient_id]) map[p.patient_id] = [];
+                        if (!map[p.patient_id].includes(nome)) map[p.patient_id].push(nome);
+                    }
+                    setPrecaucoesMap(map);
+                }
             } catch (err) {
                 setError(`Erro ao carregar pacientes: ${err instanceof Error ? err.message : 'Desconhecido'}`);
                 setPatients([]);
@@ -124,7 +144,7 @@ const PatientList: React.FC<PatientListProps> = ({ onSelectPatient, onSelectHist
                 </div>
 
                 {filteredPatients.map((patient) => (
-                    <PatientCard key={patient.id} patient={patient} onSelectPatient={onSelectPatient} onSelectHistory={onSelectHistory} />
+                    <PatientCard key={patient.id} patient={patient} precaucoes={precaucoesMap[patient.id] || []} onSelectPatient={onSelectPatient} onSelectHistory={onSelectHistory} />
                 ))}
             </div>
 

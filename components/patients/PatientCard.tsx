@@ -4,6 +4,7 @@ import { PATIENT_STATUS_COLORS } from '../../utils/constants';
 
 interface PatientCardProps {
     patient: Patient;
+    precaucoes?: string[];
     onSelectPatient: (patient: Patient) => void;
     onSelectHistory: (patient: Patient) => void;
 }
@@ -34,7 +35,7 @@ const formatDate = (dateString: string | null): string => {
     return date.toLocaleDateString('pt-BR');
 };
 
-const PatientCard: React.FC<PatientCardProps> = ({ patient, onSelectPatient, onSelectHistory }) => {
+const PatientCard: React.FC<PatientCardProps> = ({ patient, precaucoes = [], onSelectPatient, onSelectHistory }) => {
     const age = calculateAge(patient.dob);
     const daysAdmitted = calculateDaysAdmitted(patient.dt_internacao);
 
@@ -75,12 +76,24 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient, onSelectPatient, onS
                         <p className="text-slate-600 dark:text-slate-400">DN: {formatDate(patient.dob)}</p>
                         <p className="text-slate-600 dark:text-slate-400">Leito {patient.bed_number}</p>
                     </div>
+                    {precaucoes.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-1">
+                            {precaucoes.map((nome) => (
+                                <span
+                                    key={nome}
+                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 text-xs font-semibold border border-orange-200 dark:border-orange-700/50"
+                                >
+                                    {nome}
+                                </span>
+                            ))}
+                        </div>
+                    )}
                 </div>
                 
                 <div className={`inline-flex items-center rounded-full px-4 py-2 text-sm sm:text-base font-bold shrink-0 ${getStatusColor()}`}>
-                    {patient.status === 'estavel' && '✓ Estável'}
-                    {patient.status === 'instavel' && '⚠ Instável'}
-                    {patient.status === 'em_risco' && '⚡ Em Risco'}
+                    {patient.status === 'estavel' && 'Estável'}
+                    {patient.status === 'instavel' && 'Instável'}
+                    {patient.status === 'em_risco' && 'Em Risco'}
                 </div>
             </div>
 
