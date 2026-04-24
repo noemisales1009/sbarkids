@@ -1,6 +1,5 @@
 import React from 'react';
 import { Patient } from '../../types';
-import { PATIENT_STATUS_COLORS } from '../../utils/constants';
 
 interface PatientCardProps {
     patient: Patient;
@@ -9,25 +8,6 @@ interface PatientCardProps {
     onSelectHistory: (patient: Patient) => void;
 }
 
-const calculateAge = (dob: string): number => {
-    const birthDate = new Date(dob); // YYYY-MM-DD format
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-        age--;
-    }
-    return age;
-};
-
-const calculateDaysAdmitted = (dt_internacao: string | null): number => {
-    if (!dt_internacao) return 0;
-    const admissionDate = new Date(dt_internacao);
-    const today = new Date();
-    const diffTime = Math.abs(today.getTime() - admissionDate.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-};
 
 const formatDate = (dateString: string | null): string => {
     if (!dateString) return '-';
@@ -36,8 +16,6 @@ const formatDate = (dateString: string | null): string => {
 };
 
 const PatientCard: React.FC<PatientCardProps> = ({ patient, precaucoes = [], onSelectPatient, onSelectHistory }) => {
-    const age = calculateAge(patient.dob);
-    const daysAdmitted = calculateDaysAdmitted(patient.dt_internacao);
 
     // Determinar cor da borda baseada no status
     const getBorderColor = () => {
@@ -76,6 +54,13 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient, precaucoes = [], onS
                         <p className="text-slate-600 dark:text-slate-400">DN: {formatDate(patient.dob)}</p>
                         <p className="text-slate-600 dark:text-slate-400">Leito {patient.bed_number}</p>
                     </div>
+                    {patient.local_transferencia && (
+                        <div className="flex items-center gap-1.5 mt-1">
+                            <span className="text-xs font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/30 rounded-full px-2.5 py-0.5">
+                                📍 Transferência: {patient.local_transferencia}
+                            </span>
+                        </div>
+                    )}
                     {precaucoes.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 mt-1">
                             {precaucoes.map((nome) => (
