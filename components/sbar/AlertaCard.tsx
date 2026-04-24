@@ -64,6 +64,18 @@ const AlertaCard: React.FC<AlertaCardProps> = ({
             <p className="font-semibold text-gray-900 dark:text-white break-word">
               {alerta.alertaclinico}
             </p>
+            {alerta.sistemas && alerta.sistemas.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-1.5">
+                {alerta.sistemas.map((s) => (
+                  <span
+                    key={s}
+                    className="inline-block px-2 py-0.5 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 text-xs font-medium"
+                  >
+                    {s}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
         <div className="shrink-0 flex flex-col items-end gap-2">

@@ -29,6 +29,7 @@ export interface Alerta {
   concluded_at?: string | null; // Quando foi concluído
   conclude_info?: string;       // Info da conclusão (ex: "23h 54min visível")
   fonte?: 'tasks' | 'alertas_paciente';
+  sistemas?: string[];
 }
 
 /**

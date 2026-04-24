@@ -57,6 +57,7 @@ interface AlertaConcluido {
   tempo_visibilidade?: string;
   tipo_origem?: string;
   live_status?: string;
+  sistemas?: string[];
 }
 
 const CompletedAlertsSection: React.FC<CompletedAlertsSectionProps> = ({ patientId }) => {
@@ -250,6 +251,18 @@ const CompletedAlertsSection: React.FC<CompletedAlertsSectionProps> = ({ patient
                       </p>
                       {getOrigemBadge(alerta.tipo_origem)}
                     </div>
+                    {alerta.sistemas && alerta.sistemas.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-2">
+                        {alerta.sistemas.map((s) => (
+                          <span
+                            key={s}
+                            className="inline-block px-2 py-0.5 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 text-xs font-medium"
+                          >
+                            {s}
+                          </span>
+                        ))}
+                      </div>
+                    )}
 
                     <div className="space-y-1.5 text-xs">
                       {/* Status */}

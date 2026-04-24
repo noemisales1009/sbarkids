@@ -4,6 +4,22 @@ import { useUser } from '../../contexts/UserContext';
 import { useToast } from '../Toast';
 import { auditService } from '../../services/auditService';
 
+const SISTEMAS = [
+  'Avaliação Respiratória',
+  'Avaliação Cardiovascular',
+  'Avaliação Renal',
+  'Distúrbios Hidroeletrolíticos e Metabólicos',
+  'Avaliação Gastrointestinal',
+  'Avaliação Hematológica',
+  'Avaliação Neurológica',
+  'Avaliação Nutricional e Metabólica',
+  'Infecções Relacionadas à Assistência à Saúde (IRAS)',
+  'Outras Infecções',
+  'Gestão de Riscos Assistenciais',
+  'Precauções e Controle de Infecção',
+  'Notificação de Eventos Adversos',
+];
+
 const RESPONSAVEIS = [
   'Médico',
   'Enfermeiro',
@@ -41,6 +57,7 @@ const CriarAlertaModal: React.FC<CriarAlertaModalProps> = ({
   const { user } = useUser();
   const { showToast } = useToast();
   const [alerta, setAlerta] = useState('');
+  const [sistema, setSistema] = useState('');
   const [responsavel, setResponsavel] = useState('');
   const [horaSelecionada, setHoraSelecionada] = useState('');
   const [saving, setSaving] = useState(false);
@@ -70,6 +87,7 @@ const CriarAlertaModal: React.FC<CriarAlertaModalProps> = ({
         .insert([{
           patient_id: patientId,
           alerta_descricao: alerta.trim().toUpperCase(),
+          sistemas: sistema ? [sistema] : [],
           responsavel,
           hora_selecionada: horaSelecionada,
           status: 'alerta',
@@ -127,6 +145,23 @@ const CriarAlertaModal: React.FC<CriarAlertaModalProps> = ({
               className="w-full px-3 py-2.5 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white text-sm focus:outline-none focus:border-red-500"
               autoFocus
             />
+          </div>
+
+          {/* Campo Sistema */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+              Sistema
+            </label>
+            <select
+              value={sistema}
+              onChange={(e) => setSistema(e.target.value)}
+              className="w-full px-3 py-2.5 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white text-sm focus:outline-none focus:border-red-500 appearance-none"
+            >
+              <option value="">Selecione...</option>
+              {SISTEMAS.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
           </div>
 
           {/* Campo Responsável */}
