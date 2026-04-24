@@ -53,9 +53,9 @@ const AlertaCard: React.FC<AlertaCardProps> = ({
 }) => {
   return (
     <div
-      className={`p-4 rounded-lg border-l-4 ml-4 ${getStatusColor(alerta.live_status)} ${borderColorClass}`}
+      className={`p-3 sm:p-4 rounded-lg border-l-4 ml-2 sm:ml-4 ${getStatusColor(alerta.live_status)} ${borderColorClass}`}
     >
-      <div className="flex items-start justify-between gap-4 mb-3">
+      <div className="flex items-start justify-between gap-2 sm:gap-4 mb-3">
         <div className="flex items-start gap-3 flex-1">
           <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center shrink-0 mt-0.5">
             <span className="text-white text-lg">🔔</span>
@@ -68,7 +68,7 @@ const AlertaCard: React.FC<AlertaCardProps> = ({
         </div>
         <div className="shrink-0 flex flex-col items-end gap-2">
           <span
-            className={`inline-block px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${getStatusBadgeColor(alerta.live_status)}`}
+            className={`inline-block px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs font-semibold whitespace-nowrap ${getStatusBadgeColor(alerta.live_status)}`}
           >
             {getStatusLabel(alerta.live_status)}
           </span>
@@ -83,22 +83,22 @@ const AlertaCard: React.FC<AlertaCardProps> = ({
         </div>
       )}
 
-      <div className="mt-4 flex gap-2">
+      <div className="mt-3 flex flex-wrap gap-2">
         <button
           onClick={() => onJustificar(alerta.id_alerta)}
-          className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition-colors flex items-center gap-2"
+          className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition-colors flex items-center gap-1 sm:gap-2"
         >
           📝 Justificar
         </button>
         <button
           onClick={() => onConcluir(alerta.id_alerta)}
-          className="px-4 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded-md font-medium transition-colors flex items-center gap-2"
+          className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm bg-green-600 hover:bg-green-700 text-white rounded-md font-medium transition-colors flex items-center gap-1 sm:gap-2"
         >
           ✓ Concluir
         </button>
         <button
           onClick={() => onArquivar(alerta.id_alerta)}
-          className="px-4 py-2 text-sm bg-orange-600 hover:bg-orange-700 text-white rounded-md font-medium transition-colors flex items-center gap-2"
+          className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm bg-orange-600 hover:bg-orange-700 text-white rounded-md font-medium transition-colors flex items-center gap-1 sm:gap-2"
         >
           📦 Arquivar
         </button>

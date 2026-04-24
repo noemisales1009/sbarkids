@@ -73,10 +73,10 @@ const ReportDetailContent: React.FC<ReportDetailContentProps> = ({ report, patie
                 </div>
 
                 {/* Card com informações do Paciente */}
-                <div className="flex flex-col gap-2 bg-gray-100 dark:bg-gray-800 print:bg-white print:border print:border-gray-300 p-4 mb-4 rounded-lg">
+                <div className="flex flex-col gap-2 bg-gray-100 dark:bg-gray-800 print:bg-white print:border print:border-gray-300 p-3 sm:p-4 mb-4 rounded-lg">
                     <div className="flex items-center gap-2">
                         <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 print:text-gray-700">person</span>
-                        <p className="text-lg font-bold text-gray-900 dark:text-white print:text-black">{patient.name}</p>
+                        <p className="text-base sm:text-lg font-bold text-gray-900 dark:text-white print:text-black">{patient.name}</p>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 print:text-gray-700">
                         <span className="material-symbols-outlined text-base print:text-gray-700">bed</span>
@@ -85,10 +85,10 @@ const ReportDetailContent: React.FC<ReportDetailContentProps> = ({ report, patie
                 </div>
                 
                 {/* Card de Status */}
-                <div className="flex flex-col gap-3 bg-gray-100 dark:bg-gray-800 print:bg-white print:border print:border-gray-300 p-4 mb-6 rounded-lg">
+                <div className="flex flex-col gap-3 bg-gray-100 dark:bg-gray-800 print:bg-white print:border print:border-gray-300 p-3 sm:p-4 mb-6 rounded-lg">
                     <div className="flex items-center gap-2">
                          <span className={`material-symbols-outlined ${config.textColor} print:text-gray-700`}>{config.icon}</span>
-                         <p className={`text-lg font-bold ${config.textColor} print:text-black`}>{report.status}</p>
+                         <p className={`text-base sm:text-lg font-bold ${config.textColor} print:text-black`}>{report.status}</p>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 print:text-gray-700">
                         <span className="material-symbols-outlined text-base print:text-gray-700">person</span>

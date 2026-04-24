@@ -96,10 +96,10 @@ const CriarAlertaModal: React.FC<CriarAlertaModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9998] p-4">
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9998] p-2 sm:p-4">
       <div className="bg-white dark:bg-gray-900 rounded-xl w-full max-w-md shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
         {/* Header vermelho */}
-        <div className="bg-red-600 dark:bg-red-800 px-5 py-4 flex items-center justify-between">
+        <div className="bg-red-600 dark:bg-red-800 px-4 sm:px-5 py-3 sm:py-4 flex items-center justify-between">
           <div className="flex items-center gap-2 text-white">
             <span className="text-xl">⚠️</span>
             <h3 className="text-lg font-bold">Criar Alerta</h3>
@@ -113,7 +113,7 @@ const CriarAlertaModal: React.FC<CriarAlertaModalProps> = ({
         </div>
 
         {/* Body */}
-        <div className="p-5 space-y-4">
+        <div className="p-4 sm:p-5 space-y-3 sm:space-y-4">
           {/* Campo Alerta */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">

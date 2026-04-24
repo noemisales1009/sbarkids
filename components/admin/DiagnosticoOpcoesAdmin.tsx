@@ -178,6 +178,42 @@ const DiagnosticoOpcoesAdmin: React.FC = () => {
     );
   };
 
+  const renderOpcaoCard = (opcao: OpcaoDiagnostico, isChild: boolean = false) => {
+    const childOpcoes = getChildOpcoes(opcao.id);
+
+    return (
+      <div key={opcao.id} className={`rounded-lg border border-gray-700 p-3 ${isChild ? 'ml-4 mt-2 bg-gray-800' : 'bg-gray-750'}`}>
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {isChild && <span className="text-gray-500 text-xs">├─</span>}
+            <span className="bg-gray-700 text-gray-200 text-xs font-mono px-2 py-0.5 rounded">{opcao.codigo}</span>
+            <span className="text-gray-400 text-xs">#{opcao.ordem}</span>
+            {opcao.has_input && <span className="text-green-500 text-xs font-semibold">Input</span>}
+          </div>
+          <div className="flex gap-1 shrink-0">
+            <button
+              onClick={() => handleEdit(opcao)}
+              className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm"
+            >
+              ✎
+            </button>
+            <button
+              onClick={() => handleDelete(opcao.id)}
+              className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm"
+            >
+              🗑
+            </button>
+          </div>
+        </div>
+        <p className="text-white text-sm font-medium mb-1">{opcao.label}</p>
+        {opcao.input_placeholder && (
+          <p className="text-gray-400 text-xs">Placeholder: {opcao.input_placeholder}</p>
+        )}
+        {childOpcoes.length > 0 && childOpcoes.map(child => renderOpcaoCard(child, true))}
+      </div>
+    );
+  };
+
   if (loading) {
     return <div className="p-4 text-center text-gray-400">Carregando...</div>;
   }
@@ -311,23 +347,30 @@ const DiagnosticoOpcoesAdmin: React.FC = () => {
 
           {/* Tabela de Opções */}
           {opcoes.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-gray-800 border border-gray-700">
-                    <th className="px-4 py-2 text-left text-white text-sm">Código</th>
-                    <th className="px-4 py-2 text-left text-white text-sm">Label</th>
-                    <th className="px-4 py-2 text-center text-white text-sm">Input?</th>
-                    <th className="px-4 py-2 text-left text-white text-sm">Placeholder</th>
-                    <th className="px-4 py-2 text-center text-white text-sm">Ordem</th>
-                    <th className="px-4 py-2 text-center text-white text-sm">Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {getChildOpcoes(null).map((opcao) => renderOpcaoRow(opcao, false))}
-                </tbody>
-              </table>
-            </div>
+            <>
+              {/* Mobile: cards */}
+              <div className="md:hidden flex flex-col gap-2">
+                {getChildOpcoes(null).map((opcao) => renderOpcaoCard(opcao, false))}
+              </div>
+              {/* Desktop: tabela */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="bg-gray-800 border border-gray-700">
+                      <th className="px-4 py-2 text-left text-white text-sm">Código</th>
+                      <th className="px-4 py-2 text-left text-white text-sm">Label</th>
+                      <th className="px-4 py-2 text-center text-white text-sm">Input?</th>
+                      <th className="px-4 py-2 text-left text-white text-sm">Placeholder</th>
+                      <th className="px-4 py-2 text-center text-white text-sm">Ordem</th>
+                      <th className="px-4 py-2 text-center text-white text-sm">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {getChildOpcoes(null).map((opcao) => renderOpcaoRow(opcao, false))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           ) : (
             <div className="p-4 text-center text-gray-400 bg-gray-800 rounded-lg">
               Nenhuma opção cadastrada para esta pergunta
