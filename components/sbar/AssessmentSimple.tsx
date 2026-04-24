@@ -3,8 +3,10 @@
  * Um único campo de texto por turno (Manhã, Tarde, Noite)
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { clinicalRoundsSimpleService } from '../../services/clinicalRoundsSimpleService';
+
+type EditRow = { id: number; content: string; nome_editor: string; data_edicao: string };
 
 interface AssessmentSimpleProps {
   patientId: string;
@@ -22,21 +24,18 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
   const [selectedShift, setSelectedShift] = useState<'morning' | 'afternoon' | 'night'>('morning');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [editing, setEditing] = useState(false);
 
   // Estado dos campos
   const [assessmentMorning, setAssessmentMorning] = useState('');
   const [assessmentAfternoon, setAssessmentAfternoon] = useState('');
   const [assessmentNight, setAssessmentNight] = useState('');
 
-  // Info de salvamento
-  const [morningInfo, setMorningInfo] = useState({ savedBy: '', savedAt: '' });
-  const [afternoonInfo, setAfternoonInfo] = useState({ savedBy: '', savedAt: '' });
-  const [nightInfo, setNightInfo] = useState({ savedBy: '', savedAt: '' });
+  // Guarda o conteúdo original para cancelar edição
+  const cancelContentRef = useRef('');
 
   // Histórico de edições
-  type EditRow = { id: number; content: string; nome_editor: string; data_edicao: string };
   const [edits, setEdits] = useState<EditRow[]>([]);
-  const [showHistory, setShowHistory] = useState(false);
 
   // Carregar dados ao montar
   useEffect(() => {
@@ -48,23 +47,10 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
           setAssessmentMorning(data.assessment_morning || '');
           setAssessmentAfternoon(data.assessment_afternoon || '');
           setAssessmentNight(data.assessment_night || '');
-
-          setMorningInfo({
-            savedBy: data.assessment_morning_saved_by_name || '',
-            savedAt: data.assessment_morning_saved_at ? new Date(data.assessment_morning_saved_at).toLocaleString('pt-BR') : ''
-          });
-
-          setAfternoonInfo({
-            savedBy: data.assessment_afternoon_saved_by_name || '',
-            savedAt: data.assessment_afternoon_saved_at ? new Date(data.assessment_afternoon_saved_at).toLocaleString('pt-BR') : ''
-          });
-
-          setNightInfo({
-            savedBy: data.assessment_night_saved_by_name || '',
-            savedAt: data.assessment_night_saved_at ? new Date(data.assessment_night_saved_at).toLocaleString('pt-BR') : ''
-          });
         }
       } catch (error) {
+        console.error('Erro ao carregar avaliação:', error);
+        onSaved?.('❌ Erro ao carregar avaliação');
       } finally {
         setLoading(false);
       }
@@ -73,6 +59,11 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
     loadData();
   }, [patientId, roundId]);
 
+  // Ao trocar de turno, sai do modo edição
+  useEffect(() => {
+    setEditing(false);
+  }, [selectedShift]);
+
   // Carregar histórico de edições quando trocar de turno
   useEffect(() => {
     const loadEdits = async () => {
@@ -80,13 +71,23 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
       setEdits(rows);
     };
     loadEdits();
-  }, [patientId, selectedShift, saving]);
+  }, [patientId, selectedShift]);
+
+  const handleEdit = () => {
+    cancelContentRef.current = currentData.content;
+    setEditing(true);
+  };
+
+  const handleCancel = () => {
+    currentData.setContent(cancelContentRef.current);
+    setEditing(false);
+  };
 
   const handleSave = async () => {
     setSaving(true);
     try {
       const content = selectedShift === 'morning' ? assessmentMorning : selectedShift === 'afternoon' ? assessmentAfternoon : assessmentNight;
-      
+
       const success = await clinicalRoundsSimpleService.saveAssessment(
         patientId,
         roundId,
@@ -98,15 +99,10 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
       if (success) {
         const shiftLabel = { morning: 'Manhã', afternoon: 'Tarde', night: 'Noite' }[selectedShift];
         onSaved?.(`✅ Avaliação da ${shiftLabel} salva com sucesso!`);
+        setEditing(false);
 
-        // Atualizar info de salvamento
-        if (selectedShift === 'morning') {
-          setMorningInfo({ savedBy: currentUserName, savedAt: new Date().toLocaleString('pt-BR') });
-        } else if (selectedShift === 'afternoon') {
-          setAfternoonInfo({ savedBy: currentUserName, savedAt: new Date().toLocaleString('pt-BR') });
-        } else {
-          setNightInfo({ savedBy: currentUserName, savedAt: new Date().toLocaleString('pt-BR') });
-        }
+        const updatedEdits = await clinicalRoundsSimpleService.getAssessmentEdits(patientId, selectedShift);
+        setEdits(updatedEdits);
       } else {
         onSaved?.('❌ Erro ao salvar avaliação');
       }
@@ -126,23 +122,26 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
       label: '🌅 Manhã',
       content: assessmentMorning,
       setContent: setAssessmentMorning,
-      info: morningInfo
     },
     afternoon: {
       label: '☀️ Tarde',
       content: assessmentAfternoon,
       setContent: setAssessmentAfternoon,
-      info: afternoonInfo
     },
     night: {
       label: '🌙 Noite',
       content: assessmentNight,
       setContent: setAssessmentNight,
-      info: nightInfo
     }
   };
 
   const currentData = shiftData[selectedShift];
+  const hasContent = currentData.content.trim().length > 0;
+  const isReadOnly = hasContent && !editing;
+
+  // Info de criação/edição
+  const criador = edits.length > 0 ? edits[edits.length - 1] : null;
+  const ultimoEditor = edits.length > 1 ? edits[0] : null;
 
   return (
     <div className="bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm">
@@ -168,49 +167,71 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
         })}
       </div>
 
-      {/* Textarea único */}
+      {/* Área de conteúdo */}
       <div className="mb-4">
-        <textarea
-          value={currentData.content}
-          onChange={(e) => currentData.setContent(e.target.value)}
-          placeholder="Digite a avaliação do paciente..."
-          className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-gray-800 whitespace-pre-wrap"
-          rows={8}
-          wrap="soft"
-        />
+        {isReadOnly ? (
+          <div className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white min-h-[12rem] whitespace-pre-wrap">
+            {currentData.content}
+          </div>
+        ) : (
+          <textarea
+            value={currentData.content}
+            onChange={(e) => currentData.setContent(e.target.value)}
+            placeholder="Digite a avaliação do paciente..."
+            autoFocus={editing}
+            className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 whitespace-pre-wrap"
+            rows={8}
+            wrap="soft"
+          />
+        )}
       </div>
 
       {/* Info de criação/edição */}
-      {edits.length > 0 && (() => {
-        // edits vem ordenado por data_edicao DESC → último = 1º criador, primeiro = última edição
-        const criador = edits[edits.length - 1];
-        const ultimoEditor = edits[0];
-        const foiEditado = edits.length > 1 && ultimoEditor.nome_editor !== criador.nome_editor;
-
-        return (
-          <div className="mb-4 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-300 space-y-1">
+      {criador && (
+        <div className="mb-4 text-xs text-gray-500 dark:text-gray-400 space-y-0.5">
+          <p>
+            ✍️ Criado por{' '}
+            <span className="font-medium text-blue-600 dark:text-blue-400">{criador.nome_editor}</span>
+            <span className="ml-1">• {new Date(criador.data_edicao).toLocaleString('pt-BR')}</span>
+          </p>
+          {ultimoEditor && (
             <p>
-              ✍️ Criado por: <span className="text-blue-600 dark:text-blue-400 font-medium">{criador.nome_editor}</span>
-              <span className="text-xs text-gray-500 ml-2">• {new Date(criador.data_edicao).toLocaleString('pt-BR')}</span>
+              📝 Editado por{' '}
+              <span className="font-medium text-amber-600 dark:text-amber-400">{ultimoEditor.nome_editor}</span>
+              <span className="ml-1">• {new Date(ultimoEditor.data_edicao).toLocaleString('pt-BR')}</span>
             </p>
-            {foiEditado && (
-              <p>
-                📝 Editado por: <span className="text-amber-600 dark:text-amber-400 font-medium">{ultimoEditor.nome_editor}</span>
-                <span className="text-xs text-gray-500 ml-2">• {new Date(ultimoEditor.data_edicao).toLocaleString('pt-BR')}</span>
-              </p>
-            )}
-          </div>
-        );
-      })()}
+          )}
+        </div>
+      )}
 
-      {/* Botão Salvar */}
-      <button
-        onClick={handleSave}
-        disabled={saving}
-        className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white font-semibold rounded-lg transition"
-      >
-        {saving ? '⏳ Salvando...' : '💾 Salvar Avaliação'}
-      </button>
+      {/* Botões de ação */}
+      {isReadOnly ? (
+        <button
+          onClick={handleEdit}
+          className="w-full px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-lg transition"
+        >
+          ✏️ Editar Avaliação
+        </button>
+      ) : (
+        <div className="flex gap-2">
+          {hasContent && (
+            <button
+              onClick={handleCancel}
+              disabled={saving}
+              className="flex-1 px-4 py-2 bg-gray-500 hover:bg-gray-600 disabled:bg-gray-400 text-white font-semibold rounded-lg transition"
+            >
+              Cancelar
+            </button>
+          )}
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white font-semibold rounded-lg transition"
+          >
+            {saving ? '⏳ Salvando...' : '💾 Salvar Avaliação'}
+          </button>
+        </div>
+      )}
     </div>
   );
 };
