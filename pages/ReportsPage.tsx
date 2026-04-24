@@ -159,16 +159,15 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onNavigate, currentPage, onSe
 
             setReports(allReports);
 
-            // Buscar alertas para cada paciente
+            // Buscar alertas de todos os pacientes em paralelo
+            const uniquePatientIds = [...new Set(allReports.map(r => r.patient.id))];
+            const alertasResults = await Promise.all(
+                uniquePatientIds.map(id =>
+                    alertasService.getAlertas(id).catch(() => [] as Alerta[])
+                )
+            );
             const alertasMap: Record<string, Alerta[]> = {};
-            for (const report of allReports) {
-                try {
-                    const alertas = await alertasService.getAlertas(report.patient.id);
-                    alertasMap[report.patient.id] = alertas;
-                } catch (error) {
-                    alertasMap[report.patient.id] = [];
-                }
-            }
+            uniquePatientIds.forEach((id, i) => { alertasMap[id] = alertasResults[i]; });
             setAlertasPorPaciente(alertasMap);
             
             setLoading(false);
