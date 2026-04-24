@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { clinicalRoundsSimpleService } from '../../services/clinicalRoundsSimpleService';
+import { ShiftType, shiftFilterService } from '../../services/shiftFilterService';
 
 type EditRow = { id: number; content: string; nome_editor: string; data_edicao: string };
 
@@ -21,73 +22,76 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
   currentUserName,
   onSaved
 }) => {
-  const [selectedShift, setSelectedShift] = useState<'morning' | 'afternoon' | 'night'>('morning');
+  const [selectedShift, setSelectedShift] = useState<ShiftType>('morning');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
 
-  // Estado dos campos
   const [assessmentMorning, setAssessmentMorning] = useState('');
   const [assessmentAfternoon, setAssessmentAfternoon] = useState('');
   const [assessmentNight, setAssessmentNight] = useState('');
 
-  // Guarda o conteúdo original para cancelar edição
   const cancelContentRef = useRef('');
-
-  // Histórico de edições
   const [edits, setEdits] = useState<EditRow[]>([]);
 
-  // Carregar dados ao montar
   useEffect(() => {
+    let cancelled = false;
     const loadData = async () => {
       setLoading(true);
       try {
         const data = await clinicalRoundsSimpleService.getByRound(patientId, roundId);
-        if (data) {
+        if (!cancelled && data) {
           setAssessmentMorning(data.assessment_morning || '');
           setAssessmentAfternoon(data.assessment_afternoon || '');
           setAssessmentNight(data.assessment_night || '');
         }
       } catch (error) {
-        console.error('Erro ao carregar avaliação:', error);
-        onSaved?.('❌ Erro ao carregar avaliação');
+        if (!cancelled) {
+          console.error('Erro ao carregar avaliação:', error);
+          onSaved?.('❌ Erro ao carregar avaliação');
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
-
     loadData();
+    return () => { cancelled = true; };
   }, [patientId, roundId]);
 
-  // Ao trocar de turno, sai do modo edição
   useEffect(() => {
     setEditing(false);
   }, [selectedShift]);
 
-  // Carregar histórico de edições quando trocar de turno
   useEffect(() => {
+    let cancelled = false;
     const loadEdits = async () => {
       const rows = await clinicalRoundsSimpleService.getAssessmentEdits(patientId, selectedShift);
-      setEdits(rows);
+      if (!cancelled) setEdits(rows);
     };
     loadEdits();
+    return () => { cancelled = true; };
   }, [patientId, selectedShift]);
 
-  const handleEdit = () => {
-    cancelContentRef.current = currentData.content;
+  const handleEdit = (content: string) => {
+    cancelContentRef.current = content;
     setEditing(true);
   };
 
-  const handleCancel = () => {
-    currentData.setContent(cancelContentRef.current);
+  const handleCancel = (setContent: (v: string) => void) => {
+    setContent(cancelContentRef.current);
     setEditing(false);
   };
 
   const handleSave = async () => {
+    const contentMap: Record<ShiftType, string> = {
+      morning: assessmentMorning,
+      afternoon: assessmentAfternoon,
+      night: assessmentNight,
+    };
+    const content = contentMap[selectedShift];
+
     setSaving(true);
     try {
-      const content = selectedShift === 'morning' ? assessmentMorning : selectedShift === 'afternoon' ? assessmentAfternoon : assessmentNight;
-
       const success = await clinicalRoundsSimpleService.saveAssessment(
         patientId,
         roundId,
@@ -97,10 +101,8 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
       );
 
       if (success) {
-        const shiftLabel = { morning: 'Manhã', afternoon: 'Tarde', night: 'Noite' }[selectedShift];
-        onSaved?.(`✅ Avaliação da ${shiftLabel} salva com sucesso!`);
+        onSaved?.(`✅ Avaliação da ${shiftFilterService.getShiftLabel(selectedShift)} salva com sucesso!`);
         setEditing(false);
-
         const updatedEdits = await clinicalRoundsSimpleService.getAssessmentEdits(patientId, selectedShift);
         setEdits(updatedEdits);
       } else {
@@ -117,29 +119,16 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
     return <div className="text-center py-4 text-gray-400">Carregando...</div>;
   }
 
-  const shiftData = {
-    morning: {
-      label: '🌅 Manhã',
-      content: assessmentMorning,
-      setContent: setAssessmentMorning,
-    },
-    afternoon: {
-      label: '☀️ Tarde',
-      content: assessmentAfternoon,
-      setContent: setAssessmentAfternoon,
-    },
-    night: {
-      label: '🌙 Noite',
-      content: assessmentNight,
-      setContent: setAssessmentNight,
-    }
+  const shiftData: Record<ShiftType, { label: string; content: string; setContent: (v: string) => void }> = {
+    morning: { label: shiftFilterService.SHIFTS.morning.label, content: assessmentMorning, setContent: setAssessmentMorning },
+    afternoon: { label: shiftFilterService.SHIFTS.afternoon.label, content: assessmentAfternoon, setContent: setAssessmentAfternoon },
+    night: { label: shiftFilterService.SHIFTS.night.label, content: assessmentNight, setContent: setAssessmentNight },
   };
 
   const currentData = shiftData[selectedShift];
   const hasContent = currentData.content.trim().length > 0;
   const isReadOnly = hasContent && !editing;
 
-  // Info de criação/edição
   const criador = edits.length > 0 ? edits[edits.length - 1] : null;
   const ultimoEditor = edits.length > 1 ? edits[0] : null;
 
@@ -149,19 +138,19 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
 
       {/* Tabs de Turnos */}
       <div className="flex gap-2 mb-4 border-b border-gray-300 dark:border-gray-700 flex-wrap">
-        {Object.entries(shiftData).map(([shift, { label }]) => {
+        {(Object.keys(shiftData) as ShiftType[]).map((shift) => {
           const isCurrentShift = selectedShift === shift;
           return (
             <button
               key={shift}
-              onClick={() => setSelectedShift(shift as 'morning' | 'afternoon' | 'night')}
+              onClick={() => setSelectedShift(shift)}
               className={`px-4 py-2 font-semibold transition ${
                 isCurrentShift
                   ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
                   : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
               }`}
             >
-              {label}
+              {shiftData[shift].label}
             </button>
           );
         })}
@@ -207,7 +196,7 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
       {/* Botões de ação */}
       {isReadOnly ? (
         <button
-          onClick={handleEdit}
+          onClick={() => handleEdit(currentData.content)}
           className="w-full px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-lg transition"
         >
           ✏️ Editar Avaliação
@@ -216,7 +205,7 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
         <div className="flex gap-2">
           {hasContent && (
             <button
-              onClick={handleCancel}
+              onClick={() => handleCancel(currentData.setContent)}
               disabled={saving}
               className="flex-1 px-4 py-2 bg-gray-500 hover:bg-gray-600 disabled:bg-gray-400 text-white font-semibold rounded-lg transition"
             >
