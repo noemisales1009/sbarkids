@@ -4,22 +4,17 @@ import { CurrentPage } from '../../types';
 import MainSidebar from './MainSidebar';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useUser } from '../../contexts/UserContext';
-import { supabase } from '../../lib/supabase';
 
 interface DesktopLayoutProps {
     children: React.ReactNode;
     currentPage: CurrentPage;
     onNavigate: (page: CurrentPage) => void;
+    onLogout: () => void;
 }
 
-const DesktopLayout: React.FC<DesktopLayoutProps> = ({ children, currentPage, onNavigate }) => {
+const DesktopLayout: React.FC<DesktopLayoutProps> = ({ children, currentPage, onNavigate, onLogout }) => {
     const { theme, toggleTheme } = useTheme();
     const { user } = useUser();
-
-    const handleLogout = async () => {
-        await supabase.auth.signOut();
-        onNavigate('login');
-    };
 
     return (
         <div className="hidden sm:flex w-full min-h-screen print:block print:bg-white">
@@ -52,7 +47,7 @@ const DesktopLayout: React.FC<DesktopLayoutProps> = ({ children, currentPage, on
                     </div>
 
                     <button
-                        onClick={handleLogout}
+                        onClick={onLogout}
                         className="flex items-center justify-center h-9 w-9 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
                         aria-label="Sair"
                     >
