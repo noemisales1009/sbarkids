@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import offlineImg from './offline.png';
 
 const OfflineOverlay: React.FC = () => {
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -44,12 +45,7 @@ const OfflineOverlay: React.FC = () => {
   return (
     <div className="fixed inset-0 z-[10001] flex items-center justify-center bg-black/70 backdrop-blur-sm">
       <div className="rounded-2xl shadow-2xl overflow-hidden max-w-sm w-full mx-4 text-center">
-        <img
-          src={`${import.meta.env.BASE_URL}offline.png`}
-          alt="Sem conexão"
-          className="w-full block"
-          style={{ minHeight: 200 }}
-        />
+        <img src={offlineImg} alt="Sem conexão" className="w-full block" />
         <div className="bg-[#1a9fd4] py-4 px-6">
           <button
             onClick={() => window.location.reload()}
