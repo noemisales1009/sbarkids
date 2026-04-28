@@ -130,24 +130,23 @@ const DiagnosticoSelector = ({ pacienteId, onSave, onSaveMessage }: DiagnosticoS
   }
 
   return (
-    <div className="bg-gray-900 rounded-lg border border-gray-800">
-      {/* Resumo de diagnósticos - APENAS VISUALIZAÇÃO */}
+    <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800">
       {selecionados.length > 0 ? (
-        <div className="p-6 bg-linear-to-r from-blue-900/30 to-green-900/30 border-b-2 border-gray-700">
-          <p className="text-lg font-bold text-white mb-4">
+        <div className="p-6 bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-900/30 dark:to-green-900/30 border-b-2 border-gray-200 dark:border-gray-700">
+          <p className="text-lg font-bold text-gray-800 dark:text-white mb-4">
             📋 {selecionados.length} diagnóstico(s) registrado(s)
           </p>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {principais.length > 0 && (
               <div>
-                <p className="text-sm font-bold text-blue-400 mb-2">Principais: {principais.length}</p>
+                <p className="text-sm font-bold text-blue-600 dark:text-blue-400 mb-2">Principais: {principais.length}</p>
                 <ul className="list-disc list-inside space-y-1 ml-2">
                   {principais.map(diag => (
-                    <li key={diag.opcao_id} className={`text-sm text-gray-300 ${diag.status === 'resolvido' ? 'line-through text-gray-500' : ''}`}>
+                    <li key={diag.opcao_id} className={`text-sm text-gray-700 dark:text-gray-300 ${diag.status === 'resolvido' ? 'line-through text-gray-400 dark:text-gray-500' : ''}`}>
                       <span>{diag.label || `Diagnóstico #${diag.opcao_id}`}</span>
                       {inputValues[diag.opcao_id] && (
-                        <div className="text-xs text-gray-400 italic ml-5 mt-1">
+                        <div className="text-xs text-gray-500 dark:text-gray-400 italic ml-5 mt-1">
                           "{inputValues[diag.opcao_id]}"
                         </div>
                       )}
@@ -159,13 +158,13 @@ const DiagnosticoSelector = ({ pacienteId, onSave, onSaveMessage }: DiagnosticoS
 
             {secundarios.length > 0 && (
               <div>
-                <p className="text-sm font-bold text-green-400 mb-2">Secundários: {secundarios.length}</p>
+                <p className="text-sm font-bold text-green-600 dark:text-green-400 mb-2">Secundários: {secundarios.length}</p>
                 <ul className="list-disc list-inside space-y-1 ml-2">
                   {secundarios.map(diag => (
-                    <li key={diag.opcao_id} className={`text-sm text-gray-300 ${diag.status === 'resolvido' ? 'line-through text-gray-500' : ''}`}>
+                    <li key={diag.opcao_id} className={`text-sm text-gray-700 dark:text-gray-300 ${diag.status === 'resolvido' ? 'line-through text-gray-400 dark:text-gray-500' : ''}`}>
                       <span>{diag.label || `Diagnóstico #${diag.opcao_id}`}</span>
                       {inputValues[diag.opcao_id] && (
-                        <div className="text-xs text-gray-400 italic ml-5 mt-1">
+                        <div className="text-xs text-gray-500 dark:text-gray-400 italic ml-5 mt-1">
                           "{inputValues[diag.opcao_id]}"
                         </div>
                       )}
@@ -177,7 +176,7 @@ const DiagnosticoSelector = ({ pacienteId, onSave, onSaveMessage }: DiagnosticoS
           </div>
         </div>
       ) : (
-        <div className="p-6 text-center text-gray-400">
+        <div className="p-6 text-center text-gray-400 dark:text-gray-400">
           <p className="text-lg">📭</p>
           <p className="mt-2">Nenhum diagnóstico registrado</p>
         </div>
