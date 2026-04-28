@@ -48,15 +48,15 @@ const ComorbidadesSection: React.FC<ComorbidadesSectionProps> = ({ patientId }) 
   }
 
   return (
-    <div className="rounded-xl border border-gray-700/50 bg-gradient-to-br from-gray-900/80 to-gray-800/40 overflow-hidden shadow-sm">
+    <div className="rounded-xl border border-gray-200 dark:border-gray-700/50 bg-white dark:bg-gradient-to-br dark:from-gray-900/80 dark:to-gray-800/40 overflow-hidden shadow-sm">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-700/50 bg-gray-800/30">
+      <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-200 dark:border-gray-700/50 bg-gray-50 dark:bg-gray-800/30">
         <div className="flex items-center gap-2">
           <span className="w-1.5 h-4 rounded-full bg-purple-500 shrink-0" />
-          <p className="text-sm font-semibold text-gray-200">Comorbidades</p>
+          <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">Comorbidades</p>
         </div>
         {comorbidades.length > 0 && (
-          <span className="text-xs bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-full px-2.5 py-0.5 font-bold">
+          <span className="text-xs bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-500/30 rounded-full px-2.5 py-0.5 font-bold">
             {comorbidades.length}
           </span>
         )}
@@ -69,16 +69,16 @@ const ComorbidadesSection: React.FC<ComorbidadesSectionProps> = ({ patientId }) 
             {comorbidades.map((comorbidade, index) => (
               <span
                 key={`${comorbidade}-${index}`}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-800/80 border border-gray-600/50 text-gray-200 text-sm font-medium hover:border-purple-500/40 transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800/80 border border-gray-300 dark:border-gray-600/50 text-gray-700 dark:text-gray-200 text-sm font-medium hover:border-purple-400 dark:hover:border-purple-500/40 transition-colors"
               >
-                <span className="w-1.5 h-1.5 rounded-full bg-purple-400 shrink-0" />
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-500 dark:bg-purple-400 shrink-0" />
                 {comorbidade}
               </span>
             ))}
           </div>
         ) : (
-          <div className="flex items-center gap-2 text-gray-600">
-            <span className="w-1.5 h-1.5 rounded-full bg-gray-700" />
+          <div className="flex items-center gap-2 text-gray-400 dark:text-gray-600">
+            <span className="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-700" />
             <p className="text-sm italic">Nenhuma comorbidade registrada</p>
           </div>
         )}
