@@ -9,10 +9,9 @@ interface DesktopLayoutProps {
     children: React.ReactNode;
     currentPage: CurrentPage;
     onNavigate: (page: CurrentPage) => void;
-    onLogout: () => void;
 }
 
-const DesktopLayout: React.FC<DesktopLayoutProps> = ({ children, currentPage, onNavigate, onLogout }) => {
+const DesktopLayout: React.FC<DesktopLayoutProps> = ({ children, currentPage, onNavigate }) => {
     const { theme, toggleTheme } = useTheme();
     const { user } = useUser();
 
@@ -47,7 +46,7 @@ const DesktopLayout: React.FC<DesktopLayoutProps> = ({ children, currentPage, on
                     </div>
 
                     <button
-                        onClick={onLogout}
+                        onClick={() => onNavigate('login')}
                         className="flex items-center justify-center h-9 w-9 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
                         aria-label="Sair"
                     >
