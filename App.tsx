@@ -22,6 +22,7 @@ import { useInactivityTimeout } from './hooks/useInactivityTimeout';
 import InactivityWarningModal from './components/InactivityWarningModal';
 import { auditService } from './services/auditService';
 import { ToastProvider } from './components/Toast';
+import OfflineOverlay from './components/OfflineOverlay';
 
 interface AuthUser {
     id: string;
@@ -354,6 +355,7 @@ const App: React.FC = () => {
             <ViewportProvider>
                 <UserProvider>
                     <ToastProvider>
+                        <OfflineOverlay />
                         <BrowserRouter>
                             <AppContent />
                         </BrowserRouter>

@@ -57,9 +57,9 @@ export const dailyClearanceService = {
         .select('id')
         .eq('patient_id', patientId)
         .eq('reference_date', today)
-        .single();
+        .maybeSingle();
 
-      if (selectError && selectError.code !== 'PGRST116') {
+      if (selectError) {
         return false;
       }
 

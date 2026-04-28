@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, createContext, useContext } from 'react';
+import React, { useState, useCallback, createContext, useContext } from 'react';
 
 type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -12,6 +12,8 @@ interface ToastContextType {
   showToast: (message: string, type?: ToastType) => void;
   showPrompt: (title: string, placeholder?: string) => Promise<string | null>;
   showConfirm: (message: string) => Promise<boolean>;
+  showLoading: (message?: string) => void;
+  hideLoading: () => void;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
@@ -28,6 +30,7 @@ let toastId = 0;
 
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const [loading, setLoading] = useState<{ visible: boolean; message: string }>({ visible: false, message: '' });
   const [prompt, setPrompt] = useState<{
     visible: boolean;
     title: string;
@@ -59,6 +62,14 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return new Promise((resolve) => {
       setConfirm({ visible: true, message, resolve });
     });
+  }, []);
+
+  const showLoading = useCallback((message = 'Atualizando...') => {
+    setLoading({ visible: true, message });
+  }, []);
+
+  const hideLoading = useCallback(() => {
+    setLoading({ visible: false, message: '' });
   }, []);
 
   const handlePromptConfirm = () => {
@@ -100,8 +111,26 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   return (
-    <ToastContext.Provider value={{ showToast, showPrompt, showConfirm }}>
+    <ToastContext.Provider value={{ showToast, showPrompt, showConfirm, showLoading, hideLoading }}>
       {children}
+
+      {/* Loading bar */}
+      {loading.visible && (
+        <div className="fixed top-0 left-0 right-0 z-[10000]">
+          <div className="h-1 bg-blue-900/40 overflow-hidden">
+            <div className="h-full bg-blue-500 animate-loading-bar" />
+          </div>
+          <div className="flex items-center justify-center mt-2">
+            <div className="flex items-center gap-2 bg-gray-900/90 text-white text-xs font-medium px-3 py-1.5 rounded-full shadow-lg">
+              <svg className="animate-spin h-3 w-3 text-blue-400" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              {loading.message}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Toasts */}
       <div className="fixed top-4 right-4 z-[9999] space-y-2 max-w-sm">

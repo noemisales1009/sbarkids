@@ -73,13 +73,11 @@ export const clinicalRoundsSimpleService = {
         selectQuery = selectQuery.is('round_id', null);
       }
       
-      const { data: existingData, error: selectError } = await selectQuery.single();
+      const { data: existingData, error: selectError } = await selectQuery.maybeSingle();
 
-      if (selectError && selectError.code !== 'PGRST116') {
-        // Verificar se é erro 406 (tabela não acessível)
-        if (selectError.message?.includes('406') || selectError.code === '406') {
-          return false;
-        }
+      if (selectError) {
+        logError(selectError, 'clinicalRoundsSimpleService.select');
+        return false;
       }
 
       let result;
@@ -198,13 +196,11 @@ export const clinicalRoundsSimpleService = {
         selectQuery = selectQuery.is('round_id', null);
       }
       
-      const { data: existingData, error: selectError } = await selectQuery.single();
+      const { data: existingData, error: selectError } = await selectQuery.maybeSingle();
 
-      if (selectError && selectError.code !== 'PGRST116') {
-        // Verificar se é erro 406 (tabela não acessível)
-        if (selectError.message?.includes('406') || selectError.code === '406') {
-          return false;
-        }
+      if (selectError) {
+        logError(selectError, 'clinicalRoundsSimpleService.select');
+        return false;
       }
 
       let result;
@@ -265,23 +261,14 @@ export const clinicalRoundsSimpleService = {
         query = query.is('round_id', null);
       }
 
-      const { data, error } = await query.single();
+      const { data, error } = await query.maybeSingle();
 
       if (error) {
-        if (error.code === 'PGRST116') {
-          return null;
-        }
-        
-        // Erro 406 geralmente indica problema com RLS ou tabela não existe
-        if (error.message?.includes('406') || error.code === '406') {
-          return null;
-        }
-        
         logError(error, 'clinicalRoundsSimpleService.getByRound');
         return null;
       }
 
-      return data as ClinicalRoundsSimple;
+      return data as ClinicalRoundsSimple | null;
     } catch (error: any) {
       // Silenciar erros 406 para evitar poluição no console
       if (error?.message?.includes('406') || error?.status === 406) {
@@ -439,17 +426,14 @@ export const clinicalRoundsSimpleService = {
         query = query.is('round_id', null);
       }
 
-      const { data, error } = await query.single();
+      const { data, error } = await query.maybeSingle();
 
       if (error) {
-        if (error.code === 'PGRST116') {
-          return null;
-        }
         logError(error, 'clinicalRoundsSimpleService.getArchivedByRound');
         return null;
       }
 
-      return data as ClinicalRoundsSimple;
+      return data as ClinicalRoundsSimple | null;
     } catch (error) {
       logError(error, 'clinicalRoundsSimpleService.getArchivedByRound');
       return null;

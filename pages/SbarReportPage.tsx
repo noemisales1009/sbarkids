@@ -23,6 +23,7 @@ import { alertasService, Alerta } from '../services/alertasService';
 import { patientService } from '../services/patientService';
 import { patientsService } from '../services/patientsService';
 import { diagnosticosSelecionadosService } from '../services/diagnosticosSelecionadosService';
+import { useToast } from '../components/Toast';
 
 interface SbarReportPageProps {
     patient: Patient;
@@ -45,6 +46,7 @@ const MOCK_OTHER_USER = {
 };
 
 const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavigate, currentPage }) => {
+    const { showLoading, hideLoading } = useToast();
     // ID do usuário (você pode pegar do Supabase Auth)
     const CURRENT_USER_ID = 'user-1';
     const [status, setStatus] = useState<'estavel' | 'instavel' | 'em_risco' | null>(null);
@@ -58,22 +60,30 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
     const [alertas, setAlertas] = useState<Alerta[]>([]);
     const [showCriarAlerta, setShowCriarAlerta] = useState(false);
 
-    // Buscar nome do usuário autenticado (sem localStorage por LGPD)
+    // Carregar dados iniciais da ficha
     useEffect(() => {
-        const loadCurrentUser = async () => {
+        const loadInitialData = async () => {
+            showLoading('Carregando ficha...');
             try {
-                const userData = await userService.getCurrentUser();
-                if (userData?.name) {
-                    setCurrentUserName(userData.name);
-                } else {
-                    setCurrentUserName('Dr. Usuário');
-                }
-            } catch (error) {
-                setCurrentUserName('Dr. Usuário');
+                await Promise.all([
+                    userService.getCurrentUser().then(userData => {
+                        setCurrentUserName(userData?.name || 'Dr. Usuário');
+                    }).catch(() => setCurrentUserName('Dr. Usuário')),
+
+                    alertasService.getAlertas(patient.id).then(setAlertas).catch(() => setAlertas([])),
+
+                    patientsService.getPatient(patient.id).then(patientData => {
+                        if (patientData?.status) {
+                            setStatus(patientData.status as 'estavel' | 'instavel' | 'em_risco');
+                        }
+                    }).catch(() => {}),
+                ]);
+            } finally {
+                hideLoading();
             }
         };
-        loadCurrentUser();
-    }, []);
+        loadInitialData();
+    }, [patient.id]);
 
     const loadAlertas = async () => {
         try {
@@ -83,11 +93,6 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
             setAlertas([]);
         }
     };
-
-    // Carregar alertas quando a página carrega
-    useEffect(() => {
-        loadAlertas();
-    }, [patient.id]);
 
     // Salvar status automaticamente quando o paciente é selecionado
     useEffect(() => {
@@ -100,26 +105,9 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
             }
         };
 
-        // Aguardar um pouco para que o usuário tenha confirmado o status
         const saveTimeout = setTimeout(saveStatus, 500);
-        
         return () => clearTimeout(saveTimeout);
     }, [status, patient.id]);
-
-    // Carregar status do paciente quando a página carrega
-    useEffect(() => {
-        const loadPatientStatus = async () => {
-            try {
-                // Buscar o paciente completo do Supabase para pegar o status
-                const patientData = await patientsService.getPatient(patient.id);
-                if (patientData?.status) {
-                    setStatus(patientData.status as 'estavel' | 'instavel' | 'em_risco');
-                }
-            } catch (error) {
-            }
-        };
-        loadPatientStatus();
-    }, [patient.id]);
 
     // NÃO criar round automaticamente - apenas quando houver dados para salvar
     // Isso evita a criação de relatórios vazios
@@ -760,10 +748,10 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient, onBack, onNavi
 
                     {/* Mensagem de status */}
                     {saveMessage && (
-                        <div className={`p-4 rounded-lg font-semibold text-white ${
-                            saveMessage.type === 'success' 
-                                ? 'bg-green-500' 
-                                : 'bg-red-500'
+                        <div className={`fixed top-6 left-1/2 -translate-x-1/2 z-[9999] px-6 py-4 rounded-xl shadow-2xl font-semibold text-white text-sm flex items-center gap-3 animate-slide-in ${
+                            saveMessage.type === 'success'
+                                ? 'bg-green-600'
+                                : 'bg-red-600'
                         }`}>
                             {saveMessage.text}
                         </div>
