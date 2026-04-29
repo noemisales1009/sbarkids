@@ -54,6 +54,11 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient: patientProp, o
     return () => { cancelled = true; };
   }, [patientProp, urlPatientId]);
 
+  // Volta ao topo toda vez que abrir um paciente
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [patient?.id]);
+
   useEffect(() => {
     if (!patient) return;
     let cancelled = false;

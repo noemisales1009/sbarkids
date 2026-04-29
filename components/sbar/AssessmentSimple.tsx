@@ -31,32 +31,30 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
   const cancelContentRef = useRef('');
   const [edits, setEdits] = useState<EditRow[]>([]);
 
-  // Carrega dados e histórico de edição num único Promise.all para evitar dois saltos de layout
+  // Carrega dados e histórico juntos (allSettled = nunca lança erro, trata cada um separado)
   useEffect(() => {
     let cancelled = false;
     const loadAll = async () => {
       setLoading(true);
-      try {
-        const [data, rows] = await Promise.all([
-          clinicalRoundsSimpleService.getByRound(patientId, roundId),
-          clinicalRoundsSimpleService.getAssessmentEdits(patientId, selectedShift),
-        ]);
-        if (!cancelled) {
-          if (data) {
-            const m = data.assessment_morning || '';
-            const a = data.assessment_afternoon || '';
-            const n = data.assessment_night || '';
-            setAssessmentMorning(m);
-            setAssessmentAfternoon(a);
-            setAssessmentNight(n);
-            setSavedContent({ morning: m, afternoon: a, night: n });
-          }
-          setEdits(rows);
+      const [dataResult, editsResult] = await Promise.allSettled([
+        clinicalRoundsSimpleService.getByRound(patientId, roundId),
+        clinicalRoundsSimpleService.getAssessmentEdits(patientId, selectedShift),
+      ]);
+      if (!cancelled) {
+        if (dataResult.status === 'fulfilled' && dataResult.value) {
+          const data = dataResult.value;
+          const m = data.assessment_morning || '';
+          const a = data.assessment_afternoon || '';
+          const n = data.assessment_night || '';
+          setAssessmentMorning(m);
+          setAssessmentAfternoon(a);
+          setAssessmentNight(n);
+          setSavedContent({ morning: m, afternoon: a, night: n });
         }
-      } catch {
-        if (!cancelled) onSaved?.('❌ Erro ao carregar avaliação');
-      } finally {
-        if (!cancelled) setLoading(false);
+        if (editsResult.status === 'fulfilled') {
+          setEdits(editsResult.value);
+        }
+        setLoading(false);
       }
     };
     loadAll();
