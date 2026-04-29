@@ -23,7 +23,8 @@ import InactivityWarningModal from './components/InactivityWarningModal';
 import { auditService } from './services/auditService';
 import { ToastProvider, useToast } from './components/Toast';
 import { logError } from './utils/errorHandler';
-import OfflineOverlay from './components/OfflineOverlay';
+import { NetworkBanner } from './components/NetworkBanner';
+import { NetworkProvider } from './contexts/NetworkContext';
 
 interface AuthUser {
     id: string;
@@ -350,10 +351,12 @@ const App: React.FC = () => {
             <ViewportProvider>
                 <UserProvider>
                     <ToastProvider>
-                        <OfflineOverlay />
-                        <BrowserRouter>
-                            <AppContent />
-                        </BrowserRouter>
+                        <NetworkProvider>
+                            <NetworkBanner />
+                            <BrowserRouter>
+                                <AppContent />
+                            </BrowserRouter>
+                        </NetworkProvider>
                     </ToastProvider>
                 </UserProvider>
             </ViewportProvider>
