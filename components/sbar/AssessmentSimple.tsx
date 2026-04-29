@@ -129,10 +129,6 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
     }
   };
 
-  if (loading) {
-    return <div className="text-center py-4 text-gray-400">Carregando...</div>;
-  }
-
   const shiftData: Record<ShiftType, { label: string; content: string; setContent: (v: string) => void }> = {
     morning: { label: shiftFilterService.SHIFTS.morning.label, content: assessmentMorning, setContent: setAssessmentMorning },
     afternoon: { label: shiftFilterService.SHIFTS.afternoon.label, content: assessmentAfternoon, setContent: setAssessmentAfternoon },
@@ -154,6 +150,7 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
       <div className="flex items-center gap-3 px-5 py-3.5 border-b border-gray-200 dark:border-gray-700/60 bg-gray-50 dark:bg-gray-800/50">
         <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-600 text-white text-xs font-bold shrink-0 shadow-sm">A</span>
         <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 tracking-wide uppercase">Assessment <span className="normal-case font-normal text-gray-500 dark:text-gray-400">(Avaliação)</span></h3>
+        {loading && <div className="ml-auto w-4 h-4 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />}
       </div>
 
       <div className="p-4">
@@ -192,7 +189,8 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
               }}
               placeholder="Digite a avaliação do paciente..."
               autoFocus={editing}
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 dark:focus:border-blue-500 text-sm leading-relaxed transition"
+              disabled={loading}
+              className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 dark:focus:border-blue-500 text-sm leading-relaxed transition disabled:opacity-40"
               rows={8}
               wrap="soft"
             />
@@ -223,7 +221,8 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
         {isReadOnly ? (
           <button
             onClick={() => handleEdit(currentData.content)}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-white text-sm font-semibold rounded-lg transition shadow-sm hover:shadow"
+            disabled={loading}
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 active:bg-amber-600 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition shadow-sm hover:shadow"
           >
             ✏️ Editar Avaliação
           </button>
