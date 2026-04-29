@@ -5,8 +5,8 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { recommendationService, ClinicalRoundRecommendation } from '../../services/recommendationService';
-import { auditLogService, AuditLogEntry } from '../../services/auditLogService';
+import { ClinicalRoundRecommendation } from '../../services/recommendationService';
+import { roundAuditService, RoundAuditEntry as AuditLogEntry } from '../../services/roundAuditService';
 import { backgroundService, Exame } from '../../services/backgroundService';
 import { useToast } from '../Toast';
 
@@ -24,8 +24,6 @@ interface RecommendationPlanProps {
   morning: RecommendationByShift;
   afternoon: RecommendationByShift;
   night: RecommendationByShift;
-  currentUserId: string;
-  currentUserName: string;
   roundId?: string;
   patientId: string;
   shiftStatus?: ClinicalRoundRecommendation | null;
@@ -34,7 +32,6 @@ interface RecommendationPlanProps {
   onMorningChange: (key: keyof RecommendationByShift, value: string) => void;
   onAfternoonChange: (key: keyof RecommendationByShift, value: string) => void;
   onNightChange: (key: keyof RecommendationByShift, value: string) => void;
-  onSaved?: (message: string) => void;
 }
 
 // Componente interno para exibir histórico de Recomendações
@@ -44,14 +41,14 @@ interface RecommendationHistoryPanelProps {
   shiftStatus?: ClinicalRoundRecommendation | null;
 }
 
-const RecommendationHistoryPanel: React.FC<RecommendationHistoryPanelProps> = ({ shift, roundId, shiftStatus }) => {
+const RecommendationHistoryPanel: React.FC<RecommendationHistoryPanelProps> = ({ shift, roundId }) => {
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadAuditLogs = async () => {
       try {
-        const logs = await auditLogService.getAuditLogByShift(roundId, shift);
+        const logs = await roundAuditService.getByShift(roundId, shift);
         setAuditLogs(logs);
       } catch (error) {
       } finally {
@@ -101,8 +98,6 @@ const RecommendationPlan: React.FC<RecommendationPlanProps> = ({
   morning,
   afternoon,
   night,
-  currentUserId,
-  currentUserName,
   roundId,
   patientId,
   shiftStatus,
@@ -111,10 +106,7 @@ const RecommendationPlan: React.FC<RecommendationPlanProps> = ({
   onMorningChange,
   onAfternoonChange,
   onNightChange,
-  onSaved,
 }) => {
-  const [internalSelectedShift, setInternalSelectedShift] = useState<'morning' | 'afternoon' | 'night'>('morning');
-  const [saving, setSaving] = useState(false);
   const { showToast } = useToast();
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
@@ -137,7 +129,6 @@ const RecommendationPlan: React.FC<RecommendationPlanProps> = ({
   }, [patientId, refreshKey]);
   
   const handleShiftChange = (shift: 'morning' | 'afternoon' | 'night') => {
-    setInternalSelectedShift(shift);
     if (onShiftChange) {
       onShiftChange(shift);
     }
@@ -158,42 +149,6 @@ const RecommendationPlan: React.FC<RecommendationPlanProps> = ({
     { key: 'pendencias' as const, icon: 'checklist', title: 'Pendências', placeholder: 'Procedimentos, alertas, checagem de dispositivos...' }
   ];
 
-  const handleSaveAll = async () => {
-    if (!roundId) {
-      onSaved?.('❌ Erro: Round não identificado');
-      return;
-    }
-
-    setSaving(true);
-    try {
-      // Salva apenas o turno selecionado
-      const currentData = shiftData[selectedShift].data;
-      const result = await recommendationService.saveShiftRecommendation(
-        patientId, 
-        roundId, 
-        selectedShift, 
-        currentData, 
-        currentUserId, 
-        currentUserName
-      );
-
-      if (result) {
-        const shiftLabel = {
-          morning: 'Manhã',
-          afternoon: 'Tarde',
-          night: 'Noite'
-        }[selectedShift];
-        onSaved?.(`✅ Recomendação da ${shiftLabel} salva com sucesso!`);
-      } else {
-        onSaved?.('❌ Erro ao salvar recomendação');
-      }
-    } catch (error) {
-      onSaved?.('❌ Erro ao salvar recomendação');
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const handleSaveExame = async (exameData: { nome_exame: string; data_exame: string; observacao?: string | null }) => {
     if (!patientId) {
       return;
@@ -203,6 +158,10 @@ const RecommendationPlan: React.FC<RecommendationPlanProps> = ({
       
       if (exameModal.exame) {
         const result = await backgroundService.updateExame(exameModal.exame.id, exameData);
+        if (!result) {
+          showToast('Erro ao salvar exame', 'error');
+          return;
+        }
       } else {
         const dataToSave = {
           ...exameData,

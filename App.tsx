@@ -21,7 +21,8 @@ import { initializeDailyClearanceService } from './services/dailyClearanceServic
 import { useInactivityTimeout } from './hooks/useInactivityTimeout';
 import InactivityWarningModal from './components/InactivityWarningModal';
 import { auditService } from './services/auditService';
-import { ToastProvider } from './components/Toast';
+import { ToastProvider, useToast } from './components/Toast';
+import { logError } from './utils/errorHandler';
 import OfflineOverlay from './components/OfflineOverlay';
 
 interface AuthUser {
@@ -29,6 +30,13 @@ interface AuthUser {
     email: string;
     name: string;
 }
+
+const ProtectedRoute = ({ children, isAuthenticated }: { children: React.ReactNode; isAuthenticated: boolean }) => {
+    if (!isAuthenticated) {
+        return <Navigate to="/login" replace />;
+    }
+    return <>{children}</>;
+};
 
 // Componente para gerenciar navegação
 const AppContent: React.FC = () => {
@@ -38,7 +46,8 @@ const AppContent: React.FC = () => {
     const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
     const [selectedReport, setSelectedReport] = useState<HistoryItemData | null>(null);
     const [authUser, setAuthUser] = useState<AuthUser | null>(null);
-    const [refreshKey, setRefreshKey] = useState(0);
+    const [refreshKey] = useState(0);
+    const { showToast } = useToast();
 
     // Timeout de inatividade - 15 min com aviso 2 min antes
     const handleInactivityTimeout = React.useCallback(async () => {
@@ -136,15 +145,15 @@ const AppContent: React.FC = () => {
         const routeMap: Record<CurrentPage, string> = {
             login: '/login',
             patients: '/patients',
-            sbar: '/sbar',
-            history: '/history',
+            sbar: selectedPatient ? `/sbar/${selectedPatient.id}` : '/patients',
+            history: selectedPatient ? `/history/${selectedPatient.id}` : '/patients',
             settings: '/settings',
             reports: '/reports',
             reportDetail: '/report-detail',
             ponto: '/ponto',
             test: '/test'
         };
-        
+
         const route = routeMap[page];
         if (route) {
             navigate(route);
@@ -187,14 +196,15 @@ const AppContent: React.FC = () => {
                 });
             }
         } catch (error) {
+            logError(error, 'handleSelectPatientForSbar');
+            showToast('Erro ao sincronizar paciente com o servidor', 'error');
         }
-        
+
         setSelectedPatient(patient);
-        // Registrar acesso na auditoria
         if (user) {
             auditService.logAcessoFicha(user.id, user.name, patient.id, patient.name);
         }
-        handleNavigate('sbar');
+        navigate(`/sbar/${patient.id}`);
     };
 
     const handleSelectPatientForHistory = (patient: Patient) => {
@@ -224,14 +234,6 @@ const AppContent: React.FC = () => {
         handleNavigate('reportDetail');
     };
 
-    // Componente de proteção de rotas
-    const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-        if (!authUser) {
-            return <Navigate to="/login" replace />;
-        }
-        
-        return <>{children}</>;
-    };
 
     return (
         <div className="relative flex h-auto min-h-screen w-full flex-col bg-background-light dark:bg-background-dark group/design-root">
@@ -252,8 +254,8 @@ const AppContent: React.FC = () => {
                 <Route path="/login" element={<LoginPage />} />
                 
                 <Route path="/patients" element={
-                    <ProtectedRoute>
-                        <PatientsPage 
+                    <ProtectedRoute isAuthenticated={!!authUser}>
+                        <PatientsPage
                             onSelectPatient={handleSelectPatientForSbar} 
                             onSelectHistory={handleSelectPatientForHistory} 
                             onNavigate={handleNavigate} 
@@ -263,25 +265,19 @@ const AppContent: React.FC = () => {
                     </ProtectedRoute>
                 } />
                 
-                <Route path="/sbar" element={
-                    <ProtectedRoute>
-                        {selectedPatient ? (
-                            <SbarReportPage 
-                                patient={selectedPatient} 
-                                onBack={() => {
-                                    navigate('/patients');
-                                }} 
-                                onNavigate={handleNavigate} 
-                                currentPage="sbar" 
-                            />
-                        ) : (
-                            <Navigate to="/patients" replace />
-                        )}
+                <Route path="/sbar/:patientId" element={
+                    <ProtectedRoute isAuthenticated={!!authUser}>
+                        <SbarReportPage
+                            patient={selectedPatient || undefined}
+                            onBack={() => navigate('/patients')}
+                            onNavigate={handleNavigate}
+                            currentPage="sbar"
+                        />
                     </ProtectedRoute>
                 } />
                 
                 <Route path="/history" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute isAuthenticated={!!authUser}>
                         {selectedPatient ? (
                             <HistoryPage 
                                 patient={selectedPatient} 
@@ -300,13 +296,13 @@ const AppContent: React.FC = () => {
                 } />
                 
                 <Route path="/settings" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute isAuthenticated={!!authUser}>
                         <SettingsPage onNavigate={handleNavigate} currentPage="settings" />
                     </ProtectedRoute>
                 } />
                 
                 <Route path="/reports" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute isAuthenticated={!!authUser}>
                         <ReportsPage 
                             onNavigate={handleNavigate} 
                             currentPage="reports" 
@@ -316,7 +312,7 @@ const AppContent: React.FC = () => {
                 } />
                 
                 <Route path="/report-detail" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute isAuthenticated={!!authUser}>
                         {selectedPatient && selectedReport ? (
                             <ReportDetailPage 
                                 patient={selectedPatient} 
@@ -335,7 +331,7 @@ const AppContent: React.FC = () => {
                 
                 {import.meta.env.DEV && (
                     <Route path="/test" element={
-                        <ProtectedRoute>
+                        <ProtectedRoute isAuthenticated={!!authUser}>
                             <TestSupabasePage />
                         </ProtectedRoute>
                     } />

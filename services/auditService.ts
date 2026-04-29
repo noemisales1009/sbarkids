@@ -49,10 +49,10 @@ export const auditService = {
         }]);
 
       if (error) {
-        // Não quebrar o app se a auditoria falhar
+        console.warn('[Audit] Falha ao registrar ação:', entry.action, error);
       }
-    } catch {
-      // Silenciar - auditoria não deve impedir o uso do app
+    } catch (e) {
+      console.warn('[Audit] Erro inesperado ao registrar ação:', entry.action, e);
     }
   },
 

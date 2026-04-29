@@ -1,5 +1,5 @@
 import React from 'react';
-import { AuditLogEntry } from '../../services/auditLogService';
+import { RoundAuditEntry as AuditLogEntry } from '../../services/roundAuditService';
 import { ClinicalRoundAssessment } from '../../services/assessmentService';
 import { ClinicalRoundRecommendation } from '../../services/recommendationService';
 

@@ -47,7 +47,7 @@ export const diureseService = {
       return data as Diurese;
     } catch (error) {
       logError(error, 'diureseService.saveDiurese');
-      return null;
+      throw error;
     }
   },
 
@@ -68,7 +68,7 @@ export const diureseService = {
       return data as Diurese;
     } catch (error) {
       logError(error, 'diureseService.updateDiurese');
-      return null;
+      throw error;
     }
   },
 

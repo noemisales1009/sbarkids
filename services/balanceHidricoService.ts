@@ -48,7 +48,7 @@ export const balanceHidricoService = {
       return data as BalancoHidrico;
     } catch (error) {
       logError(error, 'balanceHidricoService.saveBalanceHidrico');
-      return null;
+      throw error;
     }
   },
 
@@ -69,7 +69,7 @@ export const balanceHidricoService = {
       return data as BalancoHidrico;
     } catch (error) {
       logError(error, 'balanceHidricoService.updateBalanceHidrico');
-      return null;
+      throw error;
     }
   },
 

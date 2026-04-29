@@ -130,7 +130,7 @@ export const backgroundService = {
       return data as Medicacao;
     } catch (error) {
       logError(error, 'backgroundService.saveMedicacao');
-      return null;
+      throw error;
     }
   },
 
@@ -151,7 +151,7 @@ export const backgroundService = {
       return data as Medicacao;
     } catch (error) {
       logError(error, 'backgroundService.updateMedicacao');
-      return null;
+      throw error;
     }
   },
 
@@ -189,7 +189,7 @@ export const backgroundService = {
       return data as Dispositivo;
     } catch (error) {
       logError(error, 'backgroundService.saveDispositivo');
-      return null;
+      throw error;
     }
   },
 
@@ -210,7 +210,7 @@ export const backgroundService = {
       return data as Dispositivo;
     } catch (error) {
       logError(error, 'backgroundService.updateDispositivo');
-      return null;
+      throw error;
     }
   },
 
@@ -244,7 +244,7 @@ export const backgroundService = {
       return data as Cultura;
     } catch (error) {
       logError(error, 'backgroundService.saveCultura');
-      return null;
+      throw error;
     }
   },
 
@@ -265,7 +265,7 @@ export const backgroundService = {
       return data as Cultura;
     } catch (error) {
       logError(error, 'backgroundService.updateCultura');
-      return null;
+      throw error;
     }
   },
 
@@ -299,7 +299,7 @@ export const backgroundService = {
       return data as Procedimento;
     } catch (error) {
       logError(error, 'backgroundService.saveProcedimento');
-      return null;
+      throw error;
     }
   },
 
@@ -320,7 +320,7 @@ export const backgroundService = {
       return data as Procedimento;
     } catch (error) {
       logError(error, 'backgroundService.updateProcedimento');
-      return null;
+      throw error;
     }
   },
 
@@ -358,7 +358,7 @@ export const backgroundService = {
       return data as Exame;
     } catch (error) {
       logError(error, 'backgroundService.saveExame');
-      return null;
+      throw error;
     }
   },
 
@@ -379,7 +379,7 @@ export const backgroundService = {
       return data as Exame;
     } catch (error) {
       logError(error, 'backgroundService.updateExame');
-      return null;
+      throw error;
     }
   },
 
@@ -430,7 +430,7 @@ export const backgroundService = {
       return data as Dieta;
     } catch (error) {
       logError(error, 'backgroundService.saveDieta');
-      return null;
+      throw error;
     }
   },
 
@@ -451,7 +451,7 @@ export const backgroundService = {
       return data as Dieta;
     } catch (error) {
       logError(error, 'backgroundService.updateDieta');
-      return null;
+      throw error;
     }
   }
 };

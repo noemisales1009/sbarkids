@@ -178,7 +178,7 @@ export const sbarService = {
       };
     } catch (error) {
       logError(error, 'sbarService.createReport');
-      return null;
+      throw error;
     }
   },
 
@@ -254,7 +254,7 @@ export const sbarService = {
       };
     } catch (error) {
       logError(error, 'sbarService.updateReport');
-      return null;
+      throw error;
     }
   },
 

@@ -82,10 +82,7 @@ const PatientList: React.FC<PatientListProps> = ({ onSelectPatient, onSelectHist
                 <span className="material-symbols-outlined text-5xl text-red-500 mb-3">error</span>
                 <h3 className="text-lg sm:text-xl font-semibold text-red-900 dark:text-red-300 mb-2">{error}</h3>
                 <button 
-                    onClick={() => {
-                        sessionStorage.removeItem('patientsList');
-                        window.location.reload();
-                    }}
+                    onClick={() => window.location.reload()}
                     className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                 >
                     Recarregar

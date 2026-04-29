@@ -1,7 +1,9 @@
 import { supabase } from '../lib/supabase';
 import { logError } from '../utils/errorHandler';
 
-export interface AuditLogEntry {
+// Log técnico de dados salvos por turno (tabela round_audit_log).
+// Diferente do auditService (LGPD), este registra os dados exatos salvos em cada turno.
+export interface RoundAuditEntry {
   id: string;
   round_id: string;
   patient_id: string;
@@ -14,10 +16,7 @@ export interface AuditLogEntry {
   created_at: string;
 }
 
-export const auditLogService = {
-  /**
-   * Registrar um salvamento no histórico de auditoria
-   */
+export const roundAuditService = {
   async logSave(
     roundId: string,
     patientId: string,
@@ -25,42 +24,37 @@ export const auditLogService = {
     dataType: 'assessment' | 'recommendation',
     savedData: Record<string, unknown>,
     savedById: string | null,
-    savedByName: string
-  ): Promise<AuditLogEntry | null> {
+    savedByName: string,
+  ): Promise<RoundAuditEntry | null> {
     try {
       const { data: entry, error } = await supabase
         .from('round_audit_log')
-        .insert([
-          {
-            round_id: roundId,
-            patient_id: patientId,
-            shift,
-            data_type: dataType,
-            saved_by_id: null, // Sempre null porque "user-1" não é um UUID válido
-            saved_by_name: savedByName,
-            saved_data: savedData,
-            saved_at: new Date().toISOString()
-          }
-        ])
+        .insert([{
+          round_id: roundId,
+          patient_id: patientId,
+          shift,
+          data_type: dataType,
+          saved_by_id: savedById,
+          saved_by_name: savedByName,
+          saved_data: savedData,
+          saved_at: new Date().toISOString(),
+        }])
         .select()
         .single();
 
       if (error) {
-        logError(error, 'auditLogService.logSave');
+        logError(error, 'roundAuditService.logSave');
         return null;
       }
 
-      return entry as AuditLogEntry;
+      return entry as RoundAuditEntry;
     } catch (error) {
-      logError(error, 'auditLogService.logSave');
+      logError(error, 'roundAuditService.logSave');
       return null;
     }
   },
 
-  /**
-   * Obter histórico de salvamentos para um round
-   */
-  async getAuditLog(roundId: string): Promise<AuditLogEntry[]> {
+  async getByRound(roundId: string): Promise<RoundAuditEntry[]> {
     try {
       const { data: entries, error } = await supabase
         .from('round_audit_log')
@@ -69,21 +63,21 @@ export const auditLogService = {
         .order('saved_at', { ascending: false });
 
       if (error) {
-        logError(error, 'auditLogService.getAuditLog');
+        logError(error, 'roundAuditService.getByRound');
         return [];
       }
 
-      return entries as AuditLogEntry[];
+      return entries as RoundAuditEntry[];
     } catch (error) {
-      logError(error, 'auditLogService.getAuditLog');
+      logError(error, 'roundAuditService.getByRound');
       return [];
     }
   },
 
-  /**
-   * Obter histórico para um turno específico
-   */
-  async getAuditLogByShift(roundId: string, shift: 'morning' | 'afternoon' | 'night'): Promise<AuditLogEntry[]> {
+  async getByShift(
+    roundId: string,
+    shift: 'morning' | 'afternoon' | 'night',
+  ): Promise<RoundAuditEntry[]> {
     try {
       const { data: entries, error } = await supabase
         .from('round_audit_log')
@@ -93,14 +87,14 @@ export const auditLogService = {
         .order('saved_at', { ascending: false });
 
       if (error) {
-        logError(error, 'auditLogService.getAuditLogByShift');
+        logError(error, 'roundAuditService.getByShift');
         return [];
       }
 
-      return entries as AuditLogEntry[];
+      return entries as RoundAuditEntry[];
     } catch (error) {
-      logError(error, 'auditLogService.getAuditLogByShift');
+      logError(error, 'roundAuditService.getByShift');
       return [];
     }
-  }
+  },
 };

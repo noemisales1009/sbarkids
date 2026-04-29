@@ -1,16 +1,5 @@
 import { useState, useEffect } from 'react';
-import { diagnosticoPerguntasService } from '../../services/diagnosticoPerguntasService';
-
-interface OpcaoDiagnostico {
-  id: number;
-  pergunta_id: number;
-  codigo: string;
-  label: string;
-  has_input: boolean;
-  input_placeholder: string;
-  ordem: number;
-  parent_id: number | null;
-}
+import { diagnosticoPerguntasService, OpcaoDiagnostico } from '../../services/diagnosticoPerguntasService';
 
 interface DiagnosticoSelecionado {
   opcao_id: number;

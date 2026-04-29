@@ -2,10 +2,8 @@ import { supabase } from '../lib/supabase';
 import { Patient } from '../types';
 import { logError } from '../utils/errorHandler';
 
-/**
- * Serviço de Pacientes
- * Conecta com a tabela patients do Supabase
- */
+const patientCache = new Map<string, { data: Patient; ts: number }>();
+const PATIENT_CACHE_TTL = 60_000;
 
 export const patientsService = {
   /**
@@ -13,16 +11,12 @@ export const patientsService = {
  */
 async listPatients(limit: number = 50): Promise<Patient[]> {
   try {
-    const startTime = Date.now();
-    
     // Query simples e direta - Filtrar APENAS pacientes não arquivados
     const { data, error } = await supabase
       .from('patients')
       .select('*')
       .filter('archived_at', 'is', null)
       .limit(limit);
-    
-    const duration = Date.now() - startTime;
     
     if (error) {
       throw error;
@@ -41,6 +35,9 @@ async listPatients(limit: number = 50): Promise<Patient[]> {
    * Obter um paciente por ID
    */
   async getPatient(id: string): Promise<Patient | null> {
+    const cached = patientCache.get(id);
+    if (cached && Date.now() - cached.ts < PATIENT_CACHE_TTL) return cached.data;
+
     try {
       const { data, error } = await supabase
         .from('patients')
@@ -50,6 +47,7 @@ async listPatients(limit: number = 50): Promise<Patient[]> {
         .single();
 
       if (error) throw error;
+      if (data) patientCache.set(id, { data, ts: Date.now() });
       return data || null;
     } catch (error) {
       logError(error, 'patientsService.getPatient');
@@ -96,15 +94,11 @@ async listPatients(limit: number = 50): Promise<Patient[]> {
         .single();
 
       if (error) throw error;
-      
-      // Limpar cache completamente
-      sessionStorage.removeItem('patientsList');
-      sessionStorage.removeItem('patientsListTimestamp');
-      
+      if (data) patientCache.delete(id);
       return data || null;
     } catch (error) {
       logError(error, 'patientsService.archivePatient');
-      return null;
+      throw error;
     }
   },
 
@@ -125,15 +119,11 @@ async listPatients(limit: number = 50): Promise<Patient[]> {
         .single();
 
       if (error) throw error;
-      
-      // Limpar cache completamente
-      sessionStorage.removeItem('patientsList');
-      sessionStorage.removeItem('patientsListTimestamp');
-      
+      if (data) patientCache.delete(id);
       return data || null;
     } catch (error) {
       logError(error, 'patientsService.restorePatient');
-      return null;
+      throw error;
     }
   },
 
@@ -152,7 +142,7 @@ async listPatients(limit: number = 50): Promise<Patient[]> {
       return data || null;
     } catch (error) {
       logError(error, 'patientsService.createPatient');
-      return null;
+      throw error;
     }
   },
 
@@ -169,10 +159,11 @@ async listPatients(limit: number = 50): Promise<Patient[]> {
         .single();
 
       if (error) throw error;
+      patientCache.delete(id);
       return data || null;
     } catch (error) {
       logError(error, 'patientsService.updatePatient');
-      return null;
+      throw error;
     }
   },
 

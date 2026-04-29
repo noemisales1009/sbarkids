@@ -85,7 +85,7 @@ export const diagnosticsService = {
       return data as DiagnosticHistory;
     } catch (error) {
       logError(error, 'diagnosticsService.savePrincipalDiagnostic');
-      return null;
+      throw error;
     }
   },
 
@@ -115,7 +115,7 @@ export const diagnosticsService = {
       return data as DiagnosticHistory;
     } catch (error) {
       logError(error, 'diagnosticsService.addSecondaryDiagnostic');
-      return null;
+      throw error;
     }
   }
 };

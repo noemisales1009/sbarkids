@@ -6,7 +6,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { assessmentService, ClinicalRoundAssessment } from '../../services/assessmentService';
-import { auditLogService, AuditLogEntry } from '../../services/auditLogService';
+import { roundAuditService, RoundAuditEntry as AuditLogEntry } from '../../services/roundAuditService';
 import ShiftHistoryPanel from './ShiftHistoryPanel';
 
 interface AssessmentByShift {
@@ -49,7 +49,7 @@ const AssessmentHistoryPanel: React.FC<AssessmentHistoryPanelProps> = ({ shift, 
   useEffect(() => {
     const loadAuditLogs = async () => {
       try {
-        const logs = await auditLogService.getAuditLogByShift(roundId, shift);
+        const logs = await roundAuditService.getByShift(roundId, shift);
         setAuditLogs(logs);
       } catch (error) {
       } finally {
