@@ -92,13 +92,18 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
 
   const handleSave = async () => {
     // Lê direto do DOM para capturar texto colado que pode não ter disparado onChange
-    const domValue = textareaRef.current?.value;
+    const domValue = textareaRef.current?.value ?? '';
     const contentMap: Record<ShiftType, string> = {
       morning: assessmentMorning,
       afternoon: assessmentAfternoon,
       night: assessmentNight,
     };
-    const content = domValue ?? contentMap[selectedShift];
+    const content = domValue || contentMap[selectedShift];
+
+    // Sincroniza estado React com DOM (para paste/voz que não disparam onChange)
+    if (content !== contentMap[selectedShift]) {
+      currentData.setContent(content);
+    }
 
     setSaving(true);
     try {
