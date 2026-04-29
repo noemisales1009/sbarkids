@@ -142,8 +142,13 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
   const hasContent = currentData.content.trim().length > 0;
   const isReadOnly = savedContent[selectedShift] !== '' && !editing && !hasChanges;
 
-  const criador = edits.length > 0 ? edits[edits.length - 1] : null;
-  const ultimoEditor = edits.length > 1 ? edits[0] : null;
+  // Filtra apenas edições de hoje (horário de São Paulo) para mostrar quem atuou no dia
+  const todayStr = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+  const todayEdits = edits.filter(e =>
+    new Date(e.data_edicao).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) === todayStr
+  );
+  const criador = todayEdits.length > 0 ? todayEdits[todayEdits.length - 1] : null;
+  const ultimoEditor = todayEdits.length > 1 ? todayEdits[0] : null;
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700/60 shadow-sm overflow-hidden">
