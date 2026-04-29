@@ -22,6 +22,7 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const [assessmentMorning, setAssessmentMorning] = useState('');
   const [assessmentAfternoon, setAssessmentAfternoon] = useState('');
@@ -61,6 +62,11 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
     return () => { cancelled = true; };
   }, [patientId, roundId]);
 
+  // Foca o textarea quando entra no modo edição
+  useEffect(() => {
+    if (editing) textareaRef.current?.focus();
+  }, [editing]);
+
   // Ao trocar de turno: sai do modo edição e recarrega apenas o histórico
   useEffect(() => {
     setEditing(false);
@@ -70,7 +76,7 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
       .then(rows => { if (!cancelled) setEdits(rows); })
       .catch(() => {});
     return () => { cancelled = true; };
-  }, [selectedShift]);
+  }, [patientId, selectedShift]);
 
   const handleEdit = (content: string) => {
     cancelContentRef.current = content;
@@ -167,6 +173,7 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
         {/* Área de conteúdo — sempre usa textarea para manter altura constante */}
         <div className="mb-3">
           <textarea
+            ref={textareaRef}
             value={currentData.content}
             onChange={(e) => {
               if (isReadOnly) return;
@@ -174,7 +181,6 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
               setHasChanges(true);
             }}
             placeholder={loading ? '' : 'Digite a avaliação do paciente...'}
-            autoFocus={editing}
             disabled={loading}
             readOnly={isReadOnly}
             className={`w-full px-4 py-3 rounded-lg border text-sm leading-relaxed transition resize-none
