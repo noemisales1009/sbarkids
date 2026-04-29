@@ -80,6 +80,41 @@ export interface HistoryItemData {
 }
 
 // ============================================================================
+// EXAMES DE IMAGEM
+// ============================================================================
+
+export interface ExameImagem {
+  id: string;
+  paciente_id: string;
+  categoria: string;
+  exame: string;
+  data_exame: string;
+  resultado: string | null;
+  created_by: string | null;
+  updated_by: string | null;
+  created_at: string;
+  archived_at: string | null;
+  motivo_arquivamento: string | null;
+}
+
+// ============================================================================
+// PARECERES
+// ============================================================================
+
+export interface Parecer {
+  id: string;
+  paciente_id: string;
+  especialista: string;
+  data_parecer: string;
+  parecer: string | null;
+  created_by: string | null;
+  updated_by: string | null;
+  created_at: string;
+  archived_at: string | null;
+  motivo_arquivamento: string | null;
+}
+
+// ============================================================================
 // NAVEGAÇÃO
 // ============================================================================
 

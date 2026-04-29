@@ -12,6 +12,9 @@ import { balanceHidricoService, BalancoHidrico } from '../../services/balanceHid
 import { diureseService, Diurese } from '../../services/diureseService';
 import { aportesService, AportesPaciente } from '../../services/aportesService';
 import { scalesService, ScaleScore } from '../../services/scalesService';
+import { examesImagemService } from '../../services/examesImagemService';
+import { pareceresService } from '../../services/pareceresService';
+import { ExameImagem, Parecer } from '../../types';
 
 import MedicacoesTab from './background/tabs/MedicacoesTab';
 import DispositivosTab from './background/tabs/DispositivosTab';
@@ -23,6 +26,8 @@ import BalancoHidricoTab from './background/tabs/BalancoHidricoTab';
 import EscalasTab from './background/tabs/EscalasTab';
 import AportesTab from './background/tabs/AportesTab';
 import DiureseTab from './background/tabs/DiureseTab';
+import PareceresTab from './background/tabs/PareceresTab';
+import ExamesImagemTab from './background/tabs/ExamesImagemTab';
 
 interface BackgroundEditorProps {
   patientId: string;
@@ -39,6 +44,8 @@ type ActiveTab =
   | 'diurese'
   | 'aportes'
   | 'escalas'
+  | 'pareceres'
+  | 'examesImagem'
   | null;
 
 interface CategoryCardProps {
@@ -80,6 +87,8 @@ const CATEGORY_TITLES: Record<NonNullable<ActiveTab>, string> = {
   diurese: '💦 Diurese',
   aportes: '💉 Aportes',
   escalas: '📊 Escalas',
+  pareceres: '📋 Pareceres',
+  examesImagem: '📷 Imagem',
 };
 
 const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
@@ -93,6 +102,8 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
   const [diurese, setDiurese] = useState<Diurese[]>([]);
   const [aportes, setAportes] = useState<AportesPaciente[]>([]);
   const [scaleScores, setScaleScores] = useState<ScaleScore[]>([]);
+  const [pareceres, setPareceres] = useState<Parecer[]>([]);
+  const [examesImagem, setExamesImagem] = useState<ExameImagem[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<ActiveTab>(null);
 
@@ -103,7 +114,7 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [meds, devs, cults, procs, exs, diets, bhidricos, diur, aports, scales] =
+      const [meds, devs, cults, procs, exs, diets, bhidricos, diur, aports, scales, parecsList, exImgList] =
         await Promise.all([
           backgroundService.getMedicacoes(patientId),
           backgroundService.getDispositivos(patientId),
@@ -115,6 +126,8 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
           diureseService.getDiurese(patientId),
           aportesService.getAportes(patientId),
           scalesService.getScaleScores(patientId),
+          pareceresService.getAll(patientId).catch(() => [] as Parecer[]),
+          examesImagemService.getAll(patientId).catch(() => [] as ExameImagem[]),
         ]);
 
       setMedicacoes(meds);
@@ -127,6 +140,8 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
       setDiurese(diur);
       setAportes(aports);
       setScaleScores(scales);
+      setPareceres(parecsList);
+      setExamesImagem(exImgList);
     } catch {
     } finally {
       setLoading(false);
@@ -154,6 +169,8 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
         <CategoryCard icon="💦" title="Diurese" count={diurese.length} gradient="from-pink-500 to-rose-700" isActive={activeTab === 'diurese'} onClick={() => setActiveTab('diurese')} />
         <CategoryCard icon="💉" title="Aportes" count={aportes.length} gradient="from-indigo-500 to-violet-700" isActive={activeTab === 'aportes'} onClick={() => setActiveTab('aportes')} />
         <CategoryCard icon="📊" title="Escalas" count={scaleScores.length} gradient="from-violet-500 to-purple-700" isActive={activeTab === 'escalas'} onClick={() => setActiveTab('escalas')} />
+        <CategoryCard icon="📋" title="Pareceres" count={pareceres.length} gradient="from-pink-500 to-red-500" isActive={activeTab === 'pareceres'} onClick={() => setActiveTab('pareceres')} />
+        <CategoryCard icon="📷" title="Exames de Imagem" count={examesImagem.length} gradient="from-purple-500 to-violet-600" isActive={activeTab === 'examesImagem'} onClick={() => setActiveTab('examesImagem')} />
       </div>
 
       {activeTab && (
@@ -188,6 +205,8 @@ const BackgroundEditor: React.FC<BackgroundEditorProps> = ({ patientId }) => {
               {activeTab === 'escalas' && <EscalasTab scaleScores={scaleScores} />}
               {activeTab === 'aportes' && <AportesTab aportes={aportes} />}
               {activeTab === 'diurese' && <DiureseTab diurese={diurese} />}
+              {activeTab === 'pareceres' && <PareceresTab pareceres={pareceres} />}
+              {activeTab === 'examesImagem' && <ExamesImagemTab examesImagem={examesImagem} />}
             </div>
           </div>
         </div>
