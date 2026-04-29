@@ -45,14 +45,6 @@ const ComorbidadesSection: React.FC<ComorbidadesSectionProps> = ({ patientId, co
     return () => { cancelled = true; };
   }, [patientId, comorbidade]);
 
-  if (loading) {
-    return (
-      <div className="text-center py-4 text-gray-400">
-        Carregando comorbidades...
-      </div>
-    );
-  }
-
   return (
     <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden shadow-sm">
       {/* Header */}
@@ -61,7 +53,7 @@ const ComorbidadesSection: React.FC<ComorbidadesSectionProps> = ({ patientId, co
           <span className="w-1.5 h-4 rounded-full bg-purple-500 shrink-0" />
           <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">Comorbidades</p>
         </div>
-        {comorbidades.length > 0 && (
+        {!loading && comorbidades.length > 0 && (
           <span className="text-xs bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-500/30 rounded-full px-2.5 py-0.5 font-bold">
             {comorbidades.length}
           </span>
@@ -70,7 +62,13 @@ const ComorbidadesSection: React.FC<ComorbidadesSectionProps> = ({ patientId, co
 
       {/* Conteúdo */}
       <div className="px-5 py-4">
-        {comorbidades.length > 0 ? (
+        {loading ? (
+          <div className="flex gap-2">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="h-8 w-24 rounded-lg bg-gray-200 dark:bg-gray-700 animate-pulse" />
+            ))}
+          </div>
+        ) : comorbidades.length > 0 ? (
           <div className="flex flex-wrap gap-2">
             {comorbidades.map((comorbidade, index) => (
               <span

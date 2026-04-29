@@ -115,7 +115,16 @@ const DiagnosticoSelector = ({ pacienteId, onSave, onSaveMessage }: DiagnosticoS
   const secundarios = selecionados.filter(s => s.tipo === 'secundario');
 
   if (loading) {
-    return <div className="p-4 text-center text-gray-400">⏳ Carregando diagnósticos...</div>;
+    return (
+      <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6">
+        <div className="h-6 w-48 rounded bg-gray-200 dark:bg-gray-700 animate-pulse mb-4" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-8 rounded-lg bg-gray-200 dark:bg-gray-700 animate-pulse" />
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (
