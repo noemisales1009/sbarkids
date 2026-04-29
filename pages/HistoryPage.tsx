@@ -442,21 +442,21 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ patient, onBack, onNavigate, 
                 <div className="space-y-6">
                     {/* Exibir Assessments */}
                     {assessments.length > 0 && (
-                        <div className="bg-gray-900 rounded-lg border border-gray-800 p-6">
-                            <h3 className="text-xl font-bold text-white mb-4">📋 Avaliações Clínicas (Assessment)</h3>
+                        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6">
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">📋 Avaliações Clínicas (Assessment)</h3>
                             <div className="space-y-4">
                                 {assessments.map((assessment, idx) => (
-                                    <div key={idx} className="border border-gray-700 rounded-lg p-4 bg-gray-800/50">
+                                    <div key={idx} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-800/50">
                                         {/* Manhã */}
                                         {assessment.assessment_morning && (
-                                            <div className="mb-4 pb-4 border-b border-gray-700">
+                                            <div className="mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
                                                 <div className="flex items-center gap-2 mb-2">
                                                     <span className="text-lg">🌅</span>
-                                                    <h4 className="font-semibold text-orange-400">Manhã (7:01 - 13:00)</h4>
+                                                    <h4 className="font-semibold text-orange-500 dark:text-orange-400">Manhã (7:01 - 13:00)</h4>
                                                 </div>
-                                                <p className="text-gray-300 text-sm whitespace-pre-wrap mb-2">{assessment.assessment_morning}</p>
+                                                <p className="text-gray-700 dark:text-gray-300 text-sm whitespace-pre-wrap mb-2">{assessment.assessment_morning}</p>
                                                 {assessment.assessment_morning_saved_by_name && (
-                                                    <div className="text-xs text-gray-500">
+                                                    <div className="text-xs text-gray-500 dark:text-gray-500">
                                                         💾 Salvo por: <strong>{assessment.assessment_morning_saved_by_name}</strong>
                                                         {assessment.assessment_morning_saved_at && (
                                                             <span> • {new Date(assessment.assessment_morning_saved_at).toLocaleString('pt-BR')}</span>
@@ -468,14 +468,14 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ patient, onBack, onNavigate, 
 
                                         {/* Tarde */}
                                         {assessment.assessment_afternoon && (
-                                            <div className="mb-4 pb-4 border-b border-gray-700">
+                                            <div className="mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
                                                 <div className="flex items-center gap-2 mb-2">
                                                     <span className="text-lg">☀️</span>
-                                                    <h4 className="font-semibold text-yellow-400">Tarde (13:01 - 19:00)</h4>
+                                                    <h4 className="font-semibold text-yellow-600 dark:text-yellow-400">Tarde (13:01 - 19:00)</h4>
                                                 </div>
-                                                <p className="text-gray-300 text-sm whitespace-pre-wrap mb-2">{assessment.assessment_afternoon}</p>
+                                                <p className="text-gray-700 dark:text-gray-300 text-sm whitespace-pre-wrap mb-2">{assessment.assessment_afternoon}</p>
                                                 {assessment.assessment_afternoon_saved_by_name && (
-                                                    <div className="text-xs text-gray-500">
+                                                    <div className="text-xs text-gray-500 dark:text-gray-500">
                                                         💾 Salvo por: <strong>{assessment.assessment_afternoon_saved_by_name}</strong>
                                                         {assessment.assessment_afternoon_saved_at && (
                                                             <span> • {new Date(assessment.assessment_afternoon_saved_at).toLocaleString('pt-BR')}</span>
@@ -490,11 +490,11 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ patient, onBack, onNavigate, 
                                             <div>
                                                 <div className="flex items-center gap-2 mb-2">
                                                     <span className="text-lg">🌙</span>
-                                                    <h4 className="font-semibold text-indigo-400">Noite (19:01 - 07:00)</h4>
+                                                    <h4 className="font-semibold text-indigo-600 dark:text-indigo-400">Noite (19:01 - 07:00)</h4>
                                                 </div>
-                                                <p className="text-gray-300 text-sm whitespace-pre-wrap mb-2">{assessment.assessment_night}</p>
+                                                <p className="text-gray-700 dark:text-gray-300 text-sm whitespace-pre-wrap mb-2">{assessment.assessment_night}</p>
                                                 {assessment.assessment_night_saved_by_name && (
-                                                    <div className="text-xs text-gray-500">
+                                                    <div className="text-xs text-gray-500 dark:text-gray-500">
                                                         💾 Salvo por: <strong>{assessment.assessment_night_saved_by_name}</strong>
                                                         {assessment.assessment_night_saved_at && (
                                                             <span> • {new Date(assessment.assessment_night_saved_at).toLocaleString('pt-BR')}</span>
@@ -525,18 +525,18 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ patient, onBack, onNavigate, 
     return (
         <>
             {/* Mobile View */}
-            <div className="w-full overflow-x-hidden sm:hidden min-h-screen bg-[#131722]">
+            <div className="w-full overflow-x-hidden sm:hidden min-h-screen bg-background-light dark:bg-background-dark">
                 <HistoryHeader patientName={patient.name} onBack={onBack} />
                 <main className="grow px-4 pt-2 pb-28">
                     {renderContent()}
                 </main>
                 <BottomNavBar onNavigate={onNavigate} currentPage={currentPage} />
             </div>
-            
+
             {/* Desktop View */}
             <DesktopLayout currentPage={currentPage} onNavigate={onNavigate}>
                 <DesktopHistoryHeader patientName={patient.name} onBack={onBack} />
-                <main className="grow pt-6 px-6 bg-[#131722]">
+                <main className="grow pt-6 px-6">
                     {renderContent()}
                 </main>
             </DesktopLayout>

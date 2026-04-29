@@ -67,7 +67,7 @@ const HistoryTimeline: React.FC<HistoryTimelineProps> = ({ date, items }) => {
 
   return (
     <div className="mb-6">
-      <h3 className="text-gray-400 text-sm font-medium mb-3">
+      <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-3">
         {date}
       </h3>
       <div className="space-y-2">
@@ -79,51 +79,51 @@ const HistoryTimeline: React.FC<HistoryTimelineProps> = ({ date, items }) => {
           return (
             <div
               key={item.id_alerta}
-              className={`p-4 bg-gray-800/40 rounded-lg border border-gray-700 border-l-4 ${getShiftBorderColor(item.created_at)}`}
+              className={`p-4 bg-white dark:bg-gray-800/40 rounded-lg border border-gray-200 dark:border-gray-700 border-l-4 ${getShiftBorderColor(item.created_at)}`}
             >
               {/* Título e badge de origem */}
               <div className="flex items-center gap-2 mb-2 flex-wrap">
-                <p className="font-semibold text-white text-sm">{item.alertaclinico}</p>
+                <p className="font-semibold text-gray-900 dark:text-white text-sm">{item.alertaclinico}</p>
                 {getOriginBadge(item.fonte)}
               </div>
 
               <div className="space-y-1.5 text-xs">
                 {/* Status */}
-                <div className="text-gray-300">
+                <div className="text-gray-600 dark:text-gray-300">
                   Status: <strong className={getStatusColor(item.status, item.live_status)}>{statusLabel}</strong>
                 </div>
 
                 {/* Criado em */}
-                <div className="text-gray-400">
+                <div className="text-gray-500 dark:text-gray-400">
                   📅 Criado: {item.hora_criacao_formatado || formatDate(item.created_at)}
                 </div>
 
                 {/* Concluído por (se concluído) */}
                 {concluded && item.concluded_by_name && (
-                  <div className="text-gray-300">
-                    ✓ Concluído por: <strong className="text-white">{item.concluded_by_name}</strong>
+                  <div className="text-gray-600 dark:text-gray-300">
+                    ✓ Concluído por: <strong className="text-gray-900 dark:text-white">{item.concluded_by_name}</strong>
                   </div>
                 )}
 
                 {/* Criado por (se não concluído) */}
                 {!concluded && item.created_by_name && (
-                  <div className="text-gray-400">
-                    👤 Criado por: <strong className="text-white">{item.created_by_name}</strong>
+                  <div className="text-gray-500 dark:text-gray-400">
+                    👤 Criado por: <strong className="text-gray-900 dark:text-white">{item.created_by_name}</strong>
                   </div>
                 )}
 
                 {/* Justificativa */}
                 {item.justificativa && item.justificativa.trim() !== '' && (
-                  <div className="mt-2 p-2 bg-blue-900/30 rounded border-l-2 border-blue-400">
-                    <p className="text-blue-200">
-                      <strong>Justificativa:</strong> {item.justificativa}
+                  <div className="mt-2 p-2 bg-gray-100 dark:bg-gray-800 rounded border-l-2 border-blue-500">
+                    <p className="text-gray-800 dark:text-gray-200">
+                      <strong className="text-gray-900 dark:text-white">Justificativa:</strong> {item.justificativa}
                     </p>
                   </div>
                 )}
 
                 {/* Timer de visibilidade (apenas para concluídos dentro de 24h) */}
                 {tempoVisibilidade && tempoVisibilidade !== 'Expirado' && (
-                  <div className="mt-2 inline-block px-2 py-1 bg-yellow-900/30 text-yellow-400 rounded text-xs font-semibold">
+                  <div className="mt-2 inline-block px-2 py-1 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 rounded text-xs font-semibold">
                     ⏰ Visível por: {tempoVisibilidade}
                   </div>
                 )}

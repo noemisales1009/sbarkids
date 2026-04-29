@@ -209,7 +209,6 @@ const AppContent: React.FC = () => {
 
     const handleSelectPatientForHistory = (patient: Patient) => {
         setSelectedPatient(patient);
-        // Registrar acesso ao histórico na auditoria
         if (user) {
             auditService.log({
                 user_id: user.id,
@@ -219,7 +218,7 @@ const AppContent: React.FC = () => {
                 patient_name: patient.name,
             });
         }
-        handleNavigate('history');
+        navigate('/history');
     };
     
     const handleSelectReport = (report: HistoryItemData) => {
