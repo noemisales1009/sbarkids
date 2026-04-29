@@ -34,10 +34,10 @@ export const NetworkBanner: React.FC = () => {
 
                 {/* 404 com ícone wifi animado */}
                 <div className="flex items-center justify-center" style={{ lineHeight: 1 }}>
-                    <span className="text-white font-black" style={{ fontSize: 'clamp(3.5rem, 18vw, 7rem)' }}>4</span>
+                    <span className="text-white font-black" style={{ fontSize: '7rem' }}>4</span>
 
-                    <div className="mx-1 flex items-center justify-center animate-wifi" style={{ width: 'clamp(3.5rem, 18vw, 7rem)', height: 'clamp(3.5rem, 18vw, 7rem)' }}>
-                        <svg viewBox="0 0 100 100" width="100%" height="100%" fill="none">
+                    <div className="mx-1 flex items-center justify-center animate-wifi" style={{ width: '7rem', height: '7rem' }}>
+                        <svg viewBox="0 0 100 100" width="100" height="100" fill="none">
                             <circle cx="50" cy="50" r="46" stroke="white" strokeWidth="6" />
                             <line x1="18" y1="18" x2="82" y2="82" stroke="white" strokeWidth="6" strokeLinecap="round" />
                             <path d="M20 42 Q50 18 80 42" stroke="white" strokeWidth="6" strokeLinecap="round" fill="none" />
@@ -47,18 +47,18 @@ export const NetworkBanner: React.FC = () => {
                         </svg>
                     </div>
 
-                    <span className="text-white font-black" style={{ fontSize: 'clamp(3.5rem, 18vw, 7rem)' }}>4</span>
+                    <span className="text-white font-black" style={{ fontSize: '7rem' }}>4</span>
                 </div>
 
-                <h1 className="text-white font-black tracking-[0.2em] text-center" style={{ fontSize: 'clamp(1.3rem, 6vw, 2rem)' }}>
+                <h1 className="text-white font-black tracking-[0.2em] text-center" style={{ fontSize: '2rem' }}>
                     SEM CONEXÃO
                 </h1>
-                <p className="text-white text-center" style={{ fontSize: 'clamp(0.9rem, 3.5vw, 1.1rem)' }}>
+                <p className="text-white text-center" style={{ fontSize: '1.1rem' }}>
                     Desculpe, você está offline.
                 </p>
 
                 {/* Ilustração cabo desconectado */}
-                <svg width="100%" height="auto" viewBox="0 0 280 90" fill="none" className="mt-2" style={{ maxWidth: '280px' }}>
+                <svg width="280" height="90" viewBox="0 0 280 90" fill="none" className="mt-2">
                     <rect x="10" y="18" width="52" height="38" rx="10" fill="#1c2e3a" />
                     <rect x="22" y="6" width="9" height="16" rx="3" fill="#d4a017" />
                     <rect x="38" y="6" width="9" height="16" rx="3" fill="#d4a017" />
