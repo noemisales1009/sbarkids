@@ -91,12 +91,14 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
   };
 
   const handleSave = async () => {
+    // Lê direto do DOM para capturar texto colado que pode não ter disparado onChange
+    const domValue = textareaRef.current?.value;
     const contentMap: Record<ShiftType, string> = {
       morning: assessmentMorning,
       afternoon: assessmentAfternoon,
       night: assessmentNight,
     };
-    const content = contentMap[selectedShift];
+    const content = domValue ?? contentMap[selectedShift];
 
     setSaving(true);
     try {
@@ -179,6 +181,14 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
               if (isReadOnly) return;
               currentData.setContent(e.target.value);
               setHasChanges(true);
+            }}
+            onInput={(e) => {
+              if (isReadOnly) return;
+              const val = (e.target as HTMLTextAreaElement).value;
+              if (val !== currentData.content) {
+                currentData.setContent(val);
+                setHasChanges(true);
+              }
             }}
             placeholder={loading ? '' : 'Digite a avaliação do paciente...'}
             disabled={loading}
