@@ -17,7 +17,6 @@ import { supabase } from './lib/supabase';
 import { patientsService } from './services/patientsService';
 import { UserProvider, useUser } from './contexts/UserContext';
 import { ThemeProvider } from './contexts/ThemeContext';
-import { initializeDailyClearanceService } from './services/dailyClearanceService';
 import { useInactivityTimeout } from './hooks/useInactivityTimeout';
 import InactivityWarningModal from './components/InactivityWarningModal';
 import { auditService } from './services/auditService';
@@ -71,11 +70,7 @@ const AppContent: React.FC = () => {
 
     // Estado mantido apenas em memória (sem sessionStorage) por segurança LGPD
 
-    // Inicializar serviço de limpeza diária (00:05 São Paulo)
-    useEffect(() => {
-        const cleanup = initializeDailyClearanceService();
-        return cleanup;
-    }, []);
+    // Limpeza diária 00:05 SP agora é feita por pg_cron no Supabase
 
     // Dados de pacientes mantidos apenas em memória (LGPD compliance)
 

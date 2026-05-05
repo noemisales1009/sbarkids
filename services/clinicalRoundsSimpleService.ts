@@ -61,28 +61,32 @@ export const clinicalRoundsSimpleService = {
         updated_at: new Date().toISOString()
       };
 
-      // Buscar registro existente
+      // Buscar registro ATIVO (não arquivado) mais recente
       let selectQuery = supabase
         .from('clinical_rounds_simple')
         .select('id')
-        .eq('patient_id', patientId);
-      
+        .eq('patient_id', patientId)
+        .eq('is_archived', false);
+
       if (roundId) {
         selectQuery = selectQuery.eq('round_id', roundId);
       } else {
         selectQuery = selectQuery.is('round_id', null);
       }
-      
-      const { data: existingData, error: selectError } = await selectQuery.maybeSingle();
+
+      const { data: existingRows, error: selectError } = await selectQuery
+        .order('updated_at', { ascending: false })
+        .limit(1);
 
       if (selectError) {
         logError(selectError, 'clinicalRoundsSimpleService.select');
         return false;
       }
 
+      const existingData = existingRows && existingRows.length > 0 ? existingRows[0] : null;
+
       let result;
       if (existingData) {
-        // Atualizar registro existente
         const { error } = await supabase
           .from('clinical_rounds_simple')
           .update(updateData)
@@ -90,7 +94,6 @@ export const clinicalRoundsSimpleService = {
 
         result = error;
       } else {
-        // Inserir novo registro
         const { error } = await supabase
           .from('clinical_rounds_simple')
           .insert([updateData]);
@@ -99,11 +102,6 @@ export const clinicalRoundsSimpleService = {
       }
 
       if (result) {
-        // Silenciar erros 406
-        if (result.message?.includes('406') || result.code === '406') {
-          return false;
-        }
-
         logError(result, `clinicalRoundsSimpleService.saveAssessment.${shift}`);
         return false;
       }
@@ -127,11 +125,6 @@ export const clinicalRoundsSimpleService = {
 
       return true;
     } catch (error: any) {
-      // Silenciar erros 406
-      if (error?.message?.includes('406') || error?.status === 406) {
-        return false;
-      }
-
       logError(error, 'clinicalRoundsSimpleService.saveAssessment');
       return false;
     }
@@ -184,28 +177,32 @@ export const clinicalRoundsSimpleService = {
         updated_at: new Date().toISOString()
       };
 
-      // Buscar registro existente
+      // Buscar registro ATIVO (não arquivado) mais recente
       let selectQuery = supabase
         .from('clinical_rounds_simple')
         .select('id')
-        .eq('patient_id', patientId);
-      
+        .eq('patient_id', patientId)
+        .eq('is_archived', false);
+
       if (roundId) {
         selectQuery = selectQuery.eq('round_id', roundId);
       } else {
         selectQuery = selectQuery.is('round_id', null);
       }
-      
-      const { data: existingData, error: selectError } = await selectQuery.maybeSingle();
+
+      const { data: existingRows, error: selectError } = await selectQuery
+        .order('updated_at', { ascending: false })
+        .limit(1);
 
       if (selectError) {
         logError(selectError, 'clinicalRoundsSimpleService.select');
         return false;
       }
 
+      const existingData = existingRows && existingRows.length > 0 ? existingRows[0] : null;
+
       let result;
       if (existingData) {
-        // Atualizar registro existente
         const { error } = await supabase
           .from('clinical_rounds_simple')
           .update(updateData)
@@ -213,7 +210,6 @@ export const clinicalRoundsSimpleService = {
 
         result = error;
       } else {
-        // Inserir novo registro
         const { error } = await supabase
           .from('clinical_rounds_simple')
           .insert([updateData]);
@@ -222,22 +218,12 @@ export const clinicalRoundsSimpleService = {
       }
 
       if (result) {
-        // Silenciar erros 406
-        if (result.message?.includes('406') || result.code === '406') {
-          return false;
-        }
-        
         logError(result, `clinicalRoundsSimpleService.saveRecommendation.${shift}`);
         return false;
       }
 
       return true;
     } catch (error: any) {
-      // Silenciar erros 406
-      if (error?.message?.includes('406') || error?.status === 406) {
-        return false;
-      }
-      
       logError(error, 'clinicalRoundsSimpleService.saveRecommendation');
       return false;
     }
@@ -270,11 +256,6 @@ export const clinicalRoundsSimpleService = {
 
       return data as ClinicalRoundsSimple | null;
     } catch (error: any) {
-      // Silenciar erros 406 para evitar poluição no console
-      if (error?.message?.includes('406') || error?.status === 406) {
-        return null;
-      }
-      
       logError(error, 'clinicalRoundsSimpleService.getByRound');
       return null;
     }
