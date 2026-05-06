@@ -131,6 +131,30 @@ export const clinicalRoundsSimpleService = {
   },
 
   /**
+   * Buscar todo o histórico de edições do Assessment (todos os turnos)
+   */
+  async getAllAssessmentEdits(
+    patientId: string
+  ): Promise<Array<{ id: number; shift: string; content: string; nome_editor: string; data_edicao: string }>> {
+    try {
+      const { data, error } = await supabase
+        .from('clinical_rounds_assessment_edits_com_usuario')
+        .select('id, shift, content, nome_editor, data_edicao')
+        .eq('patient_id', patientId)
+        .order('data_edicao', { ascending: false });
+
+      if (error) {
+        logError(error, 'clinicalRoundsSimpleService.getAllAssessmentEdits');
+        return [];
+      }
+      return (data || []) as any[];
+    } catch (error) {
+      logError(error, 'clinicalRoundsSimpleService.getAllAssessmentEdits');
+      return [];
+    }
+  },
+
+  /**
    * Buscar histórico de edições do Assessment
    */
   async getAssessmentEdits(
@@ -348,6 +372,46 @@ export const clinicalRoundsSimpleService = {
       return true;
     } catch (error) {
       logError(error, 'clinicalRoundsSimpleService.deleteShift');
+      return false;
+    }
+  },
+
+  /**
+   * Arquivar (limpar) apenas o assessment de um turno específico
+   */
+  async archiveAssessmentShift(
+    patientId: string,
+    roundId: string | undefined,
+    shift: 'morning' | 'afternoon' | 'night'
+  ): Promise<boolean> {
+    try {
+      const updateData = {
+        [`assessment_${shift}`]: null,
+        [`assessment_${shift}_saved_by`]: null,
+        [`assessment_${shift}_saved_by_name`]: null,
+        [`assessment_${shift}_saved_at`]: null,
+        updated_at: new Date().toISOString()
+      };
+
+      let query = supabase
+        .from('clinical_rounds_simple')
+        .update(updateData)
+        .eq('patient_id', patientId);
+
+      if (roundId) {
+        query = query.eq('round_id', roundId);
+      } else {
+        query = query.is('round_id', null);
+      }
+
+      const { error } = await query;
+      if (error) {
+        logError(error, `clinicalRoundsSimpleService.archiveAssessmentShift.${shift}`);
+        return false;
+      }
+      return true;
+    } catch (error) {
+      logError(error, 'clinicalRoundsSimpleService.archiveAssessmentShift');
       return false;
     }
   },

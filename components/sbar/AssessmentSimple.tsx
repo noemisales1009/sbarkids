@@ -20,6 +20,7 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
   const [selectedShift, setSelectedShift] = useState<ShiftType>('morning');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [archiving, setArchiving] = useState(false);
   const [editing, setEditing] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -88,6 +89,29 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
     setContent(cancelContentRef.current);
     setEditing(false);
     setHasChanges(false);
+  };
+
+  const handleArchiveShift = async () => {
+    const shiftLabel = shiftFilterService.getShiftLabel(selectedShift);
+    if (!confirm(`Arquivar o turno da ${shiftLabel}? O conteúdo será limpo para um novo registro, mas o histórico é mantido.`)) return;
+    setArchiving(true);
+    const shiftSetter = { morning: setAssessmentMorning, afternoon: setAssessmentAfternoon, night: setAssessmentNight }[selectedShift];
+    try {
+      const success = await clinicalRoundsSimpleService.archiveAssessmentShift(patientId, roundId, selectedShift);
+      if (success) {
+        shiftSetter('');
+        setSavedContent(prev => ({ ...prev, [selectedShift]: '' }));
+        setEditing(false);
+        setHasChanges(false);
+        onSaved?.(`✅ Turno da ${shiftLabel} arquivado com sucesso!`);
+      } else {
+        onSaved?.('❌ Erro ao arquivar turno');
+      }
+    } catch {
+      onSaved?.('❌ Erro ao arquivar turno');
+    } finally {
+      setArchiving(false);
+    }
   };
 
   const handleSave = async () => {
@@ -238,13 +262,22 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
 
         {/* Botões de ação */}
         {isReadOnly ? (
-          <button
-            onClick={() => handleEdit(currentData.content)}
-            disabled={loading}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 active:bg-amber-600 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition shadow-sm hover:shadow"
-          >
-            ✏️ Editar Avaliação
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => handleEdit(currentData.content)}
+              disabled={loading}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 active:bg-amber-600 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition shadow-sm hover:shadow"
+            >
+              ✏️ Editar Avaliação
+            </button>
+            <button
+              onClick={handleArchiveShift}
+              disabled={archiving || loading}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 disabled:opacity-50 text-gray-600 dark:text-gray-300 text-sm font-medium rounded-lg transition"
+            >
+              {archiving ? '⏳ Arquivando...' : '🗂️ Arquivar Turno'}
+            </button>
+          </div>
         ) : (
           <div className="flex gap-2">
             {hasContent && (
