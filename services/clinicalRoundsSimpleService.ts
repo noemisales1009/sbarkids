@@ -271,14 +271,16 @@ export const clinicalRoundsSimpleService = {
         query = query.is('round_id', null);
       }
 
-      const { data, error } = await query.maybeSingle();
+      const { data, error } = await query
+        .order('updated_at', { ascending: false })
+        .limit(1);
 
       if (error) {
         logError(error, 'clinicalRoundsSimpleService.getByRound');
         return null;
       }
 
-      return data as ClinicalRoundsSimple | null;
+      return (data && data.length > 0 ? data[0] : null) as ClinicalRoundsSimple | null;
     } catch (error: any) {
       logError(error, 'clinicalRoundsSimpleService.getByRound');
       return null;
