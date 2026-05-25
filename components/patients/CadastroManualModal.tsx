@@ -23,6 +23,7 @@ const CadastroManualModal: React.FC<Props> = ({ onClose, onSuccess }) => {
   });
   const [saving, setSaving] = useState(false);
   const [erro, setErro] = useState('');
+  const [leitoOcupado, setLeitoOcupado] = useState<{ nome: string } | null>(null);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -31,12 +32,15 @@ const CadastroManualModal: React.FC<Props> = ({ onClose, onSuccess }) => {
   }, [onClose]);
 
   const set = (field: keyof FormState) =>
-    (e: React.ChangeEvent<HTMLInputElement>) =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
       setForm(prev => ({ ...prev, [field]: e.target.value }));
+      if (field === 'numero_leito') setLeitoOcupado(null);
+    };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErro('');
+    setLeitoOcupado(null);
     if (!form.nome_paciente.trim()) return setErro('Nome do paciente é obrigatório.');
     if (!form.numero_leito) return setErro('Número do leito é obrigatório.');
     if (!form.dt_nasc) return setErro('Data de nascimento é obrigatória.');
@@ -44,6 +48,20 @@ const CadastroManualModal: React.FC<Props> = ({ onClose, onSuccess }) => {
 
     setSaving(true);
     try {
+      const { data: ocupado } = await supabase
+        .from('patients')
+        .select('name')
+        .eq('bed_number', parseInt(form.numero_leito))
+        .is('archived_at', null)
+        .limit(1)
+        .maybeSingle();
+
+      if (ocupado) {
+        setLeitoOcupado({ nome: ocupado.name });
+        setSaving(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('patients')
         .insert([{
@@ -151,6 +169,22 @@ const CadastroManualModal: React.FC<Props> = ({ onClose, onSuccess }) => {
               />
             </div>
           </div>
+
+          {/* Leito ocupado */}
+          {leitoOcupado && (
+            <div className="px-3 py-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-600 text-amber-800 dark:text-amber-300 text-sm space-y-1">
+              <div className="flex items-center gap-2 font-semibold">
+                <span className="material-symbols-outlined text-base">bed</span>
+                Leito {form.numero_leito} já está ocupado
+              </div>
+              <div>
+                Paciente: <span className="font-bold">{leitoOcupado.nome}</span>
+              </div>
+              <div className="text-xs text-amber-700 dark:text-amber-400">
+                Archive o paciente atual antes de cadastrar um novo neste leito.
+              </div>
+            </div>
+          )}
 
           {/* Erro */}
           {erro && (
