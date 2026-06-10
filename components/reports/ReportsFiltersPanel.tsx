@@ -2,10 +2,10 @@ import React from 'react';
 import { Patient } from '../../types';
 
 interface ReportsFiltersPanelProps {
-  statusFilter: string;
-  setStatusFilter: (v: string) => void;
   dateFilter: string;
   setDateFilter: (v: string) => void;
+  shiftFilter: string;
+  setShiftFilter: (v: string) => void;
   selectedPatientIds: Set<string>;
   patientSearch: string;
   setPatientSearch: (v: string) => void;
@@ -18,10 +18,10 @@ interface ReportsFiltersPanelProps {
 }
 
 const ReportsFiltersPanel: React.FC<ReportsFiltersPanelProps> = ({
-  statusFilter,
-  setStatusFilter,
   dateFilter,
   setDateFilter,
+  shiftFilter,
+  setShiftFilter,
   selectedPatientIds,
   patientSearch,
   setPatientSearch,
@@ -36,29 +36,29 @@ const ReportsFiltersPanel: React.FC<ReportsFiltersPanelProps> = ({
     <div className="flex flex-col sm:flex-row gap-3">
       <div className="flex-1">
         <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">
-          Filtrar por Status
-        </label>
-        <select
-          className="w-full h-11 rounded-lg border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white"
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-        >
-          <option value="">Todos os Status</option>
-          <option value="estavel">Estável</option>
-          <option value="instavel">Instável</option>
-          <option value="em_risco">Em risco</option>
-        </select>
-      </div>
-      <div className="flex-1">
-        <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">
           Filtrar por Data
         </label>
         <input
           type="date"
-          className="w-full h-11 rounded-lg border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white"
+          className="w-full h-11 px-3 rounded-lg border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white"
           value={dateFilter}
           onChange={(e) => setDateFilter(e.target.value)}
         />
+      </div>
+      <div className="flex-1">
+        <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">
+          Filtrar por Turno
+        </label>
+        <select
+          className="w-full h-11 px-3 rounded-lg border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white"
+          value={shiftFilter}
+          onChange={(e) => setShiftFilter(e.target.value)}
+        >
+          <option value="">Todos os turnos</option>
+          <option value="morning">Manhã</option>
+          <option value="afternoon">Tarde</option>
+          <option value="night">Noite</option>
+        </select>
       </div>
     </div>
 

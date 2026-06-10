@@ -234,9 +234,10 @@ export const alertasService = {
     try {
       
       const allAlertas = await this.getAlertas(patientId);
-      const ativos = allAlertas.filter(
-        a => a.status !== 'concluido' && a.status !== 'Concluído'
-      );
+      const ativos = allAlertas.filter(a => {
+        const ls = (a.live_status || '').toLowerCase();
+        return ls !== 'concluído' && ls !== 'arquivado';
+      });
       
       return ativos;
     } catch (error) {

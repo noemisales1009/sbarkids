@@ -3,6 +3,7 @@ import { clinicalRoundsSimpleService } from '../../services/clinicalRoundsSimple
 import { ShiftType, shiftFilterService } from '../../services/shiftFilterService';
 
 type EditRow = { id: number; content: string; nome_editor: string; data_edicao: string };
+type EditRowWithShift = EditRow & { shift: string };
 
 interface AssessmentSimpleProps {
   patientId: string;
@@ -11,6 +12,9 @@ interface AssessmentSimpleProps {
   onSaved?: (message: string) => void;
 }
 
+const todayISO = () =>
+  new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+
 const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
   patientId,
   roundId,
@@ -18,6 +22,7 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
   onSaved
 }) => {
   const [selectedShift, setSelectedShift] = useState<ShiftType>('morning');
+  const [selectedDate, setSelectedDate] = useState<string>(todayISO());
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [archiving, setArchiving] = useState(false);
@@ -32,9 +37,13 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
 
   const cancelContentRef = useRef('');
   const [edits, setEdits] = useState<EditRow[]>([]);
+  const [historicalEdits, setHistoricalEdits] = useState<EditRowWithShift[]>([]);
 
-  // Carrega dados e histórico juntos (allSettled = nunca lança erro, trata cada um separado)
+  const isToday = selectedDate === todayISO();
+
+  // Carrega dados de hoje (editable)
   useEffect(() => {
+    if (!isToday) return;
     let cancelled = false;
     const loadAll = async () => {
       setLoading(true);
@@ -53,23 +62,35 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
           setAssessmentNight(n);
           setSavedContent({ morning: m, afternoon: a, night: n });
         }
-        if (editsResult.status === 'fulfilled') {
-          setEdits(editsResult.value);
-        }
+        if (editsResult.status === 'fulfilled') setEdits(editsResult.value);
         setLoading(false);
       }
     };
     loadAll();
     return () => { cancelled = true; };
-  }, [patientId, roundId]);
+  }, [patientId, roundId, isToday]);
 
-  // Foca o textarea quando entra no modo edição
+  // Carrega dados históricos (read-only)
   useEffect(() => {
-    if (editing) textareaRef.current?.focus();
-  }, [editing]);
+    if (isToday) return;
+    let cancelled = false;
+    setLoading(true);
+    clinicalRoundsSimpleService.getAssessmentEditsByDate(patientId, selectedDate)
+      .then(rows => {
+        if (!cancelled) {
+          setHistoricalEdits(rows);
+          setEditing(false);
+          setHasChanges(false);
+          setLoading(false);
+        }
+      })
+      .catch(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [patientId, selectedDate, isToday]);
 
-  // Ao trocar de turno: sai do modo edição e recarrega apenas o histórico
+  // Ao trocar turno no modo hoje: recarrega histórico do turno
   useEffect(() => {
+    if (!isToday) return;
     setEditing(false);
     setHasChanges(false);
     let cancelled = false;
@@ -77,7 +98,30 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
       .then(rows => { if (!cancelled) setEdits(rows); })
       .catch(() => {});
     return () => { cancelled = true; };
-  }, [patientId, selectedShift]);
+  }, [patientId, selectedShift, isToday]);
+
+  useEffect(() => {
+    if (editing) textareaRef.current?.focus();
+  }, [editing]);
+
+  const goToPrevDay = () => {
+    const d = new Date(selectedDate + 'T12:00:00');
+    d.setDate(d.getDate() - 1);
+    setSelectedDate(d.toISOString().split('T')[0]);
+  };
+
+  const goToNextDay = () => {
+    if (isToday) return;
+    const d = new Date(selectedDate + 'T12:00:00');
+    d.setDate(d.getDate() + 1);
+    const next = d.toISOString().split('T')[0];
+    setSelectedDate(next > todayISO() ? todayISO() : next);
+  };
+
+  const formatDateLabel = (iso: string) => {
+    if (iso === todayISO()) return 'Hoje';
+    return new Date(iso + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  };
 
   const handleEdit = (content: string) => {
     cancelContentRef.current = content;
@@ -115,7 +159,6 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
   };
 
   const handleSave = async () => {
-    // Lê direto do DOM para capturar texto colado que pode não ter disparado onChange
     const domValue = textareaRef.current?.value ?? '';
     const contentMap: Record<ShiftType, string> = {
       morning: assessmentMorning,
@@ -124,7 +167,6 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
     };
     const content = domValue || contentMap[selectedShift];
 
-    // Sincroniza estado React com DOM (para paste/voz que não disparam onChange)
     if (content !== contentMap[selectedShift]) {
       currentData.setContent(content);
     }
@@ -132,13 +174,8 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
     setSaving(true);
     try {
       const success = await clinicalRoundsSimpleService.saveAssessment(
-        patientId,
-        roundId,
-        selectedShift,
-        content,
-        currentUserName
+        patientId, roundId, selectedShift, content, currentUserName
       );
-
       if (success) {
         onSaved?.(`✅ Avaliação da ${shiftFilterService.getShiftLabel(selectedShift)} salva com sucesso!`);
         setSavedContent(prev => ({ ...prev, [selectedShift]: content }));
@@ -157,16 +194,24 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
   };
 
   const shiftData: Record<ShiftType, { label: string; content: string; setContent: (v: string) => void }> = {
-    morning: { label: shiftFilterService.SHIFTS.morning.label, content: assessmentMorning, setContent: setAssessmentMorning },
+    morning:   { label: shiftFilterService.SHIFTS.morning.label,   content: assessmentMorning,   setContent: setAssessmentMorning },
     afternoon: { label: shiftFilterService.SHIFTS.afternoon.label, content: assessmentAfternoon, setContent: setAssessmentAfternoon },
-    night: { label: shiftFilterService.SHIFTS.night.label, content: assessmentNight, setContent: setAssessmentNight },
+    night:     { label: shiftFilterService.SHIFTS.night.label,     content: assessmentNight,     setContent: setAssessmentNight },
   };
 
   const currentData = shiftData[selectedShift];
-  const hasContent = currentData.content.trim().length > 0;
-  const isReadOnly = savedContent[selectedShift] !== '' && !editing && !hasChanges;
 
-  // Filtra apenas edições de hoje (horário de São Paulo) para mostrar quem atuou no dia
+  // Conteúdo histórico do turno selecionado (mais recente do dia)
+  const historicalContent = isToday ? null :
+    historicalEdits.filter(e => e.shift === selectedShift)[0] ?? null;
+
+  const displayContent = isToday ? currentData.content : (historicalContent?.content ?? '');
+  const hasContent = displayContent.trim().length > 0;
+  const isReadOnly = isToday
+    ? (savedContent[selectedShift] !== '' && !editing && !hasChanges)
+    : true;
+
+  // Info criador/editor (apenas hoje)
   const todayStr = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
   const todayEdits = edits.filter(e =>
     new Date(e.data_edicao).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) === todayStr
@@ -186,61 +231,84 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
       </div>
 
       <div className="p-4">
+        {/* Seletor de data */}
+        <div className="flex items-center justify-center gap-2 mb-4">
+          <button
+            onClick={goToPrevDay}
+            className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition"
+          >
+            ←
+          </button>
+          <span className={`text-sm font-semibold px-3 py-1 rounded-lg ${isToday ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200'}`}>
+            {formatDateLabel(selectedDate)}
+          </span>
+          <button
+            onClick={goToNextDay}
+            disabled={isToday}
+            className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 disabled:opacity-30 disabled:cursor-not-allowed transition"
+          >
+            →
+          </button>
+        </div>
+
         {/* Tabs de Turnos */}
         <div className="flex gap-1 mb-4 p-1 bg-gray-100 dark:bg-gray-800 rounded-lg w-fit">
-          {(Object.keys(shiftData) as ShiftType[]).map((shift) => {
-            const isCurrentShift = selectedShift === shift;
-            return (
-              <button
-                key={shift}
-                onClick={() => setSelectedShift(shift)}
-                className={`px-3.5 py-1.5 text-sm font-medium rounded-md transition-all ${
-                  isCurrentShift
-                    ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                }`}
-              >
-                {shiftData[shift].label}
-              </button>
-            );
-          })}
+          {(Object.keys(shiftData) as ShiftType[]).map((shift) => (
+            <button
+              key={shift}
+              onClick={() => setSelectedShift(shift)}
+              className={`px-3.5 py-1.5 text-sm font-medium rounded-md transition-all ${
+                selectedShift === shift
+                  ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+              }`}
+            >
+              {shiftData[shift].label}
+            </button>
+          ))}
         </div>
 
-        {/* Área de conteúdo — sempre usa textarea para manter altura constante */}
+        {/* Textarea */}
         <div className="mb-3">
-          <textarea
-            ref={textareaRef}
-            value={currentData.content}
-            onChange={(e) => {
-              if (isReadOnly) return;
-              currentData.setContent(e.target.value);
-              setHasChanges(true);
-            }}
-            onInput={(e) => {
-              if (isReadOnly) return;
-              const val = (e.target as HTMLTextAreaElement).value;
-              if (val !== currentData.content) {
-                currentData.setContent(val);
+          {!isToday && !hasContent && !loading ? (
+            <div className="w-full px-4 py-6 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/70 text-center text-sm text-gray-400 dark:text-gray-500 italic">
+              Nenhuma avaliação registrada para este turno neste dia.
+            </div>
+          ) : (
+            <textarea
+              ref={isToday ? textareaRef : undefined}
+              value={isToday ? currentData.content : displayContent}
+              onChange={(e) => {
+                if (!isToday || isReadOnly) return;
+                currentData.setContent(e.target.value);
                 setHasChanges(true);
-              }
-            }}
-            placeholder={loading ? '' : 'Digite a avaliação do paciente...'}
-            disabled={loading}
-            readOnly={isReadOnly}
-            className={`w-full px-4 py-3 rounded-lg border text-sm leading-relaxed transition resize-none
-              ${isReadOnly
-                ? 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/70 text-gray-800 dark:text-gray-100 cursor-default focus:outline-none'
-                : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 dark:focus:border-blue-500'
-              }
-              ${loading ? 'opacity-40' : ''}
-            `}
-            rows={8}
-          />
+              }}
+              onInput={(e) => {
+                if (!isToday || isReadOnly) return;
+                const val = (e.target as HTMLTextAreaElement).value;
+                if (val !== currentData.content) {
+                  currentData.setContent(val);
+                  setHasChanges(true);
+                }
+              }}
+              placeholder={loading ? '' : 'Digite a avaliação do paciente...'}
+              disabled={loading}
+              readOnly={isReadOnly}
+              className={`w-full px-4 py-3 rounded-lg border text-sm leading-relaxed transition resize-none
+                ${isReadOnly
+                  ? 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/70 text-gray-800 dark:text-gray-100 cursor-default focus:outline-none'
+                  : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 dark:focus:border-blue-500'
+                }
+                ${loading ? 'opacity-40' : ''}
+              `}
+              rows={8}
+            />
+          )}
         </div>
 
-        {/* Info de criação/edição — reserva espaço mínimo para evitar salto quando aparecer */}
+        {/* Info criador/editor — apenas hoje */}
         <div className="mb-3 min-h-[1rem]">
-          {isReadOnly && criador && (
+          {isToday && isReadOnly && criador && (
             <div className="flex flex-col gap-0.5 text-xs text-gray-400 dark:text-gray-500">
               <span>
                 ✍️ Criado por{' '}
@@ -258,45 +326,55 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
               )}
             </div>
           )}
+          {/* Info do editor histórico */}
+          {!isToday && historicalContent && (
+            <div className="text-xs text-gray-400 dark:text-gray-500">
+              ✍️ <span className="font-medium text-blue-500 dark:text-blue-400">{historicalContent.nome_editor}</span>
+              <span className="mx-1">·</span>
+              {new Date(historicalContent.data_edicao).toLocaleString('pt-BR')}
+            </div>
+          )}
         </div>
 
-        {/* Botões de ação */}
-        {isReadOnly ? (
-          <div className="flex gap-2">
-            <button
-              onClick={() => handleEdit(currentData.content)}
-              disabled={loading}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 active:bg-amber-600 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition shadow-sm hover:shadow"
-            >
-              ✏️ Editar Avaliação
-            </button>
-            <button
-              onClick={handleArchiveShift}
-              disabled={archiving || loading}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 disabled:opacity-50 text-gray-600 dark:text-gray-300 text-sm font-medium rounded-lg transition"
-            >
-              {archiving ? '⏳ Arquivando...' : '🗂️ Arquivar Turno'}
-            </button>
-          </div>
-        ) : (
-          <div className="flex gap-2">
-            {hasContent && (
+        {/* Botões — apenas hoje */}
+        {isToday && (
+          isReadOnly ? (
+            <div className="flex gap-2">
               <button
-                onClick={() => handleCancel(currentData.setContent)}
-                disabled={saving}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 disabled:opacity-50 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg transition"
+                onClick={() => handleEdit(currentData.content)}
+                disabled={loading}
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 active:bg-amber-600 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition shadow-sm hover:shadow"
               >
-                Cancelar
+                ✏️ Editar Avaliação
               </button>
-            )}
-            <button
-              onClick={handleSave}
-              disabled={saving || loading}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition shadow-sm hover:shadow"
-            >
-              {saving ? '⏳ Salvando...' : '💾 Salvar Avaliação'}
-            </button>
-          </div>
+              <button
+                onClick={handleArchiveShift}
+                disabled={archiving || loading}
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 disabled:opacity-50 text-gray-600 dark:text-gray-300 text-sm font-medium rounded-lg transition"
+              >
+                {archiving ? '⏳ Arquivando...' : '🗂️ Arquivar Turno'}
+              </button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              {hasContent && (
+                <button
+                  onClick={() => handleCancel(currentData.setContent)}
+                  disabled={saving}
+                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 disabled:opacity-50 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg transition"
+                >
+                  Cancelar
+                </button>
+              )}
+              <button
+                onClick={handleSave}
+                disabled={saving || loading}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition shadow-sm hover:shadow"
+              >
+                {saving ? '⏳ Salvando...' : '💾 Salvar Avaliação'}
+              </button>
+            </div>
+          )
         )}
       </div>
     </div>

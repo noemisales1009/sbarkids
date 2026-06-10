@@ -75,6 +75,7 @@ export const buildReportHtml = (
   item: GlobalReportItem,
   isLast: boolean,
   alertasPorPaciente: Record<string, Alerta[]>,
+  shiftFilter?: string,
 ): string => {
   const patient = item.patient;
   return `
@@ -98,7 +99,9 @@ export const buildReportHtml = (
           <div class="patient-item"><span class="patient-label">Mãe</span><span class="patient-value">${patient.mother_name || '-'}</span></div>
         </div>
       </div>
-      ${(['morning', 'afternoon', 'night'] as const).map(s => buildShiftSection(s, item, alertasPorPaciente)).join('')}
+      ${(['morning', 'afternoon', 'night'] as const)
+        .filter(s => !shiftFilter || s === shiftFilter)
+        .map(s => buildShiftSection(s, item, alertasPorPaciente)).join('')}
       <div class="doc-footer">Documento gerado automaticamente · SBAR Kids · ${new Date().toLocaleString('pt-BR')}</div>
     </section>
   `;

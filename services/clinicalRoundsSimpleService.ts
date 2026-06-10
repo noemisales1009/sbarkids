@@ -131,6 +131,37 @@ export const clinicalRoundsSimpleService = {
   },
 
   /**
+   * Buscar edições do Assessment de um dia específico (fuso SP)
+   */
+  async getAssessmentEditsByDate(
+    patientId: string,
+    dateISO: string // YYYY-MM-DD no fuso de São Paulo
+  ): Promise<Array<{ id: number; shift: string; content: string; nome_editor: string; data_edicao: string }>> {
+    try {
+      // SP é UTC-3 fixo (sem horário de verão desde 2019)
+      const startUTC = `${dateISO}T03:00:00.000Z`;
+      const nextDay = new Date(new Date(startUTC).getTime() + 24 * 60 * 60 * 1000).toISOString();
+
+      const { data, error } = await supabase
+        .from('clinical_rounds_assessment_edits_com_usuario')
+        .select('id, shift, content, nome_editor, data_edicao')
+        .eq('patient_id', patientId)
+        .gte('data_edicao', startUTC)
+        .lt('data_edicao', nextDay)
+        .order('data_edicao', { ascending: false });
+
+      if (error) {
+        logError(error, 'clinicalRoundsSimpleService.getAssessmentEditsByDate');
+        return [];
+      }
+      return (data || []) as any[];
+    } catch (error) {
+      logError(error, 'clinicalRoundsSimpleService.getAssessmentEditsByDate');
+      return [];
+    }
+  },
+
+  /**
    * Buscar todo o histórico de edições do Assessment (todos os turnos)
    */
   async getAllAssessmentEdits(

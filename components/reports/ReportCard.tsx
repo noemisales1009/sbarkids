@@ -24,6 +24,11 @@ const ReportCard: React.FC<ReportCardProps> = ({ item, isSelected, alertas, onTo
     night: 'noite',
   };
 
+  const alertasAtivos = alertas.filter((a: any) => {
+    const s = (a.live_status || a.status || '').toLowerCase();
+    return s !== 'concluido' && !s.includes('concluí') && s !== 'resolvido' && s !== 'arquivado';
+  });
+
   return (
     <div className="flex items-start gap-3 p-4 bg-white dark:bg-slate-900/50 rounded-xl border border-gray-200 dark:border-gray-800 hover:shadow-md transition-shadow">
       <input
@@ -72,13 +77,13 @@ const ReportCard: React.FC<ReportCardProps> = ({ item, isSelected, alertas, onTo
           )}
         </div>
 
-        {alertas.length > 0 && (
+        {alertasAtivos.length > 0 && (
           <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
             <p className="text-xs font-bold text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-1">
-              🔔 Alertas Clínicos ({alertas.length})
+              🔔 Alertas Clínicos ({alertasAtivos.length})
             </p>
             <div className="space-y-2">
-              {alertas.slice(0, 5).map((alerta: any) => {
+              {alertasAtivos.slice(0, 5).map((alerta: any) => {
                 const status = (alerta.live_status || alerta.status || '').toLowerCase();
                 const borderColor =
                   status === 'fora_do_prazo'
@@ -114,9 +119,9 @@ const ReportCard: React.FC<ReportCardProps> = ({ item, isSelected, alertas, onTo
                   </div>
                 );
               })}
-              {alertas.length > 5 && (
+              {alertasAtivos.length > 5 && (
                 <p className="text-[11px] text-gray-500 italic text-center pt-1">
-                  + {alertas.length - 5} outros alerta(s)
+                  + {alertasAtivos.length - 5} outros alerta(s)
                 </p>
               )}
             </div>

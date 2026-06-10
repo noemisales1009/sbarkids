@@ -27,6 +27,10 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ patient, onBack, onNavigate, 
     const [alertas, setAlertas] = useState<Alerta[]>([]);
     const [assessmentEdits, setAssessmentEdits] = useState<Array<{ id: number; shift: string; content: string; nome_editor: string; data_edicao: string }>>([]);
     const [loading, setLoading] = useState(true);
+    const [pdfDate, setPdfDate] = useState<string>(
+      new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' })
+    );
+    const [pdfShift, setPdfShift] = useState<'all' | 'morning' | 'afternoon' | 'night'>('all');
 
     useEffect(() => {
         const fetchHistory = async () => {
@@ -80,7 +84,10 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ patient, onBack, onNavigate, 
         return { label: 'No prazo', bg: '#f59e0b', color: '#fff' };
     };
 
-    const handleGeneratePDF = () => {
+    const handleGeneratePDF = async () => {
+        // Busca edits do dia específico via servidor (mais confiável que filtro client-side)
+        const editsForPdfDate = await clinicalRoundsSimpleService.getAssessmentEditsByDate(patient.id, pdfDate);
+
         const htmlContent = `
             <html>
             <head>
@@ -266,8 +273,13 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ patient, onBack, onNavigate, 
                         text-align: center;
                     }
 
+                    @page {
+                        size: A4 portrait;
+                        margin: 20mm 15mm;
+                    }
+
                     @media print {
-                        body { padding: 20px; }
+                        body { padding: 0; }
                         .shift-section { page-break-inside: auto; }
                         .alert-item { page-break-inside: auto; }
                     }
@@ -280,7 +292,8 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ patient, onBack, onNavigate, 
                         <div class="subtitle">Relatório Clínico do Paciente</div>
                     </div>
                     <div class="meta">
-                        <div>${new Date().toLocaleString('pt-BR')}</div>
+                        <div>Data: <strong>${new Date(`${pdfDate}T12:00:00`).toLocaleDateString('pt-BR')}</strong></div>
+                        <div>Gerado em: ${new Date().toLocaleString('pt-BR')}</div>
                         <div>Responsável: <strong>${user?.name || 'Médico'}</strong></div>
                     </div>
                 </div>
@@ -307,7 +320,7 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ patient, onBack, onNavigate, 
                     </div>
                 </div>
 
-                ${generateShiftSections()}
+                ${generateShiftSections(editsForPdfDate)}
 
                 <div class="doc-footer">
                     Documento gerado automaticamente · SBAR Kids · ${new Date().toLocaleDateString('pt-BR')}
@@ -326,7 +339,7 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ patient, onBack, onNavigate, 
         }
     };
 
-    const generateShiftSections = () => {
+    const generateShiftSections = (edits: Array<{ id: number; shift: string; content: string; nome_editor: string; data_edicao: string }>) => {
         const shifts = ['morning', 'afternoon', 'night'];
         const shiftInfo = {
             morning: { label: '🌅 MANHÃ', hours: '07:00 - 13:00', class: 'shift-morning' },
@@ -334,10 +347,16 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ patient, onBack, onNavigate, 
             night: { label: '🌙 NOITE', hours: '19:00 - 07:00', class: 'shift-night' }
         };
 
-        return shifts.map(shift => {
+        const shiftsToShow = pdfShift === 'all' ? shifts : shifts.filter(s => s === pdfShift);
+
+        return shiftsToShow.map(shift => {
             const info = shiftInfo[shift as keyof typeof shiftInfo];
-            const assessment = assessmentEdits.find(e => e.shift === shift)?.content;
-            const shiftAlerts = alertas.filter((a: any) => a.shift_criacao === shift);
+            const assessment = edits.find(e => e.shift === shift)?.content;
+            const shiftAlerts = alertas.filter((a: any) => {
+                if (a.shift_criacao !== shift) return false;
+                const aDate = new Date(a.created_at);
+                return aDate.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' }) === pdfDate;
+            });
 
             // Se não tiver nada no turno, pula
             if (!assessment && shiftAlerts.length === 0) {
@@ -402,6 +421,15 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ patient, onBack, onNavigate, 
         });
     }, [alertas, startDate, endDate, selectedCategories]);
 
+    const filteredAssessmentEdits = useMemo(() => {
+        return assessmentEdits.filter(edit => {
+            const editDate = new Date(edit.data_edicao).toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+            if (startDate && editDate < startDate) return false;
+            if (endDate && editDate > endDate) return false;
+            return true;
+        });
+    }, [assessmentEdits, startDate, endDate]);
+
     const groupedAlerts = useMemo(() => {
         const groups: Record<string, Alerta[]> = {};
         
@@ -434,6 +462,10 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ patient, onBack, onNavigate, 
                 onCategoryChange={handleCategoryChange}
                 onClearFilters={handleClearFilters}
                 onGeneratePDF={handleGeneratePDF}
+                pdfDate={pdfDate}
+                onPdfDateChange={setPdfDate}
+                pdfShift={pdfShift}
+                onPdfShiftChange={setPdfShift}
             />
 
             {loading ? (
@@ -441,14 +473,14 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ patient, onBack, onNavigate, 
             ) : (
                 <div className="space-y-6">
                     {/* Histórico de Assessments */}
-                    {assessmentEdits.length > 0 && (() => {
+                    {filteredAssessmentEdits.length > 0 && (() => {
                         const shiftMeta: Record<string, { icon: string; label: string; color: string }> = {
                             morning:   { icon: '🌅', label: 'Manhã',  color: 'text-orange-500 dark:text-orange-400' },
                             afternoon: { icon: '☀️', label: 'Tarde',  color: 'text-yellow-600 dark:text-yellow-400' },
                             night:     { icon: '🌙', label: 'Noite',  color: 'text-indigo-500 dark:text-indigo-400' },
                         };
-                        const grouped: Record<string, typeof assessmentEdits> = {};
-                        assessmentEdits.forEach(edit => {
+                        const grouped: Record<string, typeof filteredAssessmentEdits> = {};
+                        filteredAssessmentEdits.forEach(edit => {
                             const dateKey = new Date(edit.data_edicao).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'America/Sao_Paulo' });
                             if (!grouped[dateKey]) grouped[dateKey] = [];
                             grouped[dateKey].push(edit);

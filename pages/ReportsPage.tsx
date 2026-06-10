@@ -22,8 +22,8 @@ const PAGE_SIZE = 20;
 
 const ReportsPage: React.FC<ReportsPageProps> = ({ onNavigate, currentPage }) => {
   const { showToast } = useToast();
-  const [statusFilter, setStatusFilter] = useState('');
   const [dateFilter, setDateFilter] = useState('');
+  const [shiftFilter, setShiftFilter] = useState('');
   const [selectedPatientIds, setSelectedPatientIds] = useState<Set<string>>(new Set());
   const [patientSearch, setPatientSearch] = useState('');
   const [patientDropdownOpen, setPatientDropdownOpen] = useState(false);
@@ -123,7 +123,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onNavigate, currentPage }) =>
 
       const uniquePatientIds = [...new Set(allReports.map((r) => r.patient.id))];
       const alertasResults = await Promise.all(
-        uniquePatientIds.map((id) => alertasService.getAlertas(id).catch(() => [] as Alerta[])),
+        uniquePatientIds.map((id) => alertasService.getAtivos(id).catch(() => [] as Alerta[])),
       );
       const alertasMap: Record<string, Alerta[]> = {};
       uniquePatientIds.forEach((id, i) => { alertasMap[id] = alertasResults[i]; });
@@ -136,19 +136,17 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onNavigate, currentPage }) =>
   };
 
   const filteredReports = React.useMemo(() => reports.filter((item) => {
-    const itemStatus = (item.status || '').toLowerCase();
-    const matchesStatus = statusFilter ? itemStatus === statusFilter.toLowerCase() : true;
     const itemDate = item.datetime.split(',')[0].trim();
     const filterDate = dateFilter ? dateFilter.split('-').reverse().join('/') : '';
     const matchesDate = filterDate ? itemDate === filterDate : true;
     const matchesPatient = selectedPatientIds.size === 0 || selectedPatientIds.has(item.patient.id);
-    return matchesStatus && matchesDate && matchesPatient;
-  }), [reports, statusFilter, dateFilter, selectedPatientIds]);
+    return matchesDate && matchesPatient;
+  }), [reports, dateFilter, selectedPatientIds]);
 
   // Resetar paginação quando filtros mudam
   React.useEffect(() => {
     setDisplayCount(PAGE_SIZE);
-  }, [statusFilter, dateFilter, selectedPatientIds]);
+  }, [dateFilter, selectedPatientIds]);
 
   const visibleReports = filteredReports.slice(0, displayCount);
   const hasMore = displayCount < filteredReports.length;
@@ -201,7 +199,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onNavigate, currentPage }) =>
     }
     const items = filteredReports.filter((r) => selectedReports.has(r.id));
     const body = items
-      .map((item, idx) => buildReportHtml(item, idx === items.length - 1, alertasPorPaciente))
+      .map((item, idx) => buildReportHtml(item, idx === items.length - 1, alertasPorPaciente, shiftFilter || undefined))
       .join('');
     openPrintWindow(body);
   };
@@ -209,10 +207,10 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onNavigate, currentPage }) =>
   const content = (
     <div className="flex flex-col gap-4 screen-only">
       <ReportsFiltersPanel
-        statusFilter={statusFilter}
-        setStatusFilter={setStatusFilter}
         dateFilter={dateFilter}
         setDateFilter={setDateFilter}
+        shiftFilter={shiftFilter}
+        setShiftFilter={setShiftFilter}
         selectedPatientIds={selectedPatientIds}
         patientSearch={patientSearch}
         setPatientSearch={setPatientSearch}
