@@ -40,7 +40,7 @@ const ReportsFiltersPanel: React.FC<ReportsFiltersPanelProps> = ({
         </label>
         <input
           type="date"
-          className="w-full h-11 px-3 rounded-lg border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white"
+          className="w-full h-11 px-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white"
           value={dateFilter}
           onChange={(e) => setDateFilter(e.target.value)}
         />
@@ -50,7 +50,7 @@ const ReportsFiltersPanel: React.FC<ReportsFiltersPanelProps> = ({
           Filtrar por Turno
         </label>
         <select
-          className="w-full h-11 px-3 rounded-lg border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white"
+          className="w-full h-11 px-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white"
           value={shiftFilter}
           onChange={(e) => setShiftFilter(e.target.value)}
         >
