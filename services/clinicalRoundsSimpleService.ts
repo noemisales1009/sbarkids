@@ -66,7 +66,7 @@ export const clinicalRoundsSimpleService = {
         .from('clinical_rounds_simple')
         .select('id')
         .eq('patient_id', patientId)
-        .eq('is_archived', false);
+        .or('is_archived.eq.false,is_archived.is.null');
 
       if (roundId) {
         selectQuery = selectQuery.eq('round_id', roundId);
@@ -206,7 +206,7 @@ export const clinicalRoundsSimpleService = {
         .from('clinical_rounds_simple')
         .select('id')
         .eq('patient_id', patientId)
-        .eq('is_archived', false);
+        .or('is_archived.eq.false,is_archived.is.null');
 
       if (roundId) {
         selectQuery = selectQuery.eq('round_id', roundId);
@@ -262,8 +262,7 @@ export const clinicalRoundsSimpleService = {
       let query = supabase
         .from('clinical_rounds_simple')
         .select('*')
-        .eq('patient_id', patientId)
-        .eq('is_archived', false); // Filtrar apenas não arquivados
+        .eq('patient_id', patientId);
 
       if (roundId) {
         query = query.eq('round_id', roundId);
@@ -496,7 +495,7 @@ export const clinicalRoundsSimpleService = {
         .from('clinical_rounds_simple')
         .select('*')
         .eq('patient_id', patientId)
-        .eq('is_archived', false)
+        .or('is_archived.eq.false,is_archived.is.null')
         .order('updated_at', { ascending: false });
 
       if (error) {
