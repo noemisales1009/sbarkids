@@ -150,37 +150,6 @@ const MainSidebar: React.FC<MainSidebarProps> = ({ currentPage, onNavigate }) =>
                     </div>
                     <h1 className="text-xl font-bold" style={{ color: '#13A4EC' }}>SBAR KIDS</h1>
                 </div>
-                {/* Banner colega de plantão */}
-                {showPendentes && pendentesColega.length > 0 && (
-                    <div className="mb-4 rounded-xl bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700 p-3 space-y-2">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-1.5">
-                                <span className="material-symbols-outlined text-yellow-500" style={{ fontSize: '16px' }}>warning</span>
-                                <span className="text-xs font-bold text-yellow-700 dark:text-yellow-400">Colega de plantão — hoje</span>
-                            </div>
-                            <button onClick={() => setShowPendentes(false)} className="text-yellow-400 hover:text-yellow-600">
-                                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>close</span>
-                            </button>
-                        </div>
-                        <div className="space-y-1">
-                            {pendentesColega.map(p => {
-                                const patientList = Array.isArray(p.patient_ids)
-                                    ? p.patient_ids.map(id => patientsPendentes.find(pt => pt.id === id)).filter(Boolean)
-                                    : [];
-                                return patientList.map(pt => pt && (
-                                    <div key={`${p.id}-${pt.id}`} className="flex items-center gap-1.5 text-xs text-yellow-700 dark:text-yellow-300">
-                                        <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>person</span>
-                                        <span className="font-medium truncate">{pt.name}</span>
-                                        <span className="text-yellow-500 shrink-0">· L{pt.bed_number}</span>
-                                        {p.turno && <span className="text-yellow-500 shrink-0">[{p.turno}]</span>}
-                                    </div>
-                                ));
-                            })}
-                        </div>
-                        <p className="text-xs text-yellow-600 dark:text-yellow-400">Passe para o plantonista do turno.</p>
-                    </div>
-                )}
-
                 <nav className="flex flex-col gap-2">
                     {navItems.map(item => (
                         <button
@@ -219,6 +188,59 @@ const MainSidebar: React.FC<MainSidebarProps> = ({ currentPage, onNavigate }) =>
                     </button>
                 </div>
             </aside>
+
+            {/* Modal alerta colega de plantão */}
+            {showPendentes && pendentesColega.length > 0 && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                    <div className="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-xl p-6 space-y-4">
+                        <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center shrink-0">
+                                    <span className="material-symbols-outlined text-yellow-500">warning</span>
+                                </div>
+                                <div>
+                                    <h3 className="text-base font-bold text-slate-900 dark:text-white">Colega de plantão</h3>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">Você recebeu pacientes hoje como colega</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setShowPendentes(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+
+                        <div className="space-y-2">
+                            {pendentesColega.map(p => {
+                                const patientList = Array.isArray(p.patient_ids)
+                                    ? p.patient_ids.map(id => patientsPendentes.find(pt => pt.id === id)).filter(Boolean)
+                                    : [];
+                                return patientList.map(pt => pt && (
+                                    <div key={`${p.id}-${pt.id}`} className="flex items-center gap-3 p-3 rounded-xl bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700">
+                                        <span className="material-symbols-outlined text-yellow-500 shrink-0" style={{ fontSize: '18px' }}>person</span>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{pt.name}</p>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400">Leito {pt.bed_number}</p>
+                                        </div>
+                                        {p.turno && (
+                                            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 shrink-0">{p.turno}</span>
+                                        )}
+                                    </div>
+                                ));
+                            })}
+                        </div>
+
+                        <p className="text-sm text-yellow-600 dark:text-yellow-400 font-medium text-center">
+                            Lembre-se de passar para o plantonista do turno.
+                        </p>
+
+                        <button
+                            onClick={() => setShowPendentes(false)}
+                            className="w-full py-2.5 rounded-xl bg-yellow-400 hover:bg-yellow-500 text-white font-bold text-sm transition"
+                        >
+                            Entendi
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Modal Histórico de Passagens */}
             {showHistorico && (
