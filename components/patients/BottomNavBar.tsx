@@ -21,7 +21,6 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({ onNavigate, currentPage }) 
 
     const navItems: { page: CurrentPage; icon: string; label: string }[] = [
         { page: 'patients', icon: 'groups', label: 'Pacientes' },
-        { page: 'passagem', icon: 'transfer_within_a_station', label: 'Passagem' },
         { page: 'reports', icon: 'summarize', label: 'Relatórios' },
         { page: 'settings', icon: 'settings', label: 'Ajustes' },
     ];

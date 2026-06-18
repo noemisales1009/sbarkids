@@ -13,6 +13,7 @@ export interface Passagem {
   medico_id: string;
   patient_ids: string[];
   observacao: string | null;
+  turno: string | null;
   created_at: string;
   medico?: { name: string | null; role: string | null } | null;
   profissional?: { name: string | null } | null;
@@ -31,7 +32,7 @@ export const passagensService = {
     return (data || []) as Medico[];
   },
 
-  async criar(profissionalId: string, medicoId: string, patientIds: string[], observacao?: string): Promise<boolean> {
+  async criar(profissionalId: string, medicoId: string, patientIds: string[], observacao?: string, turno?: string): Promise<boolean> {
     const { error } = await supabase
       .from('passagens')
       .insert({
@@ -39,6 +40,7 @@ export const passagensService = {
         medico_id: medicoId,
         patient_ids: patientIds,
         observacao: observacao || null,
+        turno: turno || null,
       });
     if (error) { logError(error, 'passagensService.criar'); return false; }
     return true;

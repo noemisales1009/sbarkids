@@ -97,6 +97,9 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient, precaucoes = [], ult
                     <span>{ultimaPassagem.profissional?.name || '—'}</span>
                     <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>transfer_within_a_station</span>
                     <span>{ultimaPassagem.medico?.name || '—'}</span>
+                    {ultimaPassagem.turno && (
+                        <span className="text-emerald-400 dark:text-emerald-500">· {ultimaPassagem.turno}</span>
+                    )}
                     <span className="text-emerald-400 dark:text-emerald-500">— {formatPassagemTime(ultimaPassagem.created_at)}</span>
                 </div>
             )}
