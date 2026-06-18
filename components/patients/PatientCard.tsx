@@ -91,21 +91,30 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient, precaucoes = [], ult
             </div>
 
             {/* Passagem */}
-            {ultimaPassagem && (
-                <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-medium flex-wrap">
-                    <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>check_circle</span>
-                    <span>{ultimaPassagem.profissional?.name || '—'}</span>
-                    <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>transfer_within_a_station</span>
-                    <span>{ultimaPassagem.medico?.name || '—'}</span>
-                    {ultimaPassagem.turno && (
-                        <span className="text-emerald-400 dark:text-emerald-500">· {ultimaPassagem.turno}</span>
-                    )}
-                    {ultimaPassagem.tipo === 'Colega de plantão' && (
-                        <span className="px-1.5 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 font-semibold">Colega de plantão</span>
-                    )}
-                    <span className="text-emerald-400 dark:text-emerald-500">— {formatPassagemTime(ultimaPassagem.created_at)}</span>
-                </div>
-            )}
+            {ultimaPassagem && (() => {
+                const isColega = ultimaPassagem.tipo === 'Colega de plantão';
+                const colorText = isColega
+                    ? 'text-yellow-600 dark:text-yellow-400'
+                    : 'text-emerald-600 dark:text-emerald-400';
+                const colorMuted = isColega
+                    ? 'text-yellow-500 dark:text-yellow-500'
+                    : 'text-emerald-400 dark:text-emerald-500';
+                return (
+                    <div className={`flex items-center gap-1.5 text-xs font-medium flex-wrap ${colorText}`}>
+                        <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>{isColega ? 'schedule' : 'check_circle'}</span>
+                        <span>{ultimaPassagem.profissional?.name || '—'}</span>
+                        <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>transfer_within_a_station</span>
+                        <span>{ultimaPassagem.medico?.name || '—'}</span>
+                        {ultimaPassagem.turno && (
+                            <span className={colorMuted}>· {ultimaPassagem.turno}</span>
+                        )}
+                        {isColega && (
+                            <span className="px-1.5 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 font-semibold">Pendente</span>
+                        )}
+                        <span className={colorMuted}>— {formatPassagemTime(ultimaPassagem.created_at)}</span>
+                    </div>
+                );
+            })()}
 
             {/* Botões de Ação */}
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
