@@ -100,6 +100,9 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient, precaucoes = [], ult
                     {ultimaPassagem.turno && (
                         <span className="text-emerald-400 dark:text-emerald-500">· {ultimaPassagem.turno}</span>
                     )}
+                    {ultimaPassagem.tipo === 'Colega de plantão' && (
+                        <span className="px-1.5 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 font-semibold">Colega de plantão</span>
+                    )}
                     <span className="text-emerald-400 dark:text-emerald-500">— {formatPassagemTime(ultimaPassagem.created_at)}</span>
                 </div>
             )}
