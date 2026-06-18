@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { supabase } from '../../lib/supabase';
 import { CurrentPage } from '../../types';
 
 interface MainSidebarProps {
@@ -8,6 +9,16 @@ interface MainSidebarProps {
 }
 
 const MainSidebar: React.FC<MainSidebarProps> = ({ currentPage, onNavigate }) => {
+    const handleGoToRound = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token && session?.refresh_token) {
+            const url = `https://roundkids.com.br/?access_token=${session.access_token}&refresh_token=${session.refresh_token}`;
+            window.open(url, '_blank');
+        } else {
+            window.open('https://roundkids.com.br', '_blank');
+        }
+    };
+
     const navItems: { page: CurrentPage; icon: string; label: string }[] = [
         { page: 'patients', icon: 'groups', label: 'Pacientes' },
         { page: 'reports', icon: 'summarize', label: 'Relatórios' },
@@ -42,6 +53,15 @@ const MainSidebar: React.FC<MainSidebarProps> = ({ currentPage, onNavigate }) =>
                     </button>
                 ))}
             </nav>
+            <div className="mt-2 pt-2 border-t border-slate-700 dark:border-slate-800">
+                <button
+                    onClick={handleGoToRound}
+                    className="flex items-center gap-3 p-3 rounded-lg text-base font-semibold transition-colors text-slate-400 dark:text-slate-400 hover:text-white hover:bg-slate-700 dark:hover:bg-slate-700 w-full"
+                >
+                    <span className="material-symbols-outlined">arrow_back</span>
+                    <span>Voltar ao Round</span>
+                </button>
+            </div>
         </aside>
     );
 };
