@@ -62,8 +62,7 @@ export const passagensService = {
     const { data, error } = await supabase
       .from('passagens')
       .select('*, medico:medico_id(name, role), profissional:profissional_id(name)')
-      .order('created_at', { ascending: false })
-      .limit(100);
+      .order('created_at', { ascending: false });
     if (error) { logError(error, 'passagensService.getAll'); return []; }
     return (data || []) as Passagem[];
   },

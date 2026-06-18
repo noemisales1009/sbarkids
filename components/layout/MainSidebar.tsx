@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { supabase } from '../../lib/supabase';
 import { CurrentPage, Patient } from '../../types';
 import { useUser } from '../../contexts/UserContext';
@@ -23,6 +23,8 @@ const MainSidebar: React.FC<MainSidebarProps> = ({ currentPage, onNavigate }) =>
     const [historico, setHistorico] = useState<Passagem[]>([]);
     const [patients, setPatients] = useState<Patient[]>([]);
     const [loadingHistorico, setLoadingHistorico] = useState(false);
+    const [filtroMes, setFiltroMes] = useState('');
+    const [filtroData, setFiltroData] = useState('');
 
     const isAdmin = user?.access_level === 'adm' || user?.access_level === 'super';
 
@@ -37,6 +39,74 @@ const MainSidebar: React.FC<MainSidebarProps> = ({ currentPage, onNavigate }) =>
         setPatients(pats);
         setLoadingHistorico(false);
     };
+
+    const handleCloseHistorico = () => {
+        setShowHistorico(false);
+        setFiltroMes('');
+        setFiltroData('');
+    };
+
+    const handlePrint = () => {
+        const filterLabel = filtroData
+            ? `Data: ${new Date(filtroData + 'T12:00').toLocaleDateString('pt-BR')}`
+            : filtroMes
+                ? `Mês: ${new Date(filtroMes + '-01T12:00').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}`
+                : 'Todas as passagens';
+
+        const linhas = historicoFiltrado.map(h => {
+            const pNames = Array.isArray(h.patient_ids)
+                ? h.patient_ids.map(id => patients.find(p => p.id === id)).filter(Boolean)
+                : [];
+            const pList = pNames.map(p => p ? `<li>${p.name} · Leito ${p.bed_number}</li>` : '').join('');
+            return `
+                <div style="border:1px solid #ddd;border-radius:8px;padding:12px;margin-bottom:12px;">
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
+                        <strong>${h.profissional?.name || '—'}</strong>
+                        <span>→</span>
+                        <strong>${h.medico?.name || '—'}</strong>
+                        ${h.turno ? `<span style="background:#dbeafe;color:#2563eb;padding:2px 8px;border-radius:999px;font-size:12px;">${h.turno}</span>` : ''}
+                        <span style="margin-left:auto;color:#999;font-size:12px;">${formatDateTime(h.created_at)}</span>
+                    </div>
+                    <ul style="margin:0;padding-left:16px;font-size:13px;color:#555;">
+                        ${pList || '<li style="list-style:none;color:#aaa;">—</li>'}
+                    </ul>
+                </div>`;
+        }).join('');
+
+        const html = `<html><head><title>Histórico de Passagens</title>
+            <style>
+                body{font-family:Arial,sans-serif;padding:24px;color:#111;}
+                h1{font-size:18px;margin-bottom:4px;}
+                p{font-size:13px;color:#666;margin-bottom:16px;}
+            </style></head>
+            <body>
+                <h1>Histórico de Passagens</h1>
+                <p>${filterLabel} · ${historicoFiltrado.length} passagem(ns)</p>
+                ${linhas}
+            </body></html>`;
+
+        const w = window.open('', '_blank');
+        if (!w) return;
+        w.document.write(html);
+        w.document.close();
+        w.focus();
+        w.print();
+    };
+
+    const historicoFiltrado = useMemo(() => {
+        return historico.filter(h => {
+            const data = new Date(h.created_at);
+            if (filtroData) {
+                const dataISO = data.toLocaleDateString('en-CA');
+                return dataISO === filtroData;
+            }
+            if (filtroMes) {
+                const mesISO = data.toISOString().slice(0, 7);
+                return mesISO === filtroMes;
+            }
+            return true;
+        });
+    }, [historico, filtroMes, filtroData]);
 
     const handleGoToRound = async () => {
         const { data: { session } } = await supabase.auth.getSession();
@@ -83,7 +153,6 @@ const MainSidebar: React.FC<MainSidebarProps> = ({ currentPage, onNavigate }) =>
                         </button>
                     ))}
 
-                    {/* Botão Histórico de Passagens — apenas admin/super */}
                     {isAdmin && (
                         <button
                             onClick={handleOpenHistorico}
@@ -116,27 +185,68 @@ const MainSidebar: React.FC<MainSidebarProps> = ({ currentPage, onNavigate }) =>
                                 <span className="material-symbols-outlined text-base text-slate-400">history</span>
                                 Histórico de Passagens
                             </h2>
-                            <button
-                                onClick={() => setShowHistorico(false)}
-                                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                            >
-                                <span className="material-symbols-outlined">close</span>
-                            </button>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={handlePrint}
+                                    title="Imprimir"
+                                    className="text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 transition"
+                                >
+                                    <span className="material-symbols-outlined">print</span>
+                                </button>
+                                <button
+                                    onClick={handleCloseHistorico}
+                                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                                >
+                                    <span className="material-symbols-outlined">close</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Filtros */}
+                        <div className="px-5 py-3 border-b border-slate-200 dark:border-slate-700 shrink-0 space-y-2">
+                            <div className="flex gap-2">
+                                <div className="flex-1">
+                                    <label className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1 block">Filtrar por data</label>
+                                    <input
+                                        type="date"
+                                        value={filtroData}
+                                        onChange={e => { setFiltroData(e.target.value); setFiltroMes(''); }}
+                                        className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <label className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1 block">Filtrar por mês</label>
+                                    <input
+                                        type="month"
+                                        value={filtroMes}
+                                        onChange={e => { setFiltroMes(e.target.value); setFiltroData(''); }}
+                                        className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+                                </div>
+                            </div>
+                            {(filtroData || filtroMes) && (
+                                <button
+                                    onClick={() => { setFiltroData(''); setFiltroMes(''); }}
+                                    className="text-xs text-blue-500 hover:text-blue-600 font-medium"
+                                >
+                                    Limpar filtro
+                                </button>
+                            )}
+                            <p className="text-xs text-slate-400">{historicoFiltrado.length} passagem(ns) encontrada(s)</p>
                         </div>
 
                         {/* Lista */}
                         <div className="overflow-y-auto flex-1 p-4 space-y-3">
                             {loadingHistorico ? (
                                 <p className="text-sm text-slate-400 text-center py-8">Carregando...</p>
-                            ) : historico.length === 0 ? (
-                                <p className="text-sm text-slate-400 text-center py-8">Nenhuma passagem registrada.</p>
-                            ) : historico.map(h => {
+                            ) : historicoFiltrado.length === 0 ? (
+                                <p className="text-sm text-slate-400 text-center py-8">Nenhuma passagem encontrada.</p>
+                            ) : historicoFiltrado.map(h => {
                                 const patientNames = Array.isArray(h.patient_ids)
                                     ? h.patient_ids.map(id => patients.find(p => p.id === id)).filter(Boolean)
                                     : [];
                                 return (
                                     <div key={h.id} className="rounded-xl border border-slate-200 dark:border-slate-700 p-4 space-y-2">
-                                        {/* De → Para + turno + data */}
                                         <div className="flex items-center gap-2 flex-wrap">
                                             <span className="material-symbols-outlined text-sm text-emerald-500">check_circle</span>
                                             <span className="text-sm font-semibold text-slate-900 dark:text-white">{h.profissional?.name || '—'}</span>
@@ -147,8 +257,6 @@ const MainSidebar: React.FC<MainSidebarProps> = ({ currentPage, onNavigate }) =>
                                             )}
                                             <span className="ml-auto text-xs text-slate-400 shrink-0">{formatDateTime(h.created_at)}</span>
                                         </div>
-
-                                        {/* Pacientes */}
                                         <div className="space-y-1 pl-1">
                                             {patientNames.map(p => p && (
                                                 <div key={p.id} className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
