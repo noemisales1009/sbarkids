@@ -126,5 +126,6 @@ export type CurrentPage =
     | 'settings'
     | 'reports'
     | 'reportDetail'
+    | 'passagem'
     | 'ponto'
     | 'test';

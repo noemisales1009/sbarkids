@@ -5,6 +5,7 @@ import { Patient } from '../../types';
 import { patientsService } from '../../services/patientsService';
 import { PatientListSkeleton } from '../SkeletonLoader';
 import { supabase } from '../../lib/supabase';
+import { passagensService, Passagem } from '../../services/passagensService';
 
 interface PatientListProps {
     onSelectPatient: (patient: Patient) => void;
@@ -15,6 +16,7 @@ interface PatientListProps {
 const PatientList: React.FC<PatientListProps> = ({ onSelectPatient, onSelectHistory, searchTerm = '' }) => {
     const [patients, setPatients] = useState<Patient[]>([]);
     const [precaucoesMap, setPrecaucoesMap] = useState<Record<string, string[]>>({});
+    const [passagensMap, setPassagensMap] = useState<Record<string, Passagem>>({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showCadastro, setShowCadastro] = useState(false);
@@ -43,6 +45,17 @@ const PatientList: React.FC<PatientListProps> = ({ onSelectPatient, onSelectHist
                     }
                     setPrecaucoesMap(map);
                 }
+
+                // Buscar passagens de hoje e montar mapa patientId -> última passagem
+                const passagens = await passagensService.getToday();
+                const pMap: Record<string, Passagem> = {};
+                for (const passagem of passagens) {
+                    if (!Array.isArray(passagem.patient_ids)) continue;
+                    for (const pid of passagem.patient_ids) {
+                        if (!pMap[pid]) pMap[pid] = passagem; // primeira = mais recente (ordenado desc)
+                    }
+                }
+                setPassagensMap(pMap);
             } catch (err) {
                 setError(`Erro ao carregar pacientes: ${err instanceof Error ? err.message : 'Desconhecido'}`);
                 setPatients([]);
@@ -141,7 +154,14 @@ const PatientList: React.FC<PatientListProps> = ({ onSelectPatient, onSelectHist
                 </div>
 
                 {filteredPatients.map((patient) => (
-                    <PatientCard key={patient.id} patient={patient} precaucoes={precaucoesMap[patient.id] || []} onSelectPatient={onSelectPatient} onSelectHistory={onSelectHistory} />
+                    <PatientCard
+                        key={patient.id}
+                        patient={patient}
+                        precaucoes={precaucoesMap[patient.id] || []}
+                        ultimaPassagem={passagensMap[patient.id] || null}
+                        onSelectPatient={onSelectPatient}
+                        onSelectHistory={onSelectHistory}
+                    />
                 ))}
             </div>
 

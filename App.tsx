@@ -1,11 +1,13 @@
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { Patient, HistoryItemData, CurrentPage } from './types';
 import { ViewportProvider } from './hooks/useViewport';
 
 // Lazy loading - páginas carregam sob demanda
 const LoginPage = React.lazy(() => import('./pages/LoginPage'));
+const SessionExpiredPage = React.lazy(() => import('./pages/SessionExpiredPage'));
+const PassagemPage = React.lazy(() => import('./pages/PassagemPage'));
 const PatientsPage = React.lazy(() => import('./pages/PatientsPage'));
 const SbarReportPage = React.lazy(() => import('./pages/SbarReportPage'));
 const HistoryPage = React.lazy(() => import('./pages/HistoryPage'));
@@ -17,8 +19,6 @@ import { supabase } from './lib/supabase';
 import { patientsService } from './services/patientsService';
 import { UserProvider, useUser } from './contexts/UserContext';
 import { ThemeProvider } from './contexts/ThemeContext';
-import { useInactivityTimeout } from './hooks/useInactivityTimeout';
-import InactivityWarningModal from './components/InactivityWarningModal';
 import { auditService } from './services/auditService';
 import { ToastProvider, useToast } from './components/Toast';
 import { logError } from './utils/errorHandler';
@@ -48,25 +48,8 @@ const AppContent: React.FC = () => {
     const [authUser, setAuthUser] = useState<AuthUser | null>(null);
     const [refreshKey] = useState(0);
     const { showToast } = useToast();
-
-    // Timeout de inatividade - 15 min com aviso 2 min antes
-    const handleInactivityTimeout = React.useCallback(async () => {
-        if (user) {
-            await auditService.logLogout(user.id, user.name);
-        }
-        await supabase.auth.signOut();
-        setAuthUser(null);
-        setSelectedPatient(null);
-        setSelectedReport(null);
-        sessionStorage.clear();
-        navigate('/login', { replace: true });
-    }, [user, navigate]);
-
-    const { showWarning, remainingSeconds, extendSession } = useInactivityTimeout({
-        timeoutMinutes: 15,
-        warningMinutes: 2,
-        onTimeout: handleInactivityTimeout,
-    });
+    const hadSessionRef = useRef(false);   // houve sessão ativa em algum momento
+    const manualSignOutRef = useRef(false); // o logout foi iniciado pelo utilizador
 
     // Estado mantido apenas em memória (sem sessionStorage) por segurança LGPD
 
@@ -85,27 +68,34 @@ const AppContent: React.FC = () => {
 
 
             if (session?.user) {
+                hadSessionRef.current = true;
                 setAuthUser({
                     id: session.user.id,
                     email: session.user.email || '',
                     name: session.user.user_metadata?.name || 'Usuário'
                 });
-                // Atualizar dados do usuário no contexto
                 refetchUser();
-                // Registrar login na auditoria
                 if (event === 'SIGNED_IN') {
                     auditService.logLogin(session.user.id, session.user.email || 'Usuário');
                 }
-                // Navegar automaticamente ao fazer login
-                if (location.pathname === '/login') {
+                if (location.pathname === '/login' || location.pathname === '/session-expired') {
                     navigate('/patients', { replace: true });
                 }
             } else {
                 setAuthUser(null);
-                // Navegar para login se não autenticado
-                if (location.pathname !== '/login') {
-                    navigate('/login', { replace: true });
+                const wasManual = manualSignOutRef.current;
+                manualSignOutRef.current = false;
+
+                if (wasManual || !hadSessionRef.current) {
+                    // Logout manual ou app a abrir sem sessão → vai para /login
+                    if (location.pathname !== '/login' && location.pathname !== '/session-expired') {
+                        navigate('/login', { replace: true });
+                    }
+                } else {
+                    // Token expirou sozinho → mostra página de sessão expirada
+                    navigate('/session-expired', { replace: true });
                 }
+                hadSessionRef.current = false;
             }
         });
 
@@ -120,6 +110,7 @@ const AppContent: React.FC = () => {
             if (user) {
                 await auditService.logLogout(user.id, user.name);
             }
+            manualSignOutRef.current = true;
             await supabase.auth.signOut();
             setAuthUser(null);
             setSelectedPatient(null);
@@ -146,6 +137,7 @@ const AppContent: React.FC = () => {
             settings: '/settings',
             reports: '/reports',
             reportDetail: '/report-detail',
+            passagem: '/passagem',
             ponto: '/ponto',
             test: '/test'
         };
@@ -232,14 +224,6 @@ const AppContent: React.FC = () => {
 
     return (
         <div className="relative flex h-auto min-h-screen w-full flex-col bg-background-light dark:bg-background-dark group/design-root">
-            {/* Modal de aviso de inatividade */}
-            {showWarning && authUser && (
-                <InactivityWarningModal
-                    remainingSeconds={remainingSeconds}
-                    onExtend={extendSession}
-                    onLogout={handleLogout}
-                />
-            )}
             <Suspense fallback={
                 <div className="flex items-center justify-center min-h-screen">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
@@ -247,6 +231,7 @@ const AppContent: React.FC = () => {
             }>
             <Routes>
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/session-expired" element={<SessionExpiredPage />} />
                 
                 <Route path="/patients" element={
                     <ProtectedRoute isAuthenticated={!!authUser}>
@@ -290,6 +275,12 @@ const AppContent: React.FC = () => {
                     </ProtectedRoute>
                 } />
                 
+                <Route path="/passagem" element={
+                    <ProtectedRoute isAuthenticated={!!authUser}>
+                        <PassagemPage onNavigate={handleNavigate} currentPage="passagem" />
+                    </ProtectedRoute>
+                } />
+
                 <Route path="/settings" element={
                     <ProtectedRoute isAuthenticated={!!authUser}>
                         <SettingsPage onNavigate={handleNavigate} currentPage="settings" />

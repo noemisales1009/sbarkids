@@ -1,9 +1,11 @@
 import React from 'react';
 import { Patient } from '../../types';
+import { Passagem } from '../../services/passagensService';
 
 interface PatientCardProps {
     patient: Patient;
     precaucoes?: string[];
+    ultimaPassagem?: Passagem | null;
     onSelectPatient: (patient: Patient) => void;
     onSelectHistory: (patient: Patient) => void;
 }
@@ -15,7 +17,13 @@ const formatDate = (dateString: string | null): string => {
     return date.toLocaleDateString('pt-BR');
 };
 
-const PatientCard: React.FC<PatientCardProps> = ({ patient, precaucoes = [], onSelectPatient, onSelectHistory }) => {
+const formatPassagemTime = (iso: string) => {
+    const d = new Date(iso);
+    return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) +
+        ' às ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+};
+
+const PatientCard: React.FC<PatientCardProps> = ({ patient, precaucoes = [], ultimaPassagem, onSelectPatient, onSelectHistory }) => {
 
     // Determinar cor da borda baseada no status
     const getBorderColor = () => {
@@ -81,6 +89,17 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient, precaucoes = [], onS
                     {patient.status === 'em_risco' && 'Em Risco'}
                 </div>
             </div>
+
+            {/* Passagem */}
+            {ultimaPassagem && (
+                <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-medium flex-wrap">
+                    <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>check_circle</span>
+                    <span>{ultimaPassagem.profissional?.name || '—'}</span>
+                    <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>transfer_within_a_station</span>
+                    <span>{ultimaPassagem.medico?.name || '—'}</span>
+                    <span className="text-emerald-400 dark:text-emerald-500">— {formatPassagemTime(ultimaPassagem.created_at)}</span>
+                </div>
+            )}
 
             {/* Botões de Ação */}
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
