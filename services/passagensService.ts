@@ -69,6 +69,20 @@ export const passagensService = {
     return (data || []) as Passagem[];
   },
 
+  async getPendentesComoColega(userId: string): Promise<Passagem[]> {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const { data, error } = await supabase
+      .from('passagens')
+      .select('*, profissional:profissional_id(name)')
+      .eq('medico_id', userId)
+      .eq('tipo', 'Colega de plantão')
+      .gte('created_at', start.toISOString())
+      .order('created_at', { ascending: false });
+    if (error) { logError(error, 'passagensService.getPendentesComoColega'); return []; }
+    return (data || []) as Passagem[];
+  },
+
   async getRecebidaComoColega(userId: string, patientId: string): Promise<boolean> {
     const start = new Date();
     start.setHours(0, 0, 0, 0);

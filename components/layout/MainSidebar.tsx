@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { CurrentPage, Patient } from '../../types';
 import { useUser } from '../../contexts/UserContext';
@@ -27,6 +27,21 @@ const MainSidebar: React.FC<MainSidebarProps> = ({ currentPage, onNavigate }) =>
     const [filtroData, setFiltroData] = useState('');
 
     const isAdmin = user?.access_level === 'adm' || user?.access_level === 'super';
+
+    const [pendentesColega, setPendentesColega] = useState<Passagem[]>([]);
+    const [patientsPendentes, setPatientsPendentes] = useState<Patient[]>([]);
+    const [showPendentes, setShowPendentes] = useState(true);
+
+    useEffect(() => {
+        if (!user) return;
+        Promise.all([
+            passagensService.getPendentesComoColega(user.id),
+            patientsService.listPatients(),
+        ]).then(([pendentes, pats]) => {
+            setPendentesColega(pendentes);
+            setPatientsPendentes(pats);
+        });
+    }, [user?.id]);
 
     const handleOpenHistorico = async () => {
         setShowHistorico(true);
@@ -135,6 +150,37 @@ const MainSidebar: React.FC<MainSidebarProps> = ({ currentPage, onNavigate }) =>
                     </div>
                     <h1 className="text-xl font-bold" style={{ color: '#13A4EC' }}>SBAR KIDS</h1>
                 </div>
+                {/* Banner colega de plantão */}
+                {showPendentes && pendentesColega.length > 0 && (
+                    <div className="mb-4 rounded-xl bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700 p-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1.5">
+                                <span className="material-symbols-outlined text-yellow-500" style={{ fontSize: '16px' }}>warning</span>
+                                <span className="text-xs font-bold text-yellow-700 dark:text-yellow-400">Colega de plantão — hoje</span>
+                            </div>
+                            <button onClick={() => setShowPendentes(false)} className="text-yellow-400 hover:text-yellow-600">
+                                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>close</span>
+                            </button>
+                        </div>
+                        <div className="space-y-1">
+                            {pendentesColega.map(p => {
+                                const patientList = Array.isArray(p.patient_ids)
+                                    ? p.patient_ids.map(id => patientsPendentes.find(pt => pt.id === id)).filter(Boolean)
+                                    : [];
+                                return patientList.map(pt => pt && (
+                                    <div key={`${p.id}-${pt.id}`} className="flex items-center gap-1.5 text-xs text-yellow-700 dark:text-yellow-300">
+                                        <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>person</span>
+                                        <span className="font-medium truncate">{pt.name}</span>
+                                        <span className="text-yellow-500 shrink-0">· L{pt.bed_number}</span>
+                                        {p.turno && <span className="text-yellow-500 shrink-0">[{p.turno}]</span>}
+                                    </div>
+                                ));
+                            })}
+                        </div>
+                        <p className="text-xs text-yellow-600 dark:text-yellow-400">Passe para o plantonista do turno.</p>
+                    </div>
+                )}
+
                 <nav className="flex flex-col gap-2">
                     {navItems.map(item => (
                         <button
