@@ -46,6 +46,8 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
   const [showPassagemModal, setShowPassagemModal] = useState(false);
   const [medicos, setMedicos] = useState<Medico[]>([]);
   const [selectedMedicoId, setSelectedMedicoId] = useState('');
+  const [tipoPassagem, setTipoPassagem] = useState<'Plantonista do turno' | 'Colega de plantão'>('Plantonista do turno');
+  const [recebeuComoColega, setRecebeuComoColega] = useState(false);
   const [loadingMedicos, setLoadingMedicos] = useState(false);
   const [savingPassagem, setSavingPassagem] = useState(false);
   const [passagemSucesso, setPassagemSucesso] = useState(false);
@@ -216,20 +218,31 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
     setShowPassagemModal(true);
     if (medicos.length === 0) {
       setLoadingMedicos(true);
-      const meds = await passagensService.getMedicos();
+      const [meds, foiColega] = await Promise.all([
+        passagensService.getMedicos(),
+        user ? passagensService.getRecebidaComoColega(user.id, patientId) : Promise.resolve(false),
+      ]);
       setMedicos(meds);
+      setRecebeuComoColega(foiColega);
+      if (foiColega) setTipoPassagem('Plantonista do turno');
       setLoadingMedicos(false);
+    } else if (user) {
+      const foiColega = await passagensService.getRecebidaComoColega(user.id, patientId);
+      setRecebeuComoColega(foiColega);
+      if (foiColega) setTipoPassagem('Plantonista do turno');
     }
   };
 
   const handleRegistrarPassagem = async () => {
     if (!user || !selectedMedicoId) return;
     setSavingPassagem(true);
-    const ok = await passagensService.criar(user.id, selectedMedicoId, [patientId], undefined, currentData.label);
+    const ok = await passagensService.criar(user.id, selectedMedicoId, [patientId], undefined, currentData.label, tipoPassagem);
     if (ok) {
       setPassagemSucesso(true);
       setShowPassagemModal(false);
       setSelectedMedicoId('');
+      setTipoPassagem('Plantonista do turno');
+      setRecebeuComoColega(false);
       setTimeout(() => setPassagemSucesso(false), 3000);
     }
     setSavingPassagem(false);
@@ -469,21 +482,51 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
               </div>
             </div>
 
-            {/* Dropdown médico */}
+            {/* Aviso colega de plantão */}
+            {recebeuComoColega && (
+              <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700">
+                <span className="material-symbols-outlined text-amber-500 shrink-0" style={{ fontSize: '18px' }}>warning</span>
+                <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">
+                  Você recebeu este paciente como colega de plantão. Registre agora a passagem para o plantonista do turno.
+                </p>
+              </div>
+            )}
+
+            {/* Tipo de passagem — oculto quando veio como colega */}
+            {!recebeuComoColega && (
+              <div className="flex gap-2">
+                {(['Plantonista do turno', 'Colega de plantão'] as const).map(tipo => (
+                  <button
+                    key={tipo}
+                    onClick={() => setTipoPassagem(tipo)}
+                    className={`flex-1 py-2 rounded-lg text-sm font-semibold border transition ${
+                      tipoPassagem === tipo
+                        ? 'bg-blue-600 border-blue-600 text-white'
+                        : 'border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-blue-400 dark:hover:border-blue-500'
+                    }`}
+                  >
+                    {tipo}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Dropdown profissional */}
             {loadingMedicos ? (
-              <p className="text-sm text-slate-400 text-center py-2">Carregando médicos...</p>
+              <p className="text-sm text-slate-400 text-center py-2">Carregando...</p>
             ) : (
               <select
                 value={selectedMedicoId}
                 onChange={e => setSelectedMedicoId(e.target.value)}
                 className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">Selecionar médico...</option>
+                <option value="">{tipoPassagem === 'Colega de plantão' ? 'Selecionar colega...' : 'Selecionar profissional...'}</option>
                 {medicos.map(m => (
                   <option key={m.id} value={m.id}>{m.name} — {m.role}</option>
                 ))}
               </select>
             )}
+
 
             {/* Botão confirmar */}
             <button

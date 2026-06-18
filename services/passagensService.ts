@@ -14,6 +14,7 @@ export interface Passagem {
   patient_ids: string[];
   observacao: string | null;
   turno: string | null;
+  tipo: string | null;
   created_at: string;
   medico?: { name: string | null; role: string | null } | null;
   profissional?: { name: string | null } | null;
@@ -32,7 +33,16 @@ export const passagensService = {
     return (data || []) as Medico[];
   },
 
-  async criar(profissionalId: string, medicoId: string, patientIds: string[], observacao?: string, turno?: string): Promise<boolean> {
+  async getProfissionais(): Promise<Medico[]> {
+    const { data, error } = await supabase
+      .from('users')
+      .select('id, name, role')
+      .order('name');
+    if (error) { logError(error, 'passagensService.getProfissionais'); return []; }
+    return (data || []) as Medico[];
+  },
+
+  async criar(profissionalId: string, medicoId: string, patientIds: string[], observacao?: string, turno?: string, tipo?: string): Promise<boolean> {
     const { error } = await supabase
       .from('passagens')
       .insert({
@@ -41,6 +51,7 @@ export const passagensService = {
         patient_ids: patientIds,
         observacao: observacao || null,
         turno: turno || null,
+        tipo: tipo || null,
       });
     if (error) { logError(error, 'passagensService.criar'); return false; }
     return true;
@@ -56,6 +67,20 @@ export const passagensService = {
       .order('created_at', { ascending: false });
     if (error) { logError(error, 'passagensService.getToday'); return []; }
     return (data || []) as Passagem[];
+  },
+
+  async getRecebidaComoColega(userId: string, patientId: string): Promise<boolean> {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const { data } = await supabase
+      .from('passagens')
+      .select('id')
+      .eq('medico_id', userId)
+      .eq('tipo', 'Colega de plantão')
+      .contains('patient_ids', [patientId])
+      .gte('created_at', start.toISOString())
+      .limit(1);
+    return (data?.length ?? 0) > 0;
   },
 
   async getAll(): Promise<Passagem[]> {

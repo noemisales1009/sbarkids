@@ -252,6 +252,13 @@ const MainSidebar: React.FC<MainSidebarProps> = ({ currentPage, onNavigate }) =>
                                             <span className="text-sm font-semibold text-slate-900 dark:text-white">{h.profissional?.name || '—'}</span>
                                             <span className="material-symbols-outlined text-base text-blue-400">transfer_within_a_station</span>
                                             <span className="text-sm font-semibold text-slate-900 dark:text-white">{h.medico?.name || '—'}</span>
+                                            {h.tipo && (
+                                                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                                                    h.tipo === 'Colega de plantão'
+                                                        ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400'
+                                                        : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400'
+                                                }`}>{h.tipo}</span>
+                                            )}
                                             {h.turno && (
                                                 <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">{h.turno}</span>
                                             )}
