@@ -7,12 +7,14 @@ import BackgroundEditor from '../components/sbar/BackgroundEditor';
 import AssessmentSimple from '../components/sbar/AssessmentSimple';
 import PatientHeaderCard from '../components/sbar/PatientHeaderCard';
 import AlertasPanel from '../components/sbar/AlertasPanel';
+import PassagemPlantaoSection from '../components/sbar/PassagemPlantaoSection';
 import BottomNavBar from '../components/patients/BottomNavBar';
 import SbarFooter from '../components/sbar/SbarFooter';
 import { DiagnosticoSelector } from '../components/sbar/index';
 import { userService } from '../services/userService';
 import { patientsService } from '../services/patientsService';
 import { diagnosticosSelecionadosService } from '../services/diagnosticosSelecionadosService';
+import { ShiftType } from '../services/shiftFilterService';
 import { useToast } from '../components/Toast';
 
 interface SbarReportPageProps {
@@ -30,6 +32,7 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient: patientProp, o
   const [patientLoading, setPatientLoading] = useState(!patientProp && !!urlPatientId);
   const [status, setStatus] = useState<'estavel' | 'instavel' | 'em_risco' | null>(null);
   const [currentRoundId] = useState<string | null>(null);
+  const [selectedShift, setSelectedShift] = useState<ShiftType>('morning');
   const [currentUserName, setCurrentUserName] = useState('Dr. Usuário');
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -149,6 +152,8 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient: patientProp, o
             patientId={patient.id}
             roundId={currentRoundId || undefined}
             currentUserName={currentUserName}
+            selectedShift={selectedShift}
+            onShiftChange={setSelectedShift}
             onSaved={showSaveMessage}
           />
 
@@ -156,6 +161,12 @@ const SbarReportPage: React.FC<SbarReportPageProps> = ({ patient: patientProp, o
             patientId={patient.id}
             patientName={patient.name}
             roundId={currentRoundId || undefined}
+          />
+
+          <PassagemPlantaoSection
+            patientId={patient.id}
+            shift={selectedShift}
+            onShiftChange={setSelectedShift}
           />
 
           {saveMessage && (
