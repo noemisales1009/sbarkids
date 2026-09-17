@@ -34,7 +34,7 @@ const AlertasPanel: React.FC<AlertasPanelProps> = ({ patientId, patientName, rou
           onClick={() => setShowModal(true)}
           className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
         >
-          + Criar Alerta
+          + Criar Alerta (condutas médicas)
         </button>
       </div>
 
