@@ -234,7 +234,7 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
       <div className="flex items-center gap-3 px-5 py-3.5 border-b border-gray-200 dark:border-gray-700/60 bg-gray-50 dark:bg-gray-800/50">
         <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-600 text-white text-xs font-bold shrink-0 shadow-sm">A</span>
         <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 tracking-wide uppercase">
-          Assessment <span className="normal-case font-normal text-gray-500 dark:text-gray-400">(Avaliação clínica do paciente)</span>
+          Avaliação <span className="normal-case font-normal text-gray-500 dark:text-gray-400">(Assessment)</span>
         </h3>
         {loading && <div className="ml-auto w-4 h-4 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />}
       </div>

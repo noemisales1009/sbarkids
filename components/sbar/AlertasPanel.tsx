@@ -28,38 +28,47 @@ const AlertasPanel: React.FC<AlertasPanelProps> = ({ patientId, patientName, rou
   };
 
   return (
-    <>
-      <div className="flex justify-start">
-        <button
-          onClick={() => setShowModal(true)}
-          className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-        >
-          + Criar Alerta (condutas médicas)
-        </button>
+    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700/60 shadow-sm overflow-hidden">
+      <div className="flex items-center gap-3 px-5 py-3.5 border-b border-gray-200 dark:border-gray-700/60 bg-gray-50 dark:bg-gray-800/50">
+        <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-red-600 text-white text-xs font-bold shrink-0 shadow-sm">R</span>
+        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 tracking-wide uppercase">
+          Recomendação <span className="normal-case font-normal text-gray-500 dark:text-gray-400">(Recommendation)</span>
+        </h3>
       </div>
 
-      {showModal && (
-        <CriarAlertaModal
-          patientId={patientId}
-          patientName={patientName}
-          onClose={() => setShowModal(false)}
-          onAlertaCriado={loadAlertas}
-        />
-      )}
+      <div className="p-4 flex flex-col gap-4">
+        <div className="flex justify-start">
+          <button
+            onClick={() => setShowModal(true)}
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+          >
+            + Criar Alerta (condutas médicas)
+          </button>
+        </div>
 
-      <div className="bg-gray-900 p-4 rounded-lg border border-gray-800">
-        <AlertasDisplay
-          patientId={patientId}
-          patientName={patientName}
-          roundId={roundId}
-          alertas={alertas}
-        />
-      </div>
+        {showModal && (
+          <CriarAlertaModal
+            patientId={patientId}
+            patientName={patientName}
+            onClose={() => setShowModal(false)}
+            onAlertaCriado={loadAlertas}
+          />
+        )}
 
-      <div className="bg-gray-900 p-4 rounded-lg border border-gray-800">
-        <CompletedAlertsSection patientId={patientId} />
+        <div className="bg-gray-900 p-4 rounded-lg border border-gray-800">
+          <AlertasDisplay
+            patientId={patientId}
+            patientName={patientName}
+            roundId={roundId}
+            alertas={alertas}
+          />
+        </div>
+
+        <div className="bg-gray-900 p-4 rounded-lg border border-gray-800">
+          <CompletedAlertsSection patientId={patientId} />
+        </div>
       </div>
-    </>
+    </div>
   );
 };
 
