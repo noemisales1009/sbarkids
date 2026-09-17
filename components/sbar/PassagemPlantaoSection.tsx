@@ -57,37 +57,48 @@ const PassagemPlantaoSection: React.FC<PassagemPlantaoSectionProps> = ({ patient
   };
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700/60 shadow-sm p-4">
-      {onShiftChange && (
-        <div className="flex gap-1 mb-3 p-1 bg-gray-100 dark:bg-gray-800 rounded-lg w-fit">
-          {(Object.keys(shiftFilterService.SHIFTS) as ShiftType[]).map((s) => (
-            <button
-              key={s}
-              onClick={() => onShiftChange(s)}
-              className={`px-3.5 py-1.5 text-sm font-medium rounded-md transition-all ${
-                shift === s
-                  ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-              }`}
-            >
-              {shiftFilterService.SHIFTS[s].label}
-            </button>
-          ))}
-        </div>
-      )}
-      {passagemSucesso && (
-        <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-medium mb-2 p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700">
-          <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>check_circle</span>
-          Passagem registrada com sucesso!
-        </div>
-      )}
-      <button
-        onClick={handleOpenPassagemModal}
-        className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg border border-blue-200 dark:border-blue-700/60 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition"
-      >
-        <span className="material-symbols-outlined text-base">transfer_within_a_station</span>
-        Passar {shiftLabel} para...
-      </button>
+    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700/60 shadow-sm overflow-hidden">
+      <div className="flex items-center gap-3 px-5 py-3.5 border-b border-gray-200 dark:border-gray-700/60 bg-gray-50 dark:bg-gray-800/50">
+        <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-600 text-white shrink-0 shadow-sm">
+          <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>transfer_within_a_station</span>
+        </span>
+        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 tracking-wide uppercase">
+          Passar Plantão
+        </h3>
+      </div>
+
+      <div className="p-4">
+        {onShiftChange && (
+          <div className="flex gap-1 mb-3 p-1 bg-gray-100 dark:bg-gray-800 rounded-lg w-fit">
+            {(Object.keys(shiftFilterService.SHIFTS) as ShiftType[]).map((s) => (
+              <button
+                key={s}
+                onClick={() => onShiftChange(s)}
+                className={`px-3.5 py-1.5 text-sm font-medium rounded-md transition-all ${
+                  shift === s
+                    ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                }`}
+              >
+                {shiftFilterService.SHIFTS[s].label}
+              </button>
+            ))}
+          </div>
+        )}
+        {passagemSucesso && (
+          <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-medium mb-2 p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700">
+            <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>check_circle</span>
+            Passagem registrada com sucesso!
+          </div>
+        )}
+        <button
+          onClick={handleOpenPassagemModal}
+          className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg border border-blue-200 dark:border-blue-700/60 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition"
+        >
+          <span className="material-symbols-outlined text-2xl">transfer_within_a_station</span>
+          Passar {shiftLabel} para...
+        </button>
+      </div>
 
       {/* Modal de Passagem */}
       {showPassagemModal && (

@@ -45,7 +45,6 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
   const [savedContent, setSavedContent] = useState({ morning: '', afternoon: '', night: '' });
 
   const cancelContentRef = useRef('');
-  const [edits, setEdits] = useState<EditRow[]>([]);
   const [historicalEdits, setHistoricalEdits] = useState<EditRowWithShift[]>([]);
 
   const isToday = selectedDate === todayISO();
@@ -56,13 +55,9 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
     let cancelled = false;
     const loadAll = async () => {
       setLoading(true);
-      const [dataResult, editsResult] = await Promise.allSettled([
-        clinicalRoundsSimpleService.getByRound(patientId, roundId),
-        clinicalRoundsSimpleService.getAssessmentEdits(patientId, selectedShift),
-      ]);
+      const data = await clinicalRoundsSimpleService.getByRound(patientId, roundId);
       if (!cancelled) {
-        if (dataResult.status === 'fulfilled' && dataResult.value) {
-          const data = dataResult.value;
+        if (data) {
           const m = data.assessment_morning || '';
           const a = data.assessment_afternoon || '';
           const n = data.assessment_night || '';
@@ -71,7 +66,6 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
           setAssessmentNight(n);
           setSavedContent({ morning: m, afternoon: a, night: n });
         }
-        if (editsResult.status === 'fulfilled') setEdits(editsResult.value);
         setLoading(false);
       }
     };
@@ -97,17 +91,12 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
     return () => { cancelled = true; };
   }, [patientId, selectedDate, isToday]);
 
-  // Ao trocar turno no modo hoje: recarrega histórico do turno
+  // Ao trocar turno no modo hoje: sai do modo de edição
   useEffect(() => {
     if (!isToday) return;
     setEditing(false);
     setHasChanges(false);
-    let cancelled = false;
-    clinicalRoundsSimpleService.getAssessmentEdits(patientId, selectedShift)
-      .then(rows => { if (!cancelled) setEdits(rows); })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, [patientId, selectedShift, isToday]);
+  }, [selectedShift, isToday]);
 
   useEffect(() => {
     if (editing) textareaRef.current?.focus();
@@ -190,8 +179,6 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
         setSavedContent(prev => ({ ...prev, [selectedShift]: content }));
         setEditing(false);
         setHasChanges(false);
-        const updatedEdits = await clinicalRoundsSimpleService.getAssessmentEdits(patientId, selectedShift);
-        setEdits(updatedEdits);
       } else {
         onSaved?.('❌ Erro ao salvar avaliação');
       }
@@ -219,14 +206,6 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
   const isReadOnly = isToday
     ? (savedContent[selectedShift] !== '' && !editing && !hasChanges)
     : true;
-
-  // Info criador/editor (apenas hoje)
-  const todayStr = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
-  const todayEdits = edits.filter(e =>
-    new Date(e.data_edicao).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) === todayStr
-  );
-  const criador = todayEdits.length > 0 ? todayEdits[todayEdits.length - 1] : null;
-  const ultimoEditor = todayEdits.length > 1 ? todayEdits[0] : null;
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700/60 shadow-sm overflow-hidden">
@@ -312,36 +291,6 @@ const AssessmentSimple: React.FC<AssessmentSimpleProps> = ({
               `}
               rows={8}
             />
-          )}
-        </div>
-
-        {/* Info criador/editor — apenas hoje */}
-        <div className="mb-3 min-h-[1rem]">
-          {isToday && isReadOnly && criador && (
-            <div className="flex flex-col gap-0.5 text-xs text-gray-400 dark:text-gray-500">
-              <span>
-                ✍️ Criado por{' '}
-                <span className="font-medium text-blue-500 dark:text-blue-400">{criador.nome_editor}</span>
-                <span className="mx-1">·</span>
-                {new Date(criador.data_edicao).toLocaleString('pt-BR')}
-              </span>
-              {ultimoEditor && (
-                <span>
-                  📝 Editado por{' '}
-                  <span className="font-medium text-amber-500 dark:text-amber-400">{ultimoEditor.nome_editor}</span>
-                  <span className="mx-1">·</span>
-                  {new Date(ultimoEditor.data_edicao).toLocaleString('pt-BR')}
-                </span>
-              )}
-            </div>
-          )}
-          {/* Info do editor histórico */}
-          {!isToday && historicalContent && (
-            <div className="text-xs text-gray-400 dark:text-gray-500">
-              ✍️ <span className="font-medium text-blue-500 dark:text-blue-400">{historicalContent.nome_editor}</span>
-              <span className="mx-1">·</span>
-              {new Date(historicalContent.data_edicao).toLocaleString('pt-BR')}
-            </div>
           )}
         </div>
 

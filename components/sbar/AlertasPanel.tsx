@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { alertasService, Alerta } from '../../services/alertasService';
 import AlertasDisplay from './AlertasDisplay';
-import CompletedAlertsSection from './CompletedAlertsSection';
 import CriarAlertaModal from './CriarAlertaModal';
 
 interface AlertasPanelProps {
@@ -62,10 +61,6 @@ const AlertasPanel: React.FC<AlertasPanelProps> = ({ patientId, patientName, rou
             roundId={roundId}
             alertas={alertas}
           />
-        </div>
-
-        <div className="bg-gray-900 p-4 rounded-lg border border-gray-800">
-          <CompletedAlertsSection patientId={patientId} />
         </div>
       </div>
     </div>
