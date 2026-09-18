@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alerta } from '../../services/alertasService';
+import { Alerta, isAlertaAtivo } from '../../services/alertasService';
 
 interface AlertaCardProps {
   alerta: Alerta;
@@ -51,17 +51,23 @@ const AlertaCard: React.FC<AlertaCardProps> = ({
   onConcluir,
   onArquivar,
 }) => {
+  const concluido = !isAlertaAtivo(alerta);
+
   return (
     <div
-      className={`p-3 sm:p-4 rounded-lg border-l-4 ml-2 sm:ml-4 ${getStatusColor(alerta.live_status)} ${borderColorClass}`}
+      className={`p-3 sm:p-4 rounded-lg border-l-4 ml-2 sm:ml-4 ${
+        concluido
+          ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 border-l-green-500 opacity-80'
+          : `${getStatusColor(alerta.live_status)} ${borderColorClass}`
+      }`}
     >
       <div className="flex items-start justify-between gap-2 sm:gap-4 mb-3">
         <div className="flex items-start gap-3 flex-1">
-          <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center shrink-0 mt-0.5">
-            <span className="text-white text-lg">🔔</span>
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${concluido ? 'bg-green-600' : 'bg-blue-600'}`}>
+            <span className="text-white text-lg">{concluido ? '✓' : '🔔'}</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-semibold text-gray-900 dark:text-white break-word">
+            <p className={`font-semibold text-gray-900 dark:text-white break-word ${concluido ? 'line-through decoration-green-600/60' : ''}`}>
               {alerta.alertaclinico}
             </p>
             {alerta.sistemas && alerta.sistemas.length > 0 && (
@@ -80,21 +86,30 @@ const AlertaCard: React.FC<AlertaCardProps> = ({
         </div>
         <div className="shrink-0 flex flex-col items-end gap-2">
           <span
-            className={`inline-block px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs font-semibold whitespace-nowrap ${getStatusBadgeColor(alerta.live_status)}`}
+            className={`inline-block px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
+              concluido ? 'bg-green-500 text-white' : getStatusBadgeColor(alerta.live_status)
+            }`}
           >
-            {getStatusLabel(alerta.live_status)}
+            {concluido ? '✓ Concluído' : getStatusLabel(alerta.live_status)}
           </span>
         </div>
       </div>
 
-      {alerta.justificativa && (
+      {(alerta.justificativa || alerta.justification) && (
         <div className="mt-3 p-2 bg-white/50 dark:bg-gray-800/50 rounded border border-gray-200 dark:border-gray-700">
           <p className="text-xs text-gray-700 dark:text-gray-300">
-            <strong>Justificativa:</strong> {alerta.justificativa}
+            <strong>Justificativa:</strong> {alerta.justificativa || alerta.justification}
           </p>
         </div>
       )}
 
+      {concluido ? (
+        <div className="mt-3 text-xs text-green-700 dark:text-green-300">
+          ✓ Concluído
+          {alerta.concluded_by_name && <> por <strong>{alerta.concluded_by_name}</strong></>}
+          {alerta.concluded_at && <> em {new Date(alerta.concluded_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</>}
+        </div>
+      ) : (
       <div className="mt-3 flex flex-wrap gap-2">
         <button
           onClick={() => onJustificar(alerta.id_alerta)}
@@ -115,6 +130,7 @@ const AlertaCard: React.FC<AlertaCardProps> = ({
           📦 Arquivar
         </button>
       </div>
+      )}
 
       <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
         Criado por: <strong>{alerta.created_by_name}</strong>

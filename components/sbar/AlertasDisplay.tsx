@@ -10,7 +10,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { alertasService, Alerta } from '../../services/alertasService';
+import { alertasService, Alerta, isAlertaAtivo, isConcluidoVisivel, getShiftDoAlerta } from '../../services/alertasService';
 import { clinicalRoundsSimpleService, ClinicalRoundsSimple } from '../../services/clinicalRoundsSimpleService';
 import { useUser } from '../../contexts/UserContext';
 import { auditService } from '../../services/auditService';
@@ -21,31 +21,13 @@ import { AlertasSkeleton } from '../SkeletonLoader';
 
 type ShiftKey = 'morning' | 'afternoon' | 'night';
 
-const getShiftFromHour = (hour: number): ShiftKey => {
-  if (hour >= 7 && hour < 13) return 'morning';
-  if (hour >= 13 && hour < 19) return 'afternoon';
-  return 'night';
-};
-
-const isAlertaAtivo = (a: Alerta): boolean => {
-  const s = (a.status || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  const ls = (a.live_status || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  return !a.concluded_at && s !== 'concluido' && s !== 'resolvido' && !ls.includes('resolvido') && !ls.includes('concluido') && !ls.includes('arquivado');
-};
-
+// Abertos primeiro; concluídos ficam no fim da aba até o mesmo turno do dia seguinte
 const agruparPorTurno = (lista: Alerta[]): Record<ShiftKey, Alerta[]> => {
-  const ativos = lista.filter(isAlertaAtivo);
   const grupos: Record<ShiftKey, Alerta[]> = { morning: [], afternoon: [], night: [] };
-  for (const a of ativos) {
-    const shiftCampo = (a as any).shift_criacao as ShiftKey | undefined;
-    let shift: ShiftKey;
-    if (shiftCampo === 'morning' || shiftCampo === 'afternoon' || shiftCampo === 'night') {
-      shift = shiftCampo;
-    } else {
-      const ref = a.created_at ? new Date(a.created_at) : new Date();
-      shift = getShiftFromHour(ref.getHours());
-    }
-    grupos[shift].push(a);
+  const ativos = lista.filter(isAlertaAtivo);
+  const concluidos = lista.filter(a => isConcluidoVisivel(a));
+  for (const a of [...ativos, ...concluidos]) {
+    grupos[getShiftDoAlerta(a)].push(a);
   }
   return grupos;
 };
@@ -291,7 +273,7 @@ const AlertasDisplay: React.FC<AlertasDisplayProps> = ({ patientId, patientName,
 
       {expanded && (
         <div className="space-y-3">
-          {alertasAtivos.length === 0 ? (
+          {alertasPorTurno.morning.length + alertasPorTurno.afternoon.length + alertasPorTurno.night.length === 0 ? (
             <div className="text-center py-6 text-gray-500 dark:text-gray-400">
               ✓ Nenhum alerta ativo
             </div>

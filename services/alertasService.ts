@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { logError } from '../utils/errorHandler';
+import { ShiftType, shiftFilterService } from './shiftFilterService';
 
 export interface Alerta {
   id_alerta: string;
@@ -11,6 +12,10 @@ export interface Alerta {
   responsavel: string;
   status: string;
   justificativa: string | null;
+  justification?: string | null;      // tasks (views antigas não renomeiam a coluna)
+  justificativa_at?: string | null;   // alertas_paciente
+  justification_at?: string | null;   // tasks
+  shift_criacao?: ShiftType;
   created_at: string;
   updated_at: string;
   deadline: string;
@@ -31,6 +36,78 @@ export interface Alerta {
   fonte?: 'tasks' | 'alertas_paciente';
   sistemas?: string[];
 }
+
+const semAcento = (v?: string | null) =>
+  (v || '').toLowerCase().normalize('NFD').replace(/\p{M}/gu, '');
+
+/**
+ * Alerta em aberto: não concluído, resolvido nem arquivado.
+ */
+export const isAlertaAtivo = (a: Alerta): boolean => {
+  const s = semAcento(a.status);
+  const ls = semAcento(a.live_status);
+  return !a.concluded_at && s !== 'concluido' && s !== 'resolvido' &&
+    !ls.includes('resolvido') && !ls.includes('concluido') && !ls.includes('arquivado');
+};
+
+/**
+ * Turno em que o alerta foi criado.
+ */
+export const getShiftDoAlerta = (a: Alerta): ShiftType => {
+  if (a.shift_criacao === 'morning' || a.shift_criacao === 'afternoon' || a.shift_criacao === 'night') {
+    return a.shift_criacao;
+  }
+  const ref = a.created_at ? new Date(a.created_at) : new Date();
+  return shiftFilterService.getShiftFromHour(ref.getHours());
+};
+
+/**
+ * Horário em que o turno atual começou. O turno da noite atravessa a
+ * meia-noite, então na madrugada o início é às 19h do dia anterior.
+ */
+export const getInicioTurnoAtual = (ref: Date = new Date()): Date => {
+  const hora = ref.getHours();
+  const inicio = new Date(ref);
+  inicio.setMinutes(0, 0, 0);
+  if (hora >= 7 && hora < 13) inicio.setHours(7);
+  else if (hora >= 13 && hora < 19) inicio.setHours(13);
+  else if (hora >= 19) inicio.setHours(19);
+  else {
+    inicio.setDate(inicio.getDate() - 1);
+    inicio.setHours(19);
+  }
+  return inicio;
+};
+
+const INICIO_TURNO: Record<ShiftType, number> = { morning: 7, afternoon: 13, night: 19 };
+
+/**
+ * Alerta concluído continua na aba do seu turno até o próximo início desse
+ * mesmo turno (ex: turno da manhã concluído às 10h some às 07h do dia seguinte).
+ */
+export const isConcluidoVisivel = (a: Alerta, agora: Date = new Date()): boolean => {
+  if (a.archived_at || isAlertaAtivo(a)) return false;
+  const quando = a.concluded_at || a.updated_at;
+  if (!quando) return false;
+  const concluido = new Date(quando);
+  const fim = new Date(concluido);
+  fim.setHours(INICIO_TURNO[getShiftDoAlerta(a)], 0, 0, 0);
+  if (fim <= concluido) fim.setDate(fim.getDate() + 1);
+  return agora < fim;
+};
+
+/**
+ * Alerta que precisa ser tratado antes de criar um novo: está em aberto e
+ * ainda não foi justificado dentro do turno atual. A justificativa vale só
+ * até virar o turno — o próximo plantonista revisa tudo de novo.
+ */
+export const precisaRevisao = (a: Alerta): boolean => {
+  if (!isAlertaAtivo(a)) return false;
+  const texto = a.justificativa || a.justification;
+  const quando = a.justificativa_at || a.justification_at;
+  if (!texto || !quando) return true;
+  return new Date(quando) < getInicioTurnoAtual();
+};
 
 /**
  * Serviço para gerenciar alertas do paciente
@@ -92,6 +169,42 @@ export const alertasService = {
     } catch (error) {
       logError(error, 'alertasService.getAlertas');
       return [];
+    }
+  },
+
+  /**
+   * Completa justificativa e data da justificativa lendo direto das tabelas,
+   * sem depender de quais colunas a view expõe.
+   */
+  async enriquecerJustificativas(alertas: Alerta[]): Promise<Alerta[]> {
+    const idsAP = alertas.filter(a => a.fonte !== 'tasks').map(a => a.id_alerta);
+    const idsT = alertas.filter(a => a.fonte === 'tasks').map(a => a.id_alerta);
+    try {
+      const [ap, t] = await Promise.all([
+        idsAP.length
+          ? supabase.from('alertas_paciente').select('id, justificativa, justificativa_at').in('id', idsAP)
+          : Promise.resolve({ data: [], error: null }),
+        idsT.length
+          ? supabase.from('tasks').select('id, justification, justification_at').in('id', idsT)
+          : Promise.resolve({ data: [], error: null }),
+      ]);
+      if (ap.error) logError(ap.error, 'alertasService.enriquecerJustificativas - alertas_paciente');
+      if (t.error) logError(t.error, 'alertasService.enriquecerJustificativas - tasks');
+
+      const porIdAP = new Map((ap.data || []).map((r: any) => [String(r.id), r]));
+      const porIdT = new Map((t.data || []).map((r: any) => [String(r.id), r]));
+
+      return alertas.map(a => {
+        if (a.fonte === 'tasks') {
+          const r = porIdT.get(String(a.id_alerta));
+          return r ? { ...a, justificativa: r.justification ?? a.justificativa, justification_at: r.justification_at ?? a.justification_at } : a;
+        }
+        const r = porIdAP.get(String(a.id_alerta));
+        return r ? { ...a, justificativa: r.justificativa ?? a.justificativa, justificativa_at: r.justificativa_at ?? a.justificativa_at } : a;
+      });
+    } catch (error) {
+      logError(error, 'alertasService.enriquecerJustificativas');
+      return alertas;
     }
   },
 

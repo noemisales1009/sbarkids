@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alerta } from '../../services/alertasService';
+import { Alerta, isAlertaAtivo } from '../../services/alertasService';
 import { ClinicalRoundsSimple } from '../../services/clinicalRoundsSimpleService';
 import AlertaCard from './AlertaCard';
 
@@ -78,7 +78,7 @@ const AlertasTurno: React.FC<AlertasTurnoProps> = ({
     <div>
       <div role="tablist" className="flex border-b border-slate-700 mb-4">
         {SHIFT_CONFIGS.map((shift) => {
-          const count = alertasPorTurno[shift.key].length;
+          const count = alertasPorTurno[shift.key].filter(isAlertaAtivo).length;
           const isActive = shift.key === activeShift;
           return (
             <button
