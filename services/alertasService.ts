@@ -97,12 +97,22 @@ export const isConcluidoVisivel = (a: Alerta, agora: Date = new Date()): boolean
 };
 
 /**
- * Alerta que precisa ser tratado antes de criar um novo: está em aberto e
- * ainda não foi justificado dentro do turno atual. A justificativa vale só
- * até virar o turno — o próximo plantonista revisa tudo de novo.
+ * Alerta aberto cujo prazo já venceu. As views marcam isso em live_status
+ * ('fora_do_prazo' ou 'fora_do_prazo_com_justificativa'); o deadline cobre
+ * o caso de a view ainda não ter recalculado.
+ */
+export const isForaDoPrazo = (a: Alerta, agora: Date = new Date()): boolean => {
+  if (semAcento(a.live_status).includes('fora_do_prazo')) return true;
+  return !!a.deadline && new Date(a.deadline) < agora;
+};
+
+/**
+ * Alerta que trava a criação de um novo: está em aberto, já passou do prazo
+ * e ainda não foi justificado dentro do turno atual. Aberto dentro do prazo
+ * não trava. A justificativa vale só até virar o turno.
  */
 export const precisaRevisao = (a: Alerta): boolean => {
-  if (!isAlertaAtivo(a)) return false;
+  if (!isAlertaAtivo(a) || !isForaDoPrazo(a)) return false;
   const texto = a.justificativa || a.justification;
   const quando = a.justificativa_at || a.justification_at;
   if (!texto || !quando) return true;

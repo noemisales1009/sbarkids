@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { alertasService, Alerta, getShiftDoAlerta } from '../../services/alertasService';
+import { alertasService, Alerta, getShiftDoAlerta, isForaDoPrazo } from '../../services/alertasService';
 import { ShiftType } from '../../services/shiftFilterService';
 import { useUser } from '../../contexts/UserContext';
 import { useToast } from '../Toast';
@@ -151,7 +151,7 @@ const RevisaoAlertasModal: React.FC<RevisaoAlertasModalProps> = ({
             <div>
               <h3 className="text-base font-bold text-slate-900 dark:text-white">Revisão obrigatória</h3>
               <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
-                Resolva, justifique ou arquive os alertas em aberto antes de criar um novo.
+                Resolva, justifique ou arquive os alertas fora do prazo antes de criar um novo.
               </p>
             </div>
           </div>
@@ -184,7 +184,7 @@ const RevisaoAlertasModal: React.FC<RevisaoAlertasModalProps> = ({
             visiveis.map((alerta) => {
               const shift = getShiftDoAlerta(alerta);
               const info = SHIFT_INFO[shift];
-              const atrasado = alerta.live_status === 'fora_do_prazo';
+              const atrasado = isForaDoPrazo(alerta);
               const modo = acaoAberta?.id === alerta.id_alerta ? acaoAberta.modo : null;
               const salvando = salvandoId === alerta.id_alerta;
               const justificativaNova = justificados[alerta.id_alerta];

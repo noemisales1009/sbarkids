@@ -31,7 +31,7 @@ const AlertasPanel: React.FC<AlertasPanelProps> = ({ patientId, patientName, rou
     }
   };
 
-  // Antes de criar, o médico revisa tudo que está em aberto — de qualquer turno
+  // Antes de criar, o médico revisa o que está em aberto e fora do prazo — de qualquer turno
   const handleCriarAlerta = async () => {
     const data = await loadAlertas();
     const abertos = await alertasService.enriquecerJustificativas(data.filter(isAlertaAtivo));
